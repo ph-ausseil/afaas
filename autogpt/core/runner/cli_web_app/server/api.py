@@ -1,20 +1,53 @@
 import uuid
-
+from pathlib import Path
+import yaml
 from fastapi import APIRouter, FastAPI, Request
-
+from autogpt.core.runner.client_lib.shared_click_commands import (
+    DEFAULT_SETTINGS_FILE,
+    make_settings,
+)
 from autogpt.core.runner.cli_web_app.server.schema import InteractRequestBody
+from autogpt.core.runner.cli_web_app.server.services.agent import workspace_loader
 
 router = APIRouter()
+def get_settings_from_file() : 
+    """ 
+    Current Back-end for setting is a File 
+    """
+    # @Todo : Possible Back-End No SQL Database 
+    settings_file = Path(DEFAULT_SETTINGS_FILE)
+    settings = {}
+    if settings_file.exists():
+        settings = yaml.safe_load(settings_file.read_text())
+    return settings;
 
 
-@router.post("/agents")
+@router.get("/agents")
+async def get_agents(request: Request):
+    """List all agents"""
+    settings = get_settings_from_file()
+    agent = await workspace_loader(settings).__dict__
+    # @Todo place holder for elements
+    agent.agent_id = uuid.uuid4().hex
+    agent.client_facing = True
+    agent.status = 0
+    return {"agents": [agent]}
+
+
+@router.post("/agent")
 async def create_agent(request: Request):
     """Create a new agent."""
     agent_id = uuid.uuid4().hex
     return {"agent_id": agent_id}
 
 
-@router.post("/agents/{agent_id}")
+@router.get("/agent/{agent_id}")
+async def get_agent_by_id(request: Request, agent_id: str, body: InteractRequestBody):
+    agent = get_settings_from_file()
+    return {"agent": }
+
+
+@router.post("/agent/{agent_id}")
 async def interact(request: Request, agent_id: str, body: InteractRequestBody):
     """Interact with an agent."""
 
