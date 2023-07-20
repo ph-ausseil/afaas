@@ -1,15 +1,10 @@
-
 from pydantic import BaseModel
 
-from autogpt.core.ability import (
-    AbilityRegistrySettings,
-)
+from autogpt.core.ability import AbilityRegistrySettings
 from autogpt.core.configuration import SystemConfiguration, SystemSettings
 from autogpt.core.memory import MemorySettings
 from autogpt.core.planning import PlannerSettings
-from autogpt.core.plugin.simple import (
-    PluginLocation,
-)
+from autogpt.core.plugin.simple import PluginLocation
 from autogpt.core.resource.model_providers import OpenAISettings
 from autogpt.core.workspace.simple import WorkspaceSettings
 

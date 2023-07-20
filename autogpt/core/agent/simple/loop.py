@@ -1,13 +1,7 @@
 import logging
 
-
-from autogpt.core.ability import (
-    AbilityResult,
-    SimpleAbilityRegistry,
-)
-from autogpt.core.agent.simple.models import (
-    AgentSystemSettings,
-)
+from autogpt.core.ability import AbilityResult, SimpleAbilityRegistry
+from autogpt.core.agent.simple.models import AgentSystemSettings
 from autogpt.core.memory import SimpleMemory
 from autogpt.core.planning import SimplePlanner, Task, TaskStatus
 from autogpt.core.resource.model_providers import OpenAIProvider

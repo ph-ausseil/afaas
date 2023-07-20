@@ -3,11 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
-
-from autogpt.core.ability import (
-    AbilityResult,
-    SimpleAbilityRegistry,
-)
+from autogpt.core.ability import AbilityResult, SimpleAbilityRegistry
 from autogpt.core.agent.base import Agent
 from autogpt.core.agent.simple import (
     AgentConfiguration,
