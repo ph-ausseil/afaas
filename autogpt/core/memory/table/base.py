@@ -4,41 +4,47 @@ import abc
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from pydantic import BaseModel, Field
+
 if TYPE_CHECKING:
     from autogpt.core.memory.base import NewMemory
 
 
-class BaseTable(abc.ABC):
+# TODO : Adopt Configurable ?
+class BaseTable(abc.ABC, BaseModel):
+    table_name: str = Field(default_factory=lambda: "")
+    memory: NewMemory
+
     def __init__(self, memory=NewMemory):
         self.memory = memory
 
     def add(self, value: dict) -> uuid:
         id = uuid.uuid4()
         value["id"] = id
-        self.memory.save(key=id, value=value)
+        self.memory.add(key=id, value=value, table_name=self.table_name)
         return id
 
     def get(self, id: uuid) -> Any:
-        return self.memory.data[id]
+        return self.memory.get(key=id, table_name=self.table_name)
 
     def update(self, id: uuid, value: dict):
-        self.memory.data[id] = value
-        self.memory.save(key=id, value=value)
+        self.memory.update(key=id, value=value, table_name=self.table_name)
 
     def delete(self, id: uuid):
-        del self.memorydata[id]
-        self.memory.delete(id)
+        self.memory.delete(id, table_name=self.table_name)
 
 
 class AgentsTable(BaseTable):
+    table_name = "agents"
+
     def update(self, agent):
         # NOTE : overwrite parent update # Perform any custom logic needed for adding an agent
-        super().add(agent)
+        super().update(agent)
 
 
 class MessagesTable(BaseTable):
-    pass
+    table_name = "messages_history"
 
 
 class UsersTable(BaseTable):
-    pass
+    table_name = "users"

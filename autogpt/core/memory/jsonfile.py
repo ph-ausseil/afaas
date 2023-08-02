@@ -27,36 +27,38 @@ class JSONFileMemory(NewMemory):
             data = {}
         return data
 
-    def _save_file(self, data, table_name: str):
+    def _save_file(
+        self,
+        table_name: str,
+        data: dict,
+    ):
         file = Path(self._json_file_path / f"{table_name}.json")
         with file.open("w") as f:
             json.dump(data, f)
 
     def get(self, key, table_name: str):
-        file = Path(self._json_file_path / f"{table_name}.json")
-        data = self._load_file(file)
+        data = self._load_file(table_name=table_name)
         return data.get(key)
 
     def add(self, key: uuid, value: dict, table_name: str):
-        file = Path(self._json_file_path / f"{table_name}.json")
-        data = self._load_file(file)
+        data = self._load_file(table_name=table_name)
         data[key] = value
-        self._save_file(file, data)
+        self._save_file(table_name=table_name, data=value)
 
     def update(self, key: uuid, value: dict, table_name: str):
         file = Path(self._json_file_path / f"{table_name}.json")
-        data = self._load_file(file)
+        data = self._load_file(table_name=table_name)
         if key in data:
             data[key] = value
-            self._save_file(file, data)
+            self._save_file(table_name=table_name, data=data)
         else:
             raise KeyError(f"No such key '{key}' in file {file}")
 
     def delete(self, key, table_name: str):
         file = Path(self._json_file_path / f"{table_name}.json")
-        data = self._load_file(file)
+        data = self._load_file(table_name=table_name)
         if key in data:
             del data[key]
-            self._save_file(file, data)
+            self._save_file(table_name=table_name, data=data)
         else:
             raise KeyError(f"No such key '{key}' in file {file}")
