@@ -37,9 +37,10 @@ class BaseTable(abc.ABC, BaseModel):
 class AgentsTable(BaseTable):
     table_name = "agents"
 
-    def update(self, agent):
-        # NOTE : overwrite parent update # Perform any custom logic needed for adding an agent
-        super().update(agent)
+    def update(self, id : uuid, value :  dict ):
+        # NOTE : overwrite parent update 
+        # # Perform any custom logic needed for updating an agent
+        super().update( id =  id , value = value )
 
 
 class MessagesTable(BaseTable):
