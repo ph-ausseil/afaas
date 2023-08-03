@@ -3,6 +3,7 @@ autogpt/keys.py
 autogpt/*.json
 auto_gpt_workspace/*
 *.mpeg
+prv*
 .env
 azure.yaml
 ai_settings.yaml

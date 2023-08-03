@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import abc
 import uuid
-from typing import TYPE_CHECKING, Any, List, Callable, Union, Dict, TypedDict, Optional, Literal
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+)
 
 from pydantic import BaseModel, Field
 
@@ -10,8 +20,11 @@ if TYPE_CHECKING:
     from autogpt.core.memory.base import NewMemory
 
 ComparisonOperator = Callable[[Any, Any], bool]
-FilterItem = TypedDict('FilterItem', {'value': Any, 'operator': Union[str, ComparisonOperator]})
+FilterItem = TypedDict(
+    "FilterItem", {"value": Any, "operator": Union[str, ComparisonOperator]}
+)
 FilterDict = Dict[str, FilterItem]
+
 
 # TODO : Adopt Configurable ?
 class BaseTable(abc.ABC, BaseModel):
@@ -36,10 +49,12 @@ class BaseTable(abc.ABC, BaseModel):
     def delete(self, id: uuid):
         self.memory.delete(id, table_name=self.table_name)
 
-    def list(self, 
-        filter: FilterDict = {}, 
+    def list(
+        self,
+        filter: FilterDict = {},
         order_column: Optional[str] = None,
-        order_direction: Literal['asc', 'desc'] = 'desc')  -> List[Dict[str, Any]]:
+        order_direction: Literal["asc", "desc"] = "desc",
+    ) -> List[Dict[str, Any]]:
         """
         Retrieve a filtered and optionally ordered list of items from the table.
 
@@ -127,14 +142,14 @@ class BaseTable(abc.ABC, BaseModel):
             return value != filter_value
 
         operators: Dict[str, ComparisonOperator] = {
-            '>': greater_than,
-            '<': less_than,
-            '==': equal_to,
-            '>=': greater_than_or_equal,
-            'in': in_list,
-            'not in': not_in_list,
-            '<=': less_than_or_equal,
-            '!=': not_equal_to
+            ">": greater_than,
+            "<": less_than,
+            "==": equal_to,
+            ">=": greater_than_or_equal,
+            "in": in_list,
+            "not in": not_in_list,
+            "<=": less_than_or_equal,
+            "!=": not_equal_to,
         }
 
         for data in data_list:
@@ -142,8 +157,8 @@ class BaseTable(abc.ABC, BaseModel):
             for key, filter_data in filter.items():
                 value = data.get(key)
                 if value is not None:
-                    filter_value = filter_data['value']
-                    comparison_operator = filter_data['operator']
+                    filter_value = filter_data["value"]
+                    comparison_operator = filter_data["operator"]
                     if callable(comparison_operator):
                         if comparison_operator(value, filter_value):
                             filtered_data[key] = value
@@ -154,7 +169,9 @@ class BaseTable(abc.ABC, BaseModel):
                 filtered_data_list.append(filtered_data)
 
         if order_column:
-            filtered_data_list.sort(key=lambda x: x[order_column], reverse=order_direction == 'desc')
+            filtered_data_list.sort(
+                key=lambda x: x[order_column], reverse=order_direction == "desc"
+            )
 
         return filtered_data_list
 
@@ -162,28 +179,29 @@ class BaseTable(abc.ABC, BaseModel):
 class AgentsTable(BaseTable):
     table_name = "agents"
 
-    # NOTE : overwrite parent update 
+    # NOTE : overwrite parent update
     # Perform any custom logic needed for updating an agent
-    def update(self, id : uuid, value :  dict ):
-        super().update( id =  id , value = value )
+    def update(self, id: uuid, value: dict):
+        super().update(id=id, value=value)
 
-    #def add(self, value: dict) -> uuid:
+    # def add(self, value: dict) -> uuid:
 
-    #def get(self, id: uuid) -> Any:
+    # def get(self, id: uuid) -> Any:
 
-    #def get_from_date(self, id: uuid) -> Any:
+    # def get_from_date(self, id: uuid) -> Any:
 
-    #def get_from_date(self, id: uuid) -> Any:
+    # def get_from_date(self, id: uuid) -> Any:
 
-    #def delete(self, id: uuid):
+    # def delete(self, id: uuid):
 
-    #def list(self) ->dict:
+    # def list(self) ->dict:
 
-    #def list(self, 
-    # agent_type = None, 
-    # from_date = None , 
-    # order_column = None, 
+    # def list(self,
+    # agent_type = None,
+    # from_date = None ,
+    # order_column = None,
     # order_direction = 'asc') ->dict:
+
 
 class MessagesTable(BaseTable):
     table_name = "messages_history"

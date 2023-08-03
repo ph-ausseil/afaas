@@ -183,9 +183,9 @@ class SimpleWorkspace(Configurable, Workspace):
         return workspace_root
 
     @staticmethod
-    def load_agent_settings(cls ,workspace_root: Path) -> "BaseAgentSettings":
+    def load_agent_settings(cls, workspace_root: Path) -> "BaseAgentSettings":
         # Cyclic import
-        from autogpt.core.agent.base.models import BaseAgentSettings
+        pass
 
         with (workspace_root / "agent_settings.json").open("r") as f:
             agent_settings = json.load(f)

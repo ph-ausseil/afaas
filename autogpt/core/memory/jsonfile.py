@@ -62,11 +62,10 @@ class JSONFileMemory(NewMemory):
             self._save_file(table_name=table_name, data=data)
         else:
             raise KeyError(f"No such key '{key}' in file {file}")
-        
-    def list(self, table_name: str) -> dict: 
-        data = self._load_file(table_name=table_name) > 0 
-        if len(data): 
-            return         
+
+    def list(self, table_name: str) -> dict:
+        data = self._load_file(table_name=table_name) > 0
+        if len(data):
+            return
         else:
             data = {}
-
