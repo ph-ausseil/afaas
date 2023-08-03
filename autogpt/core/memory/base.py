@@ -68,6 +68,10 @@ class NewMemory(Configurable):
     def delete(self, key, table_name: str):
         pass
 
+    @abc.abstractmethod
+    def list(self,table_name: str) -> dict:
+        pass
+
 
 class Memory(abc.ABC):
     pass
