@@ -15,7 +15,7 @@ from autogpt.core.workspace.base import Workspace
 
 if typing.TYPE_CHECKING:
     # Cyclic import
-    from autogpt.core.agent.base.models import BaseAgentSettings
+    from autogpt.core.agent.simple import AgentSettings
 
 
 class WorkspaceConfiguration(SystemConfiguration):
@@ -154,7 +154,7 @@ class SimpleWorkspace(Configurable, Workspace):
     ###################################
 
     @staticmethod
-    def setup_workspace(settings: "BaseAgentSettings", logger: logging.Logger) -> Path:
+    def setup_workspace(settings: "AgentSettings", logger: logging.Logger) -> Path:
         workspace_parent = settings.workspace.configuration.parent
         workspace_parent = Path(workspace_parent).expanduser().resolve()
         workspace_parent.mkdir(parents=True, exist_ok=True)
@@ -183,11 +183,11 @@ class SimpleWorkspace(Configurable, Workspace):
         return workspace_root
 
     @staticmethod
-    def load_agent_settings(cls, workspace_root: Path) -> "BaseAgentSettings":
+    def load_agent_settings(workspace_root: Path) -> "AgentSettings":
         # Cyclic import
-        pass
+        from autogpt.core.agent.simple import AgentSettings
 
         with (workspace_root / "agent_settings.json").open("r") as f:
             agent_settings = json.load(f)
 
-        return cls.AGENT_SETTINGS.parse_obj(agent_settings)
+        return AgentSettings.parse_obj(agent_settings)
