@@ -76,7 +76,7 @@ class NewMemory(Configurable):
 
     @classmethod
     def get_adapter(
-        cls, config: NewMemoryConfig, logger=Logger, *kwargs
+        cls, config: NewMemoryConfig, logger=Logger, *args, **kwargs
     ) -> "NewMemory":
         """
         Get an instance of a memory adapter based on the provided configuration.
@@ -147,7 +147,7 @@ class NewMemory(Configurable):
             raise ValueError(f"Unknown table: {table_name}")
 
     @abc.abstractmethod
-    def connect(self, kwarg):
+    def connect(self, *args, **kwargs):
         """
         Connect to the memory storage system.
 
