@@ -11,7 +11,11 @@ from autogpt.core.configuration import Configurable
 from autogpt.core.memory import BaseTable, JSONFileMemory
 
 if TYPE_CHECKING:
-    from autogpt.core.memory.table.base import AgentsTable, MessagesTable, UsersInformationsTable, UsersAgentsTable
+    from autogpt.core.memory.table.base import (
+        AgentsTable,
+        MessagesTable,
+        UsersInformationsTable,
+    )
 
 
 class MemoryAdapterType(Enum):

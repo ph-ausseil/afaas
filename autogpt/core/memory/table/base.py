@@ -12,8 +12,6 @@ from typing import (
     Optional,
     TypedDict,
     Union,
-    Type,
-    Enum
 )
 
 from pydantic import BaseModel, Field
@@ -45,6 +43,7 @@ FilterDict = Dict[str, FilterItem]
 #         if key_attrs:
 #             cls.Key = KeyEnum("Key", key_attrs)
 
+
 # TODO : Adopt Configurable ?
 class BaseTable(abc.ABC, BaseModel):
     table_name: str = Field(default_factory=lambda: "")
@@ -62,31 +61,31 @@ class BaseTable(abc.ABC, BaseModel):
     @abc.abstractmethod
     def add(self, value: dict) -> uuid:
         id = uuid.uuid4()
-        key = {'primary_key': value.get(self.primary_key, id)}
-        if hasattr(self, 'secondary_key') and self.secondary_key in value:
-            key['secondary_key'] = value[self.secondary_key]
+        key = {"primary_key": value.get(self.primary_key, id)}
+        if hasattr(self, "secondary_key") and self.secondary_key in value:
+            key["secondary_key"] = value[self.secondary_key]
         self.memory.add(key=key, value=value, table_name=self.table_name)
         return id
 
     @abc.abstractmethod
     def get(self, id: uuid) -> Any:
-        key = {'primary_key': id}
-        if hasattr(self, 'secondary_key') and self.secondary_key:
-            key['secondary_key'] = self.secondary_key
+        key = {"primary_key": id}
+        if hasattr(self, "secondary_key") and self.secondary_key:
+            key["secondary_key"] = self.secondary_key
         return self.memory.get(key=key, table_name=self.table_name)
 
     @abc.abstractmethod
     def update(self, id: uuid, value: dict):
-        key = {'primary_key': id}
-        if hasattr(self, 'secondary_key') and self.secondary_key in value:
-            key['secondary_key'] = value[self.secondary_key]
+        key = {"primary_key": id}
+        if hasattr(self, "secondary_key") and self.secondary_key in value:
+            key["secondary_key"] = value[self.secondary_key]
         self.memory.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
     def delete(self, id: uuid):
-        key = {'primary_key': id}
-        if hasattr(self, 'secondary_key') and self.secondary_key:
-            key['secondary_key'] = self.secondary_key
+        key = {"primary_key": id}
+        if hasattr(self, "secondary_key") and self.secondary_key:
+            key["secondary_key"] = self.secondary_key
         self.memory.delete(key=key, table_name=self.table_name)
 
     def list(
@@ -215,6 +214,7 @@ class BaseTable(abc.ABC, BaseModel):
 
         return filtered_data_list
 
+
 class AgentsTable(BaseTable):
     table_name = "agents"
     primary_key = "agent_id"
@@ -223,22 +223,21 @@ class AgentsTable(BaseTable):
 
     # This is add agent the method to create an agent, I need help to define how should be declared this method
     # def add(self, value  : dict) ?
-    # def add(self, user_id, value  : dict) ?  
-    # def add(self, user_id, agent_type, value  : dict) ?   
+    # def add(self, user_id, value  : dict) ?
+    # def add(self, user_id, agent_type, value  : dict) ?
     # def add_agent(self, user_id: uuid, agent_type: str, value: dict) -> uuid:
     #     agent_id = uuid.uuid4() # generate a new id for the agent
     #     value.update({"agent_id": agent_id, "user_id": user_id, "agent_type": agent_type}) # add additional fields
     #     self.memory.add(key=agent_id, value=value, table_name=self.table_name) # add the new agent to the database
     #     return agent_id
 
-    # def add(self,user_id , value  : dict) : 
+    # def add(self,user_id , value  : dict) :
     #     id = uuid.uuid4()
     #     value["id"] = id
     #     self.memory.add(key=id, value=value, table_name=self.table_name)
     #     return id
 
-
-    # def add(self,user_id , value  : dict) : 
+    # def add(self,user_id , value  : dict) :
     #     id = uuid.uuid4()
     #     value["id"] = id
     #     self.memory.add(key=id, value=value, table_name=self.table_name)
@@ -278,6 +277,6 @@ class UsersInformationsTable(BaseTable):
     table_name = "users_informations"
     primary_key = "user_id"
 
+
 # class UsersAgentsTable(BaseTable):
 #     table_name = "users_agents"
-

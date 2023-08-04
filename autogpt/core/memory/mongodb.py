@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from pymongo import MongoClient
 from logging import Logger
-from typing import Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
+from pymongo import MongoClient
 
 if TYPE_CHECKING:
     from autogpt.core.memory.base import NewMemory
@@ -15,14 +16,15 @@ class MongoDBMemory(NewMemory):
     Args:
         NewMemory (_type_): _description_
     """
+
     def __init__(self, logger: Logger):
         self._client = None
         self._db = None
         self._logger = logger
 
     def connect(self, **kwargs):
-        self._client = MongoClient(kwargs.get('MONGO_URI'))
-        self._db = self._client[kwargs.get('DB_NAME')]
+        self._client = MongoClient(kwargs.get("MONGO_URI"))
+        self._db = self._client[kwargs.get("DB_NAME")]
         try:
             self._db.list_collection_names()
         except Exception as e:

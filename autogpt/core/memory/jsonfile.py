@@ -120,15 +120,14 @@ class NewJSONFileMemory(NewMemory):
     def list(self, table_name: str) -> List[dict]:
         table_path = Path(self._json_file_path, table_name)
         data = []
-        for json_file in table_path.glob('**/*.json'):
+        for json_file in table_path.glob("**/*.json"):
             with json_file.open() as f:
                 data.append(json.load(f))
         return data
 
     def _get_file_path(self, key: dict, table_name: str) -> Path:
-        file_path = Path(self._json_file_path, table_name, str(key['primary_key']))
-        if 'secondary_key' in key:
-            file_path = file_path / str(key['secondary_key'])
-        file_path = file_path.with_suffix('.json')
+        file_path = Path(self._json_file_path, table_name, str(key["primary_key"]))
+        if "secondary_key" in key:
+            file_path = file_path / str(key["secondary_key"])
+        file_path = file_path.with_suffix(".json")
         return file_path
-

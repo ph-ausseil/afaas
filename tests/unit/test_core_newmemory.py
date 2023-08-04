@@ -3,7 +3,11 @@ from logging import Logger
 import pytest
 
 from autogpt.core.memory.base import JSONFileMemory, MemoryAdapterType, NewMemory
-from autogpt.core.memory.table.base import AgentsTable, MessagesTable, UsersInformationsTable
+from autogpt.core.memory.table.base import (
+    AgentsTable,
+    MessagesTable,
+    UsersInformationsTable,
+)
 
 
 # Mock logger for testing

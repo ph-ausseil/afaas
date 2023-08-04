@@ -1,4 +1,3 @@
-
 from autogpt.core.memory.table.base import (
     AgentsTable,
     BaseTable,

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from azure.cosmos import CosmosClient, PartitionKey
-from typing import Dict, List, TYPE_CHECKING
-
 from logging import Logger
+from typing import TYPE_CHECKING, List
+
+from azure.cosmos import CosmosClient
+
 if TYPE_CHECKING:
     from autogpt.core.memory.base import NewMemory
+
 
 class CosmosDBMemory(NewMemory):
     """
@@ -14,15 +16,16 @@ class CosmosDBMemory(NewMemory):
     Args:
         NewMemory (_type_): _description_
     """
+
     def __init__(self, logger: Logger):
         self._client = None
         self._database = None
         self._logger = logger
 
     def connect(self, **kwargs):
-        endpoint = kwargs.get('COSMOS_ENDPOINT')
-        key = kwargs.get('COSMOS_KEY')
-        db_name = kwargs.get('DB_NAME')
+        endpoint = kwargs.get("COSMOS_ENDPOINT")
+        key = kwargs.get("COSMOS_KEY")
+        db_name = kwargs.get("DB_NAME")
         self._client = CosmosClient(endpoint, key)
         self._database = self._client.get_database_client(db_name)
         try:
@@ -36,10 +39,9 @@ class CosmosDBMemory(NewMemory):
     def get(self, key: dict, table_name: str):
         container = self._database.get_container_client(table_name)
         query = f"SELECT * FROM c WHERE c.id = '{key['primary_key']}'"
-        results = list(container.query_items(
-            query=query,
-            enable_cross_partition_query=True
-        ))
+        results = list(
+            container.query_items(query=query, enable_cross_partition_query=True)
+        )
         return results[0] if results else None
 
     def add(self, key: dict, value: dict, table_name: str):
@@ -50,10 +52,9 @@ class CosmosDBMemory(NewMemory):
     def update(self, key: dict, value: dict, table_name: str):
         container = self._database.get_container_client(table_name)
         query = f"SELECT * FROM c WHERE c.id = '{key['primary_key']}'"
-        results = list(container.query_items(
-            query=query,
-            enable_cross_partition_query=True
-        ))
+        results = list(
+            container.query_items(query=query, enable_cross_partition_query=True)
+        )
         if not results:
             raise KeyError(f"No such key '{key}' in table {table_name}")
         item = results[0]
@@ -62,7 +63,7 @@ class CosmosDBMemory(NewMemory):
 
     def delete(self, key: dict, table_name: str):
         container = self._database.get_container_client(table_name)
-        container.delete_item(item=key['primary_key'], partition_key=key['primary_key'])
+        container.delete_item(item=key["primary_key"], partition_key=key["primary_key"])
 
     def list(self, table_name: str) -> List[dict]:
         container = self._database.get_container_client(table_name)
