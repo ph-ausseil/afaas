@@ -11,7 +11,7 @@ from autogpt.core.configuration import Configurable
 from autogpt.core.memory import BaseTable, JSONFileMemory
 
 if TYPE_CHECKING:
-    from autogpt.core.memory.table.base import AgentsTable, MessagesTable, UsersTable
+    from autogpt.core.memory.table.base import AgentsTable, MessagesTable, UsersInformationsTable, UsersAgentsTable
 
 
 class MemoryAdapterType(Enum):
@@ -141,8 +141,10 @@ class NewMemory(Configurable):
             return AgentsTable(memory=self)
         elif table_name == "messages_history":
             return MessagesTable(memory=self)
-        elif table_name == "users":
-            return UsersTable(memory=self)
+        elif table_name == "users_informations":
+            return UsersInformationsTable(memory=self)
+        # elif table_name == "users_agents":
+        #     return UsersAgentsTable(memory=self)
         else:
             raise ValueError(f"Unknown table: {table_name}")
 

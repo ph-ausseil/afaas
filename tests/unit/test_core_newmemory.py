@@ -3,7 +3,7 @@ from logging import Logger
 import pytest
 
 from autogpt.core.memory.base import JSONFileMemory, MemoryAdapterType, NewMemory
-from autogpt.core.memory.table.base import AgentsTable, MessagesTable, UsersTable
+from autogpt.core.memory.table.base import AgentsTable, MessagesTable, UsersInformationsTable
 
 
 # Mock logger for testing
@@ -48,7 +48,7 @@ def test_new_memory_get_table_users():
     }
     memory = NewMemory.get_adapter(config, logger=MockLogger())
     table = memory.get_table("users")
-    assert isinstance(table, UsersTable)
+    assert isinstance(table, UsersInformationsTable)
 
 
 def test_new_memory_get_table_unknown_table():

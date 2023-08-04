@@ -12,6 +12,8 @@ from typing import (
     Optional,
     TypedDict,
     Union,
+    Type,
+    Enum
 )
 
 from pydantic import BaseModel, Field
@@ -25,6 +27,23 @@ FilterItem = TypedDict(
 )
 FilterDict = Dict[str, FilterItem]
 
+# class KeyEnum(Enum):
+#     primary_key: str
+#     secondary_key: str
+#     third_key: str
+
+# class KeyMeta(type):
+#     def __init__(cls, name: str, bases: tuple[Type], attrs: dict[str, Any]):
+#         key_attrs = {}
+#         if "primary_key" in attrs:
+#             key_attrs["primary_key"] = attrs["primary_key"]
+#         if "secondary_key" in attrs:
+#             key_attrs["secondary_key"] = attrs["secondary_key"]
+#         if "third_key" in attrs:
+#             key_attrs["third_key"] = attrs["third_key"]
+
+#         if key_attrs:
+#             cls.Key = KeyEnum("Key", key_attrs)
 
 # TODO : Adopt Configurable ?
 class BaseTable(abc.ABC, BaseModel):
@@ -34,20 +53,41 @@ class BaseTable(abc.ABC, BaseModel):
     def __init__(self, memory=NewMemory):
         self.memory = memory
 
+    # def add(self, value: dict) -> uuid:
+    #     id = uuid.uuid4()
+    #     value["id"] = id
+    #     self.memory.add(key=id, value=value, table_name=self.table_name)
+    #     return id
+
+    @abc.abstractmethod
     def add(self, value: dict) -> uuid:
         id = uuid.uuid4()
-        value["id"] = id
-        self.memory.add(key=id, value=value, table_name=self.table_name)
+        key = {'primary_key': value.get(self.primary_key, id)}
+        if hasattr(self, 'secondary_key') and self.secondary_key in value:
+            key['secondary_key'] = value[self.secondary_key]
+        self.memory.add(key=key, value=value, table_name=self.table_name)
         return id
 
+    @abc.abstractmethod
     def get(self, id: uuid) -> Any:
-        return self.memory.get(key=id, table_name=self.table_name)
+        key = {'primary_key': id}
+        if hasattr(self, 'secondary_key') and self.secondary_key:
+            key['secondary_key'] = self.secondary_key
+        return self.memory.get(key=key, table_name=self.table_name)
 
+    @abc.abstractmethod
     def update(self, id: uuid, value: dict):
-        self.memory.update(key=id, value=value, table_name=self.table_name)
+        key = {'primary_key': id}
+        if hasattr(self, 'secondary_key') and self.secondary_key in value:
+            key['secondary_key'] = value[self.secondary_key]
+        self.memory.update(key=key, value=value, table_name=self.table_name)
 
+    @abc.abstractmethod
     def delete(self, id: uuid):
-        self.memory.delete(id, table_name=self.table_name)
+        key = {'primary_key': id}
+        if hasattr(self, 'secondary_key') and self.secondary_key:
+            key['secondary_key'] = self.secondary_key
+        self.memory.delete(key=key, table_name=self.table_name)
 
     def list(
         self,
@@ -175,9 +215,34 @@ class BaseTable(abc.ABC, BaseModel):
 
         return filtered_data_list
 
-
 class AgentsTable(BaseTable):
     table_name = "agents"
+    primary_key = "agent_id"
+    secondary_key = "user_id"
+    third_key = "agent_type"
+
+    # This is add agent the method to create an agent, I need help to define how should be declared this method
+    # def add(self, value  : dict) ?
+    # def add(self, user_id, value  : dict) ?  
+    # def add(self, user_id, agent_type, value  : dict) ?   
+    # def add_agent(self, user_id: uuid, agent_type: str, value: dict) -> uuid:
+    #     agent_id = uuid.uuid4() # generate a new id for the agent
+    #     value.update({"agent_id": agent_id, "user_id": user_id, "agent_type": agent_type}) # add additional fields
+    #     self.memory.add(key=agent_id, value=value, table_name=self.table_name) # add the new agent to the database
+    #     return agent_id
+
+    # def add(self,user_id , value  : dict) : 
+    #     id = uuid.uuid4()
+    #     value["id"] = id
+    #     self.memory.add(key=id, value=value, table_name=self.table_name)
+    #     return id
+
+
+    # def add(self,user_id , value  : dict) : 
+    #     id = uuid.uuid4()
+    #     value["id"] = id
+    #     self.memory.add(key=id, value=value, table_name=self.table_name)
+    #     return id
 
     # NOTE : overwrite parent update
     # Perform any custom logic needed for updating an agent
@@ -205,7 +270,14 @@ class AgentsTable(BaseTable):
 
 class MessagesTable(BaseTable):
     table_name = "messages_history"
+    primary_key = "message_id"
+    secondary_key = "agent_id"
 
 
-class UsersTable(BaseTable):
-    table_name = "users"
+class UsersInformationsTable(BaseTable):
+    table_name = "users_informations"
+    primary_key = "user_id"
+
+# class UsersAgentsTable(BaseTable):
+#     table_name = "users_agents"
+

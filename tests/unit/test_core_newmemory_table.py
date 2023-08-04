@@ -3,7 +3,7 @@ from autogpt.core.memory.table.base import (
     AgentsTable,
     BaseTable,
     MessagesTable,
-    UsersTable,
+    UsersInformationsTable,
 )
 
 # Create test data for BaseTable
@@ -57,7 +57,7 @@ def create_messages_table():
 # Helper function to create UsersTable instance with MockMemory
 def create_users_table():
     memory = MockMemory()
-    return UsersTable(memory=memory)
+    return UsersInformationsTable(memory=memory)
 
 
 # Test BaseTable.list method with different filter and order conditions
