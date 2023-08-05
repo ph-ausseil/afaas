@@ -15,7 +15,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from autogpt.core.memory.base import NewMemory
+    from autogpt.core.memory.base import Memory
 
 ComparisonOperator = Callable[[Any, Any], bool]
 FilterItem = TypedDict(
@@ -42,7 +42,7 @@ FilterDict = Dict[str, FilterItem]
 #             cls.Key = KeyEnum("Key", key_attrs)
 class BaseTable(abc.ABC):
     table_name: str
-    memory: NewMemory
+    memory: Memory
     primary_key: str
 
 class BaseSQLTable(BaseTable):

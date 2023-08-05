@@ -7,15 +7,15 @@ import boto3
 from botocore.exceptions import NoCredentialsError
 
 if TYPE_CHECKING:
-    from autogpt.core.memory.base import NewMemory
+    from autogpt.core.memory.base import Memory
 
 
-class DynamoDBMemory(NewMemory):
+class DynamoDBMemory(Memory):
     """
     DO NOT USE : TEMPLATE UNDER DEVELOPMENT, WOULD HAPPILY TAKE HELP :-)
 
     Args:
-        NewMemory (_type_): _description_
+        Memory (_type_): _description_
     """
 
     def __init__(self, logger: Logger):

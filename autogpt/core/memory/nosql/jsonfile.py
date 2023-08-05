@@ -6,10 +6,10 @@ from logging import Logger
 from pathlib import Path
 from typing import List
 
-from autogpt.core.memory.base import NewMemory
+from autogpt.core.memory.base import Memory
 
 
-class JSONFileMemory(NewMemory):
+class JSONFileMemory(Memory):
     def __init__(self, config: dict, logger: Logger):
         self._json_file_path = config.json_file_path
         self._logger = logger
@@ -70,7 +70,7 @@ class JSONFileMemory(NewMemory):
             data = {}
 
 
-class NewJSONFileMemory(NewMemory):
+class JSONFileMemory(Memory):
     def __init__(self, config: dict, logger: Logger):
         self._json_file_path = config.json_file_path
         self._logger = logger

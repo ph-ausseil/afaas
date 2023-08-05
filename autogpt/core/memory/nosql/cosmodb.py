@@ -6,15 +6,15 @@ from typing import TYPE_CHECKING, List
 from azure.cosmos import CosmosClient
 
 if TYPE_CHECKING:
-    from autogpt.core.memory.base import NewMemory
+    from autogpt.core.memory.nosql.base import NoSQLMemory
 
 
-class CosmosDBMemory(NewMemory):
+class CosmosDBMemory(NoSQLMemory):
     """
     DO NOT USE : TEMPLATE UNDER DEVELOPMENT, WOULD HAPPILY TAKE HELP :-)
 
     Args:
-        NewMemory (_type_): _description_
+        Memory (_type_): _description_
     """
 
     def __init__(self, logger: Logger):
