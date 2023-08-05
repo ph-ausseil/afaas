@@ -14,8 +14,6 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Field
-
 if TYPE_CHECKING:
     from autogpt.core.memory.base import NewMemory
 
@@ -42,21 +40,25 @@ FilterDict = Dict[str, FilterItem]
 
 #         if key_attrs:
 #             cls.Key = KeyEnum("Key", key_attrs)
+class BaseTable(abc.ABC):
+    table_name: str
+    memory: NewMemory
+    primary_key: str
 
+class BaseSQLTable(BaseTable):
+
+    def __init__(self) -> None:
+        raise NotImplementedError()
+
+    def add(self, value: dict) -> uuid:
+        id = uuid.uuid4()
+        value["id"] = id
+        self.memory.add(key=id, value=value, table_name=self.table_name)
+        return id
 
 # TODO : Adopt Configurable ?
-class BaseTable(abc.ABC, BaseModel):
-    table_name: str = Field(default_factory=lambda: "")
-    memory: NewMemory
-
-    def __init__(self, memory=NewMemory):
-        self.memory = memory
-
-    # def add(self, value: dict) -> uuid:
-    #     id = uuid.uuid4()
-    #     value["id"] = id
-    #     self.memory.add(key=id, value=value, table_name=self.table_name)
-    #     return id
+class BaseNoSQLTable(BaseTable):
+    secondary_key: Optional[str]    
 
     @abc.abstractmethod
     def add(self, value: dict) -> uuid:
@@ -64,6 +66,8 @@ class BaseTable(abc.ABC, BaseModel):
         key = {"primary_key": value.get(self.primary_key, id)}
         if hasattr(self, "secondary_key") and self.secondary_key in value:
             key["secondary_key"] = value[self.secondary_key]
+        print('add new ' + __class__ + 'with keys ' + str(key))
+        print('add new ' + __class__ + 'with values ' + str(value))
         self.memory.add(key=key, value=value, table_name=self.table_name)
         return id
 
@@ -215,11 +219,12 @@ class BaseTable(abc.ABC, BaseModel):
         return filtered_data_list
 
 
-class AgentsTable(BaseTable):
+class AgentsTable(BaseNoSQLTable):
     table_name = "agents"
     primary_key = "agent_id"
     secondary_key = "user_id"
     third_key = "agent_type"
+
 
     # This is add agent the method to create an agent, I need help to define how should be declared this method
     # def add(self, value  : dict) ?
@@ -243,37 +248,31 @@ class AgentsTable(BaseTable):
     #     self.memory.add(key=id, value=value, table_name=self.table_name)
     #     return id
 
+    if TYPE_CHECKING:
+        from autogpt.core.agent import BaseAgent
+
+    def add(self, value: dict) -> uuid:
+        return super().add(value)
+    
     # NOTE : overwrite parent update
     # Perform any custom logic needed for updating an agent
-    def update(self, id: uuid, value: dict):
-        super().update(id=id, value=value)
+    def update(self, agent_id: uuid, value: dict):
+        super().update(id=agent_id, value=value)
 
-    # def add(self, value: dict) -> uuid:
-
-    # def get(self, id: uuid) -> Any:
-
-    # def get_from_date(self, id: uuid) -> Any:
-
-    # def get_from_date(self, id: uuid) -> Any:
-
-    # def delete(self, id: uuid):
-
-    # def list(self) ->dict:
-
-    # def list(self,
-    # agent_type = None,
-    # from_date = None ,
-    # order_column = None,
-    # order_direction = 'asc') ->dict:
+    def delete(self, agent_id: uuid):
+        return super().delete(agent_id)
+    
+    def get(self, agent_id: uuid) -> BaseAgent:
+        return super().get(agent_id)
 
 
-class MessagesTable(BaseTable):
+class MessagesTable(BaseNoSQLTable):
     table_name = "messages_history"
     primary_key = "message_id"
     secondary_key = "agent_id"
 
 
-class UsersInformationsTable(BaseTable):
+class UsersInformationsTable(BaseNoSQLTable):
     table_name = "users_informations"
     primary_key = "user_id"
 

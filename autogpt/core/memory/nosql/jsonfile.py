@@ -4,10 +4,9 @@ import json
 import uuid
 from logging import Logger
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import List
 
-if TYPE_CHECKING:
-    from autogpt.core.memory.base import NewMemory
+from autogpt.core.memory.base import NewMemory
 
 
 class JSONFileMemory(NewMemory):
