@@ -109,24 +109,27 @@ class Memory(abc.ABC):
             memory = Memory.get_adapter(config)
         """
 
-        if config.memory_adapter == "json_file":
+        if config.memory_adapter == MemoryAdapterType.NOSQL_JSON_FILE.value:
             
-            from autogpt.core.memory.nosql.jsonfile import NewJSONFileMemory
-            return NewJSONFileMemory(config=config, logger=logger)
+            from autogpt.core.memory.nosql.jsonfile import JSONFileMemory
+            return JSONFileMemory(config=config, logger=logger)
         
-        elif config.memory_adapter == "dynamodb":
+        elif config.memory_adapter == MemoryAdapterType.SQLLIKE_JSON_FILE.value:
+            raise NotImplementedError("SQLLikeJSONFileMemory") 
+               
+        elif config.memory_adapter == MemoryAdapterType.DYNAMODB.value:
             raise NotImplementedError("DynamoDBMemory")
 
-        elif config.memory_adapter == "cosmosdb":
+        elif config.memory_adapter == MemoryAdapterType.COSMOSDB.value:
             raise NotImplementedError("CosmosDBMemory")
 
-        elif config.memory_adapter == "mongodb":
+        elif config.memory_adapter == MemoryAdapterType.MONGODB.value:
             raise NotImplementedError("MongoDBMemory")
 
         else:
             raise ValueError("Invalid memory_adapter type")
 
-
+    abc.abstractmethod
     def get_table(self, table_name: str) -> BaseTable:
         """
         Get an instance of the table with the specified table_name.
@@ -155,7 +158,7 @@ class Memory(abc.ABC):
         if table_name == "agents":
             from autogpt.core.memory.table.base import AgentsTable
             returnvalue  = AgentsTable(memory=self)
-            return AgentsTable(memory=self)
+            return returnvalue
         elif table_name == "messages_history":
             from autogpt.core.memory.table.base import MessagesTable
             return MessagesTable(memory=self)
@@ -187,19 +190,19 @@ class Memory(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get(self, key, table_name: str):
+    def get(self, key: uuid.UUID, table_name: str):
         pass
 
     @abc.abstractmethod
-    def add(self, key: uuid, value: dict, table_name: str):
+    def add(self, key: uuid.UUID, value: dict, table_name: str):
         pass
 
     @abc.abstractmethod
-    def update(self, key: uuid, value: dict, table_name: str):
+    def update(self, key: uuid.UUID, value: dict, table_name: str):
         pass
 
     @abc.abstractmethod
-    def delete(self, key, table_name: str):
+    def delete(self, key: uuid.UUID, table_name: str):
         pass
 
     @abc.abstractmethod

@@ -14,7 +14,7 @@ data_list = [
 ]
 
 
-# Mock NewMemory class
+# Mock Memory class
 class MockMemory:
     def __init__(self):
         self.data = data_list

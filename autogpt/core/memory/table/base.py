@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import uuid
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,43 +15,75 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel
+
 if TYPE_CHECKING:
     from autogpt.core.memory.base import Memory
 
-ComparisonOperator = Callable[[Any, Any], bool]
-FilterItem = TypedDict(
-    "FilterItem", {"value": Any, "operator": Union[str, ComparisonOperator]}
-)
-FilterDict = Dict[str, FilterItem]
 
-# class KeyEnum(Enum):
-#     primary_key: str
-#     secondary_key: str
-#     third_key: str
-
-# class KeyMeta(type):
-#     def __init__(cls, name: str, bases: tuple[Type], attrs: dict[str, Any]):
-#         key_attrs = {}
-#         if "primary_key" in attrs:
-#             key_attrs["primary_key"] = attrs["primary_key"]
-#         if "secondary_key" in attrs:
-#             key_attrs["secondary_key"] = attrs["secondary_key"]
-#         if "third_key" in attrs:
-#             key_attrs["third_key"] = attrs["third_key"]
-
-#         if key_attrs:
-#             cls.Key = KeyEnum("Key", key_attrs)
 class BaseTable(abc.ABC):
+    class Operators(Enum):
+        GREATER_THAN = lambda x, y: x > y
+        LESS_THAN = lambda x, y: x < y
+        EQUAL_TO = lambda x, y: x == y
+        GREATER_THAN_OR_EQUAL = lambda x, y: x >= y
+        IN_LIST = lambda x, y: x in y
+        NOT_IN_LIST = lambda x, y: x not in y
+        LESS_THAN_OR_EQUAL = lambda x, y: x <= y
+        NOT_EQUAL_TO = lambda x, y: x != y 
+
+    class ComparisonOperator(Callable[[Any, Any], bool]):
+        pass
+
+    class FilterItem(TypedDict):
+        value: Any
+        operator: Union[BaseTable.ComparisonOperator, BaseTable.Operators]
+
+    # NOTE : Change str as key as value from an enum of column provided by the model class provided by the table class (headache :))
+    # BaseModel to require a column description Enum
+    # CustomTable to reference the Enum/Model 
+    # FilterDict probably to be defined in the CustomTable class (Enforce via abc or pydantic)
+    class FilterDict(Dict[str, List[FilterItem]]):
+        pass
+
     table_name: str
     memory: Memory
     primary_key: str
+
+    def __init__(self, memory : Memory) -> None:
+        self.memory = memory
+
+    @abc.abstractmethod
+    def add(self, value: dict) -> uuid.UUID:
+        ...
+
+    @abc.abstractmethod
+    def get(self, key: BaseNoSQLTable.Key) -> Any:
+        ...
+
+    @abc.abstractmethod
+    def update(self, id: uuid, value: dict):
+        ...
+
+    @abc.abstractmethod
+    def delete(self, id: uuid):
+        ...
+        
+    @abc.abstractmethod
+    def list(
+        self,
+        filter: BaseTable.FilterDict = {},
+        order_column: Optional[str] = None,
+        order_direction: Literal["asc", "desc"] = "desc",
+    ) -> List[Dict[str, Any]]:
+        ...
 
 class BaseSQLTable(BaseTable):
 
     def __init__(self) -> None:
         raise NotImplementedError()
 
-    def add(self, value: dict) -> uuid:
+    def add(self, value: dict) -> uuid.UUID:
         id = uuid.uuid4()
         value["id"] = id
         self.memory.add(key=id, value=value, table_name=self.table_name)
@@ -58,35 +91,68 @@ class BaseSQLTable(BaseTable):
 
 # TODO : Adopt Configurable ?
 class BaseNoSQLTable(BaseTable):
-    secondary_key: Optional[str]    
 
-    @abc.abstractmethod
-    def add(self, value: dict) -> uuid:
+    class Key(TypedDict):
+        primary_key: str
+        secondary_key: str
+        third_key: Optional[Any]
+
+    secondary_key: Optional[str]   
+
+
+    # Recursive function to convert non-serializable objects
+    @classmethod
+    def serialize_value(self, value):
+        if isinstance(value, (str, int, float, bool, type(None))):
+            return value
+        elif isinstance(value, dict):
+            return {k: self.serialize_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [self.serialize_value(v) for v in value]
+        elif isinstance(value, uuid.UUID):
+            return str(value)
+        else:
+            try:
+                return str(value)
+            except Exception as e:
+                raise TypeError(f"Unable to serialize value {value}: {e}")
+
+    def add(self, value: dict) -> uuid.UUID:
+
+        # Serialize non-serializable objects
+        if isinstance(value, BaseModel):
+            value = value.dict()
+        value = self.__class__.serialize_value(value)
+
+        # Assigning primary key
         id = uuid.uuid4()
-        key = {"primary_key": value.get(self.primary_key, id)}
+        key = {"primary_key": str(id)}
+        value[self.primary_key] = str(id)
+
         if hasattr(self, "secondary_key") and self.secondary_key in value:
-            key["secondary_key"] = value[self.secondary_key]
-        print('add new ' + __class__ + 'with keys ' + str(key))
-        print('add new ' + __class__ + 'with values ' + str(value))
+            key["secondary_key"] = str(value[self.secondary_key])
+            value[self.secondary_key] = str(value[self.secondary_key])
+
+        self.memory.logger.debug('add new ' + str(self.__class__) + 'with keys ' + str(key))
+        self.memory.logger.debug('add new ' + str(self.__class__) + 'with values ' + str(value))
+
         self.memory.add(key=key, value=value, table_name=self.table_name)
         return id
 
+
     @abc.abstractmethod
-    def get(self, id: uuid) -> Any:
-        key = {"primary_key": id}
-        if hasattr(self, "secondary_key") and self.secondary_key:
-            key["secondary_key"] = self.secondary_key
+    def get(self, key: BaseNoSQLTable.Key) -> Any:
         return self.memory.get(key=key, table_name=self.table_name)
 
     @abc.abstractmethod
-    def update(self, id: uuid, value: dict):
+    def update(self, key: BaseNoSQLTable.Key, value: dict):
         key = {"primary_key": id}
         if hasattr(self, "secondary_key") and self.secondary_key in value:
             key["secondary_key"] = value[self.secondary_key]
         self.memory.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
-    def delete(self, id: uuid):
+    def delete(self, key: BaseNoSQLTable.Key):
         key = {"primary_key": id}
         if hasattr(self, "secondary_key") and self.secondary_key:
             key["secondary_key"] = self.secondary_key
@@ -94,120 +160,89 @@ class BaseNoSQLTable(BaseTable):
 
     def list(
         self,
-        filter: FilterDict = {},
+        filter: BaseTable.FilterDict = {},
         order_column: Optional[str] = None,
         order_direction: Literal["asc", "desc"] = "desc",
     ) -> List[Dict[str, Any]]:
         """
-        Retrieve a filtered and optionally ordered list of items from the table.
+            Retrieve a filtered and optionally ordered list of items from the table.
 
-        Parameters:
-            filter (FilterDict, optional): A dictionary containing the filter conditions.
-                The keys in the filter dictionary represent the column names, and the values
-                are dictionaries containing the 'value' and 'operator' keys.
-                'value': The value used for comparison in the filter.
-                'operator': The operator to use for comparison. It can be a custom callable or
-                            one of the basic operators: ('>', '<', '==', '>=', 'in', 'not in',
-                            '<=', '!=').
-                            - For basic operators, use the operator symbol as a string, e.g., '>'.
-                            - For custom operators, provide a callable that takes two arguments
-                              and returns a bool indicating the result of the comparison.
+            Parameters:
+                filter (FilterDict, optional): A dictionary containing the filter conditions.
+                    The keys in the filter dictionary represent the column names, and the values
+                    are dictionaries containing the 'value' and 'operator' keys.
+                    'value': The value used for comparison in the filter.
+                    'operator': The operator to use for comparison. It can be one of the operators defined
+                                in BaseTable.Operators enum or a custom callable.
+                                - For predefined operators, use BaseTable.Operators, e.g., BaseTable.Operators.GREATER_THAN.
+                                - For custom operators, provide a callable that takes two arguments
+                                and returns a bool indicating the result of the comparison.
 
-            order_column (str, optional): The column name to use for sorting the results.
-                Default: None.
+                order_column (str, optional): The column name to use for sorting the results.
+                    Default: None.
 
-            order_direction (str, optional): The order direction for sorting the results.
-                Can be 'asc' (ascending) or 'desc' (descending). Default: 'asc'.
+                order_direction (str, optional): The order direction for sorting the results.
+                    Can be 'asc' (ascending) or 'desc' (descending). Default: 'desc'.
 
-        Returns:
-            List[Dict[str, Any]]: A list of dictionaries containing the filtered items that
-                                  match the specified conditions.
+            Returns:
+                List[Dict[str, Any]]: A list of dictionaries containing the filtered items that
+                                    match the specified conditions.
 
-        Example:
-            Suppose we have a BaseTable instance with the following data in the memory:
+            Example:
+                Suppose we have a BaseTable instance with the following data in the memory:
 
-            data_list = [
-                {'name': 'John', 'age': 25, 'city': 'New York'},
-                {'name': 'Alice', 'age': 30, 'city': 'Los Angeles'},
-                {'name': 'Bob', 'age': 22, 'city': 'Chicago'},
-                {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}
-            ]
+                data_list = [
+                    {'name': 'John', 'age': 25, 'city': 'New York'},
+                    {'name': 'Alice', 'age': 30, 'city': 'Los Angeles'},
+                    {'name': 'Bob', 'age': 22, 'city': 'Chicago'},
+                    {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}
+                ]
 
-            # Example 1: Using basic operator '>' for age greater than 25
-            filter_dict = {'age': {'value': 25, 'operator': '>'}}
-            result = base_table.list(filter_dict)
-            # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'},
-            #          {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}]
+                # Example 1: Using BaseTable.Operators.GREATER_THAN for age greater than 25
+                filter_dict = {'age': {'value': 25, 'operator': BaseTable.Operators.GREATER_THAN}}
+                result = base_table.list(filter_dict)
+                # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'},
+                #          {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}]
 
-            # Example 2: Using custom operator for a specific filter
-            def custom_comparison(value, filter_value):
-                return len(value['city']) > len(filter_value)
+                # Example 2: Using custom operator for a specific filter
+                def custom_comparison(value, filter_value):
+                    return len(value['city']) > len(filter_value)
 
-            filter_dict = {'city': {'value': 'Chicago', 'operator': custom_comparison}}
-            result = base_table.list(filter_dict)
-            # Output: [{'name': 'John', 'age': 25, 'city': 'New York'},
-            #          {'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
+                filter_dict = {'city': {'value': 'Chicago', 'operator': custom_comparison}}
+                result = base_table.list(filter_dict)
+                # Output: [{'name': 'John', 'age': 25, 'city': 'New York'},
+                #          {'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
 
-            # Example 3: Using multiple filters with basic and custom operators
-            filter_dict = {
-                'age': {'value': 30, 'operator': '>='},
-                'city': {'value': 'New York', 'operator': '!='},
-                'name': {'value': 'Bob', 'operator': custom_comparison}
-            }
-            result = base_table.list(filter_dict)
-            # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
+                # Example 3: Using multiple filters with predefined and custom operators
+                filter_dict = {
+                    'age': {'value': 30, 'operator': BaseTable.Operators.GREATER_THAN_OR_EQUAL},
+                    'city': {'value': 'New York', 'operator': BaseTable.Operators.NOT_EQUAL_TO},
+                    'name': {'value': 'Bob', 'operator': custom_comparison}
+                }
+                result = base_table.list(filter_dict)
+                # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
         """
         data_list = self.memory.list(table_name=self.table_name)
         filtered_data_list: List = []
 
-        def greater_than(value: Any, filter_value: Any) -> bool:
-            return value > filter_value
-
-        def less_than(value: Any, filter_value: Any) -> bool:
-            return value < filter_value
-
-        def equal_to(value: Any, filter_value: Any) -> bool:
-            return value == filter_value
-
-        def greater_than_or_equal(value: Any, filter_value: Any) -> bool:
-            return value >= filter_value
-
-        def in_list(value: Any, filter_value: List[Any]) -> bool:
-            return value in filter_value
-
-        def not_in_list(value: Any, filter_value: List[Any]) -> bool:
-            return value not in filter_value
-
-        def less_than_or_equal(value: Any, filter_value: Any) -> bool:
-            return value <= filter_value
-
-        def not_equal_to(value: Any, filter_value: Any) -> bool:
-            return value != filter_value
-
-        operators: Dict[str, ComparisonOperator] = {
-            ">": greater_than,
-            "<": less_than,
-            "==": equal_to,
-            ">=": greater_than_or_equal,
-            "in": in_list,
-            "not in": not_in_list,
-            "<=": less_than_or_equal,
-            "!=": not_equal_to,
-        }
-
         for data in data_list:
             filtered_data: Dict = {}
-            for key, filter_data in filter.items():
-                value = data.get(key)
+            for column, filters in filter.items():
+                value = data.get(column)
                 if value is not None:
-                    filter_value = filter_data["value"]
-                    comparison_operator = filter_data["operator"]
-                    if callable(comparison_operator):
-                        if comparison_operator(value, filter_value):
-                            filtered_data[key] = value
-                    elif comparison_operator in operators:
-                        if operators[comparison_operator](value, filter_value):
-                            filtered_data[key] = value
+                    for filter_data in filters:
+                        filter_value = filter_data["value"]
+                        comparison_operator = filter_data["operator"]
+                        if isinstance(comparison_operator, BaseTable.Operators):
+                            comparison_function = comparison_operator.value
+                        elif callable(comparison_operator):
+                            comparison_function = comparison_operator
+                        else:
+                            raise ValueError(
+                                f"Invalid comparison operator: {comparison_operator}"
+                            )
+                        if comparison_function(value, filter_value):
+                            filtered_data[column] = value
             if filtered_data:
                 filtered_data_list.append(filtered_data)
 
@@ -225,45 +260,28 @@ class AgentsTable(BaseNoSQLTable):
     secondary_key = "user_id"
     third_key = "agent_type"
 
-
-    # This is add agent the method to create an agent, I need help to define how should be declared this method
-    # def add(self, value  : dict) ?
-    # def add(self, user_id, value  : dict) ?
-    # def add(self, user_id, agent_type, value  : dict) ?
-    # def add_agent(self, user_id: uuid, agent_type: str, value: dict) -> uuid:
-    #     agent_id = uuid.uuid4() # generate a new id for the agent
-    #     value.update({"agent_id": agent_id, "user_id": user_id, "agent_type": agent_type}) # add additional fields
-    #     self.memory.add(key=agent_id, value=value, table_name=self.table_name) # add the new agent to the database
-    #     return agent_id
-
-    # def add(self,user_id , value  : dict) :
-    #     id = uuid.uuid4()
-    #     value["id"] = id
-    #     self.memory.add(key=id, value=value, table_name=self.table_name)
-    #     return id
-
-    # def add(self,user_id , value  : dict) :
-    #     id = uuid.uuid4()
-    #     value["id"] = id
-    #     self.memory.add(key=id, value=value, table_name=self.table_name)
-    #     return id
-
     if TYPE_CHECKING:
         from autogpt.core.agent import BaseAgent
 
-    def add(self, value: dict) -> uuid:
+    def add(self, value: dict) -> uuid.UUID:
         return super().add(value)
     
     # NOTE : overwrite parent update
     # Perform any custom logic needed for updating an agent
-    def update(self, agent_id: uuid, value: dict):
-        super().update(id=agent_id, value=value)
+    def update(self, agent_id: str, user_id : str, value: dict):
+        key = AgentsTable.Key(primary_key=str(agent_id),
+                              secondary_key=str(user_id),)
+        return super().update(key=key, value=value)
 
-    def delete(self, agent_id: uuid):
-        return super().delete(agent_id)
+    def delete(self, agent_id: str, user_id : str):
+        key = AgentsTable.Key(primary_key=str(agent_id),
+                              secondary_key=str(user_id),)
+        return super().delete(key=key)
     
-    def get(self, agent_id: uuid) -> BaseAgent:
-        return super().get(agent_id)
+    def get(self, agent_id: str, user_id : str) -> BaseAgent:
+        key = AgentsTable.Key(primary_key=str(agent_id),
+                              secondary_key=str(user_id),)
+        return super().get(key=key)
 
 
 class MessagesTable(BaseNoSQLTable):

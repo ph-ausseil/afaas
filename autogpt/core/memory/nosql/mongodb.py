@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from logging import Logger
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from pymongo import MongoClient
 
-if TYPE_CHECKING:
-    from autogpt.core.memory.base import Memory
+from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
 
-class MongoDBMemory(Memory):
+class MongoDBMemory(NoSQLMemory):
     """
     DO NOT USE : TEMPLATE UNDER DEVELOPMENT, WOULD HAPPILY TAKE HELP :-)
 

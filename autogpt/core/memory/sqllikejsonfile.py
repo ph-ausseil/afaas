@@ -35,16 +35,16 @@ class SQLLikeJSONFileMemory(Memory):
         with file.open("w") as f:
             json.dump(data, f)
 
-    def get(self, key, table_name: str):
+    def get(self, key: uuid.UUID, table_name: str):
         data = self._load_file(table_name=table_name)
         return data.get(key)
 
-    def add(self, key: uuid, value: dict, table_name: str):
+    def add(self, key: uuid.UUID, value: dict, table_name: str):
         data = self._load_file(table_name=table_name)
         data[key] = value
         self._save_file(table_name=table_name, data=value)
 
-    def update(self, key: uuid, value: dict, table_name: str):
+    def update(self, key: uuid.UUID, value: dict, table_name: str):
         file = Path(self._json_file_path / f"{table_name}.json")
         data = self._load_file(table_name=table_name)
         if key in data:
@@ -53,7 +53,7 @@ class SQLLikeJSONFileMemory(Memory):
         else:
             raise KeyError(f"No such key '{key}' in file {file}")
 
-    def delete(self, key, table_name: str):
+    def delete(self, key: uuid.UUID, table_name: str):
         file = Path(self._json_file_path / f"{table_name}.json")
         data = self._load_file(table_name=table_name)
         if key in data:

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from logging import Logger
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from azure.cosmos import CosmosClient
 
-if TYPE_CHECKING:
-    from autogpt.core.memory.nosql.base import NoSQLMemory
+from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
 
 class CosmosDBMemory(NoSQLMemory):

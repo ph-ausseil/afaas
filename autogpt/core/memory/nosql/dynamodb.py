@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 from logging import Logger
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import boto3
 from botocore.exceptions import NoCredentialsError
 
-if TYPE_CHECKING:
-    from autogpt.core.memory.base import Memory
+from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
 
-class DynamoDBMemory(Memory):
+class DynamoDBMemory(NoSQLMemory):
     """
     DO NOT USE : TEMPLATE UNDER DEVELOPMENT, WOULD HAPPILY TAKE HELP :-)
 
