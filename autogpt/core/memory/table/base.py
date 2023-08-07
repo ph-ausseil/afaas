@@ -133,8 +133,8 @@ class BaseNoSQLTable(BaseTable):
             key["secondary_key"] = str(value[self.secondary_key])
             value[self.secondary_key] = str(value[self.secondary_key])
 
-        self.memory.logger.debug('add new ' + str(self.__class__) + 'with keys ' + str(key))
-        self.memory.logger.debug('add new ' + str(self.__class__) + 'with values ' + str(value))
+        self.memory._logger.debug('add new ' + str(self.__class__) + 'with keys ' + str(key))
+        self.memory._logger.debug('add new ' + str(self.__class__) + 'with values ' + str(value))
 
         self.memory.add(key=key, value=value, table_name=self.table_name)
         return id
@@ -226,25 +226,25 @@ class BaseNoSQLTable(BaseTable):
         filtered_data_list: List = []
 
         for data in data_list:
-            filtered_data: Dict = {}
-            for column, filters in filter.items():
-                value = data.get(column)
-                if value is not None:
+            remove_entry = False
+            for filter_column_name, filters in filter.items():
+                value_to_filter = data.get(filter_column_name)
+                if value_to_filter is not None:
                     for filter_data in filters:
                         filter_value = filter_data["value"]
-                        comparison_operator = filter_data["operator"]
-                        if isinstance(comparison_operator, BaseTable.Operators):
-                            comparison_function = comparison_operator.value
-                        elif callable(comparison_operator):
-                            comparison_function = comparison_operator
+                        filter_operator = filter_data["operator"]
+                        if isinstance(filter_operator, BaseTable.Operators):
+                            comparison_function = filter_operator.value
+                        elif callable(filter_operator):
+                            comparison_function = filter_operator
                         else:
                             raise ValueError(
-                                f"Invalid comparison operator: {comparison_operator}"
+                                f"Invalid comparison operator: {filter_operator}"
                             )
-                        if comparison_function(value, filter_value):
-                            filtered_data[column] = value
-            if filtered_data:
-                filtered_data_list.append(filtered_data)
+                        if not comparison_function(value_to_filter, filter_value):
+                            remove_entry = True 
+            if not remove_entry:
+                filtered_data_list.append(data)
 
         if order_column:
             filtered_data_list.sort(
