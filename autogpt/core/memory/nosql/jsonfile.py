@@ -22,10 +22,10 @@ class JSONFileMemory(NoSQLMemory):
         if file.is_file():
             with file.open() as f:
                 data = json.load(f)
-            self._logger.debug(f"Loaded data \n {str(data).substr(0, 250)}")
+            self._logger.debug(f"Loaded {table_name} \n {str(data)[:250]}")
         else:
             data = {}
-            self._logger.debug(f"No data found")
+            self._logger.debug(f"No {table_name} found")
         return data
 
     def _save_file(self, key: dict, table_name: str, data: dict):
@@ -35,7 +35,7 @@ class JSONFileMemory(NoSQLMemory):
         with file.open("w") as f:
             json.dump(data, f)
 
-        self._logger.debug(f"Saved data to {file} \n {str(data).substr(0, 250)}")
+        self._logger.debug(f"Saved {table_name} to {file} \n {str(data)[:250]}")
 
     def get(self, key: dict, table_name: str):
         return self._load_file(key, table_name)
