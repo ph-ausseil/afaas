@@ -1,9 +1,8 @@
 import json
 import logging
 import typing
+import uuid
 from pathlib import Path
-
-from pydantic import SecretField
 
 from autogpt.core.configuration import (
     Configurable,
@@ -153,28 +152,43 @@ class SimpleWorkspace(Configurable, Workspace):
     # Factory methods for agent setup #
     ###################################
 
-    @staticmethod
-    def setup_workspace(settings: "AgentSettings", logger: logging.Logger) -> Path:
-        workspace_parent = settings.workspace.configuration.parent
+    # @staticmethod
+    # def create_workspace(settings: "AgentSettings", logger: logging.Logger) -> Path:
+    #     workspace_parent = settings.workspace.configuration.parent
+    #     workspace_parent = Path(workspace_parent).expanduser().resolve()
+    #     workspace_parent.mkdir(parents=True, exist_ok=True)
+
+    #     user_id = settings.user_id
+    #     agent_id = settings.agent_id
+    #     workspace_root = workspace_parent / str(user_id) / str(agent_id)
+    #     workspace_root.mkdir(parents=True, exist_ok=True)
+
+    #     settings.workspace.configuration.root = str(workspace_root)
+
+    #     log_path = workspace_root / "logs"
+    #     log_path.mkdir(parents=True, exist_ok=True)
+    #     (log_path / "debug.log").touch()
+    #     (log_path / "cycle.log").touch()
+
+    #     return workspace_root
+    
+    @classmethod
+    def create_workspace(cls, 
+                         user_id : uuid.UUID, 
+                         agent_id : uuid.UUID, 
+                         settings: "AgentSettings", 
+                         logger: logging.Logger) -> Path:
+        workspace_parent = cls.default_settings.configuration.parent
         workspace_parent = Path(workspace_parent).expanduser().resolve()
         workspace_parent.mkdir(parents=True, exist_ok=True)
 
-        agent_name = settings.agent.name
-
-        workspace_root = workspace_parent / agent_name
+        # user_id = settings.user_id
+        # agent_id = settings.agent_id
+        workspace_root = workspace_parent / str(user_id) / str(agent_id)
         workspace_root.mkdir(parents=True, exist_ok=True)
 
-        settings.workspace.configuration.root = str(workspace_root)
+        cls.default_settings.configuration.root = str(workspace_root)
 
-        with (workspace_root / "agent_settings.json").open("w") as f:
-            settings_json = settings.json(
-                encoder=lambda x: x.get_secret_value()
-                if isinstance(x, SecretField)
-                else x,
-            )
-            f.write(settings_json)
-
-        # TODO: What are all the kinds of logs we want here?
         log_path = workspace_root / "logs"
         log_path.mkdir(parents=True, exist_ok=True)
         (log_path / "debug.log").touch()

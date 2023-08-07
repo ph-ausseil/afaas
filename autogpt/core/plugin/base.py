@@ -144,7 +144,7 @@ class PluginService(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def load_from_workspace(plugin_route: PluginStorageRoute) -> "PluginType":
+    def load_get_agent_from_settings(plugin_route: PluginStorageRoute) -> "PluginType":
         """Load a plugin from the workspace."""
         ...
 

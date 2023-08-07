@@ -1,75 +1,41 @@
 import logging
-from datetime import datetime
+import uuid
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
-
-from autogpt.core.ability import (
-    AbilityRegistrySettings,
-    AbilityResult,
-    SimpleAbilityRegistry,
+from autogpt.core.ability import AbilityResult, SimpleAbilityRegistry
+from autogpt.core.agent.base import (
+    AgentConfiguration,
+    AgentSettings,
+    AgentSystems,
+    AgentSystemSettings,
+    BaseAgent,
 )
-from autogpt.core.agent.base import Agent
-from autogpt.core.configuration import Configurable, SystemConfiguration, SystemSettings
-from autogpt.core.memory import MemorySettings, SimpleMemory
-from autogpt.core.planning import PlannerSettings, SimplePlanner, Task, TaskStatus
+from autogpt.core.configuration import Configurable
+
+#from autogpt.core.memory import SimpleMemory
+from autogpt.core.memory.base import Memory
+from autogpt.core.planning import SimplePlanner, Task, TaskStatus
 from autogpt.core.plugin.simple import (
     PluginLocation,
     PluginStorageFormat,
     SimplePluginService,
 )
-from autogpt.core.resource.model_providers import OpenAIProvider, OpenAISettings
-from autogpt.core.workspace.simple import SimpleWorkspace, WorkspaceSettings
+from autogpt.core.resource.model_providers import OpenAIProvider
+from autogpt.core.workspace.simple import SimpleWorkspace
 
 
-class AgentSystems(SystemConfiguration):
-    ability_registry: PluginLocation
-    memory: PluginLocation
-    openai_provider: PluginLocation
-    planning: PluginLocation
-    workspace: PluginLocation
-
-
-class AgentConfiguration(SystemConfiguration):
-    cycle_count: int
-    max_task_cycle_count: int
-    creation_time: str
-    name: str
-    role: str
-    goals: list[str]
-    systems: AgentSystems
-
-
-class AgentSystemSettings(SystemSettings):
-    configuration: AgentConfiguration
-
-
-class AgentSettings(BaseModel):
-    agent: AgentSystemSettings
-    ability_registry: AbilityRegistrySettings
-    memory: MemorySettings
-    openai_provider: OpenAISettings
-    planning: PlannerSettings
-    workspace: WorkspaceSettings
-
-    def update_agent_name_and_goals(self, agent_goals: dict) -> None:
-        self.agent.configuration.name = agent_goals["agent_name"]
-        self.agent.configuration.role = agent_goals["agent_role"]
-        self.agent.configuration.goals = agent_goals["agent_goals"]
-
-
-class SimpleAgent(Agent, Configurable):
+class SimpleAgent(BaseAgent, Configurable):
     default_settings = AgentSystemSettings(
         name="simple_agent",
         description="A simple agent.",
         configuration=AgentConfiguration(
-            name="Entrepreneur-GPT",
-            role=(
+            agent_name="Entrepreneur-GPT",
+            agent_role=(
                 "An AI designed to autonomously develop and run businesses with "
                 "the sole goal of increasing your net worth."
             ),
-            goals=[
+            agent_goals=[
                 "Increase net worth",
                 "Grow Twitter Account",
                 "Develop and manage multiple businesses autonomously",
@@ -77,6 +43,8 @@ class SimpleAgent(Agent, Configurable):
             cycle_count=0,
             max_task_cycle_count=3,
             creation_time="",
+            user_id=None,
+            agent_id=None,
             systems=AgentSystems(
                 ability_registry=PluginLocation(
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
@@ -84,7 +52,7 @@ class SimpleAgent(Agent, Configurable):
                 ),
                 memory=PluginLocation(
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
-                    storage_route="autogpt.core.memory.SimpleMemory",
+                    storage_route="autogpt.core.memory.Memory",
                 ),
                 openai_provider=PluginLocation(
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
@@ -98,8 +66,12 @@ class SimpleAgent(Agent, Configurable):
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
                     storage_route="autogpt.core.workspace.SimpleWorkspace",
                 ),
+                user_id=None,
+                agent_id=None,
             ),
         ),
+        user_id=None,
+        agent_id=None,
     )
 
     def __init__(
@@ -107,10 +79,12 @@ class SimpleAgent(Agent, Configurable):
         settings: AgentSystemSettings,
         logger: logging.Logger,
         ability_registry: SimpleAbilityRegistry,
-        memory: SimpleMemory,
+        memory: Memory,
         openai_provider: OpenAIProvider,
         planning: SimplePlanner,
         workspace: SimpleWorkspace,
+        user_id: uuid.UUID,
+        agent_id: uuid.UUID = None,
     ):
         self._configuration = settings.configuration
         self._logger = logger
@@ -125,14 +99,47 @@ class SimpleAgent(Agent, Configurable):
         self._completed_tasks = []
         self._current_task = None
         self._next_ability = None
+        self.agent_role = settings.configuration.agent_role
+        self.agent_goals = settings.configuration.agent_goals
+        self.agent_name = settings.configuration.agent_name
+        self.user_id = user_id
+        self.agent_id = agent_id
 
     @classmethod
-    def from_workspace(
+    def create_agent(cls,
+        agent_settings: AgentSettings,
+        logger: logging.Logger,) -> uuid.UUID:
+        """Create a new agent."""
+        cls._create_workspace(agent_settings=agent_settings, logger=logger)
+        agent_id = cls.create_agent_in_memory(agent_settings=agent_settings, 
+                                              logger=logger,
+                                              user_id = agent_settings.user_id)
+        return agent_id
+
+    @classmethod
+    def _create_workspace(
         cls,
-        workspace_path: Path,
+        agent_settings: AgentSettings,
+        logger: logging.Logger,
+    ):
+        from autogpt.core.workspace import SimpleWorkspace
+        return SimpleWorkspace.create_workspace(
+            user_id=agent_settings.user_id, 
+            agent_id=agent_settings.agent_id,  
+            settings = agent_settings, 
+            logger=logger)
+
+
+    @classmethod
+    def get_agent_from_settings(
+        cls,
+        agent_settings: AgentSettings,
         logger: logging.Logger,
     ) -> "SimpleAgent":
-        agent_settings = SimpleWorkspace.load_agent_settings(workspace_path)
+        #agent_settings = SimpleWorkspace.load_agent_settings(workspace_path)
+        #systems = agent_settings['agent']['configuration']['systems']
+        if not isinstance(agent_settings, AgentSettings):
+            agent_settings: AgentSettings = agent_settings
         agent_args = {}
 
         agent_args["settings"] = agent_settings.agent
@@ -153,12 +160,14 @@ class SimpleAgent(Agent, Configurable):
             logger,
             model_providers={"openai": agent_args["openai_provider"]},
         )
-        agent_args["memory"] = cls._get_system_instance(
-            "memory",
-            agent_settings,
-            logger,
-            workspace=agent_args["workspace"],
+
+        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig
+        config = MemoryConfig(
+            memory_adapter=MemoryAdapterType.NOSQL_JSON_FILE,
+            json_file_path=str(Path("~/auto-gpt/data/").expanduser().resolve())
         )
+        agent_args["memory"] =  Memory.get_adapter(config= config, logger=logger)
+        agent_args['user_id'] = agent_settings.user_id
 
         agent_args["ability_registry"] = cls._get_system_instance(
             "ability_registry",
@@ -173,9 +182,9 @@ class SimpleAgent(Agent, Configurable):
 
     async def build_initial_plan(self) -> dict:
         plan = await self._planning.make_initial_plan(
-            agent_name=self._configuration.name,
-            agent_role=self._configuration.role,
-            agent_goals=self._configuration.goals,
+            agent_name=self._configuration.agent_name,
+            agent_role=self._configuration.agent_role,
+            agent_goals=self._configuration.agent_goals,
             abilities=self._ability_registry.list_abilities(),
         )
         tasks = [Task.parse_obj(task) for task in plan.content["task_list"]]
@@ -300,12 +309,14 @@ class SimpleAgent(Agent, Configurable):
 
         # Build up default configuration
         for system_name, system_location in system_locations.items():
-            logger.debug(f"Compiling configuration for system {system_name}")
-            system_class = SimplePluginService.get_plugin(system_location)
-            configuration_dict[system_name] = system_class.build_agent_configuration(
-                user_configuration.get(system_name, {})
-            ).dict()
-
+            if system_location is not None and not isinstance(system_location, uuid.UUID):
+                logger.debug(f"Compiling configuration for system {system_name}")
+                system_class = SimplePluginService.get_plugin(system_location)
+                configuration_dict[system_name] = system_class.build_agent_configuration(
+                    user_configuration.get(system_name, {})
+                ).dict()
+            else :
+                configuration_dict[system_name] = system_location
         return AgentSettings.parse_obj(configuration_dict)
 
     @classmethod
@@ -335,27 +346,27 @@ class SimpleAgent(Agent, Configurable):
 
         return model_response.content
 
-    @classmethod
-    def provision_agent(
-        cls,
-        agent_settings: AgentSettings,
-        logger: logging.Logger,
-    ):
-        agent_settings.agent.configuration.creation_time = datetime.now().strftime(
-            "%Y%m%d_%H%M%S"
-        )
-        workspace: SimpleWorkspace = cls._get_system_instance(
-            "workspace",
-            agent_settings,
-            logger=logger,
-        )
-        return workspace.setup_workspace(agent_settings, logger)
+    # @classmethod
+    # def provision_agent(
+    #     cls,
+    #     agent_settings: AgentSettings,
+    #     logger: logging.Logger,
+    # ):
+    #     agent_settings.agent.configuration.creation_time = datetime.now().strftime(
+    #         "%Y%m%d_%H%M%S"
+    #     )
+    #     workspace: SimpleWorkspace = cls._get_system_instance(
+    #         "workspace",
+    #         agent_settings,
+    #         logger=logger,
+    #     )
+    #     return workspace.create_workspace(agent_settings, logger)
 
     @classmethod
     def _get_system_instance(
         cls,
         system_name: str,
-        agent_settings: AgentSettings,
+        agent_settings: dict,
         logger: logging.Logger,
         *args,
         **kwargs,
@@ -371,7 +382,55 @@ class SimpleAgent(Agent, Configurable):
             **kwargs,
         )
         return system_instance
+    
+    @classmethod
+    def get_agentsetting_list_from_memory(self, user_id: uuid.UUID, logger: logging.Logger ) -> list[AgentSettings]:
+        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig
+        from autogpt.core.memory.table.base import AgentsTable, BaseTable
+        """Warning !!!
+        Returns a list of agent settings not a list of agent
 
+        Returns:
+            _type_: _description_
+        """
+        # TODO : Make config global
+        config = MemoryConfig(
+                memory_adapter=MemoryAdapterType.NOSQL_JSON_FILE,
+                #json_file_path="~/auto-gpt/data/",
+                json_file_path=str(Path("~/auto-gpt/data/").expanduser().resolve())
+            )
+        memory = Memory.get_adapter(config= config, logger=logger)
+        agent_table : AgentsTable  =memory.get_table("agents")
+       
+        filter = BaseTable.FilterDict({
+                                        "user_id" : 
+                                       [BaseTable.FilterItem(value=str(user_id), operator= BaseTable.Operators.EQUAL_TO)]
+                                       } 
+                                       )
+        agent_list = agent_table.list(filter = filter)
+        return agent_list
+   
+    @classmethod
+    def get_agent_from_memory(cls, agent_settings : AgentSettings, agent_id: uuid.UUID, user_id: uuid.UUID, logger: logging.Logger ) -> BaseAgent:
+        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig
+        from autogpt.core.memory.table.base import AgentsTable
+
+        # TODO : Make config global
+        config = MemoryConfig(
+                memory_adapter=MemoryAdapterType.NOSQL_JSON_FILE,
+                json_file_path=str(Path("~/auto-gpt/data/").expanduser().resolve())
+            )
+        memory = Memory.get_adapter(config= config, logger=logger)
+        agent_table : AgentsTable  = memory.get_table("agents" )
+        agent = agent_table.get(agent_id= str(agent_id), user_id=str(user_id))
+        
+        if not agent :
+            return None
+        agent = SimpleAgent.get_agent_from_settings(
+            agent_settings=agent_settings,
+            logger=logger,
+        )
+        return agent
 
 def _prune_empty_dicts(d: dict) -> dict:
     """
