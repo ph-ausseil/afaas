@@ -14,7 +14,7 @@ from autogpt.core.workspace.base import Workspace
 
 if typing.TYPE_CHECKING:
     # Cyclic import
-    from autogpt.core.agent.simple import AgentSettings
+    from autogpt.core.agent.simple.models import BaseAgentSettings
 
 
 class WorkspaceConfiguration(SystemConfiguration):
@@ -152,33 +152,13 @@ class SimpleWorkspace(Configurable, Workspace):
     # Factory methods for agent setup #
     ###################################
 
-    # @staticmethod
-    # def create_workspace(settings: "AgentSettings", logger: logging.Logger) -> Path:
-    #     workspace_parent = settings.workspace.configuration.parent
-    #     workspace_parent = Path(workspace_parent).expanduser().resolve()
-    #     workspace_parent.mkdir(parents=True, exist_ok=True)
-
-    #     user_id = settings.user_id
-    #     agent_id = settings.agent_id
-    #     workspace_root = workspace_parent / str(user_id) / str(agent_id)
-    #     workspace_root.mkdir(parents=True, exist_ok=True)
-
-    #     settings.workspace.configuration.root = str(workspace_root)
-
-    #     log_path = workspace_root / "logs"
-    #     log_path.mkdir(parents=True, exist_ok=True)
-    #     (log_path / "debug.log").touch()
-    #     (log_path / "cycle.log").touch()
-
-    #     return workspace_root
-    
     @classmethod
     def create_workspace(cls, 
                          user_id : uuid.UUID, 
                          agent_id : uuid.UUID, 
-                         settings: "AgentSettings", 
+                         settings: "BaseAgentSettings", 
                          logger: logging.Logger) -> Path:
-        workspace_parent = cls.default_settings.configuration.parent
+        workspace_parent = settings.workspace.configuration.parent
         workspace_parent = Path(workspace_parent).expanduser().resolve()
         workspace_parent.mkdir(parents=True, exist_ok=True)
 
@@ -197,7 +177,7 @@ class SimpleWorkspace(Configurable, Workspace):
         return workspace_root
 
     @staticmethod
-    def load_agent_settings(workspace_root: Path) -> "AgentSettings":
+    def load_agent_settings(workspace_root: Path) -> "BaseAgentSettings":
         # Cyclic import
         from autogpt.core.agent.simple import AgentSettings
 

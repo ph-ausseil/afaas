@@ -1,4 +1,5 @@
 ## Original ignores
+prv*
 autogpt/keys.py
 autogpt/*.json
 auto_gpt_workspace/*
@@ -161,4 +162,3 @@ openai/
 
 # news
 CURRENT_BULLETIN.md
-~/auto-gpt/data/*
