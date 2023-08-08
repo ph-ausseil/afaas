@@ -5,13 +5,16 @@ from logging import Logger
 from pathlib import Path
 from typing import List
 
+from autogpt.core.memory.base import MemorySettings
 from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
 
 class JSONFileMemory(NoSQLMemory):
-    def __init__(self, config: dict, logger: Logger):
-        self._json_file_path = config.json_file_path
-        self._logger = logger
+    
+    def __init__(self,
+                 settings: MemorySettings,
+                    logger: Logger,):
+        super().__init__(settings, logger)
 
     def connect(self, *kwargs):
         pass
@@ -61,7 +64,7 @@ class JSONFileMemory(NoSQLMemory):
             raise KeyError(f"No such key '{key}' in table {table_name}")
 
     def list(self, table_name: str) -> List[dict]:
-        table_path = Path(self._json_file_path, table_name)
+        table_path = Path(self._configuration.json_file_path, table_name)
         data = []
         for json_file in table_path.glob("**/*.json"):
             with json_file.open() as f:
@@ -69,7 +72,7 @@ class JSONFileMemory(NoSQLMemory):
         return data
 
     def _get_file_path(self, key: dict, table_name: str) -> Path:
-        file_path = Path(self._json_file_path, table_name)
+        file_path = Path(self._configuration.json_file_path, table_name)
 
         if "secondary_key" in key:
             file_path = file_path / str(key["secondary_key"])
