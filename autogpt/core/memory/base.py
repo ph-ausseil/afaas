@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import abc
 import uuid
+import base64
+import json
+from pathlib import Path
 from enum import Enum
 from logging import Logger
 from typing import TYPE_CHECKING
@@ -30,27 +33,54 @@ class MemoryConfig(SystemConfiguration):
         json_file_path (str): The file path for the JSON file when using the JSONFileMemory adapter.
         # Add other parameters for different memory adapters as needed.
     """
-    pass
 
     memory_adapter: MemoryAdapterType = Field(
-        ..., description="The type of memory adapter to use."
+        MemoryAdapterType.NOSQL_JSON_FILE,
+        description="The type of memory adapter to use.",
     )
     json_file_path: str = Field(
-        ...,
+        str(Path("~/auto-gpt/data/").expanduser().resolve()),
         description="The file path for the JSON file when using the JSONFileMemory adapter.",
     )
-    # Add other parameters for different memory adapters as needed.
+    # sqllikejson_file_path=str(Path("~/auto-gpt/sqlikejsondata/").expanduser().resolve()),
+    # cosmos_endpoint=None, 
+    # cosmos_key=None, 
+    # cosmos_database_name=None,
+    # aws_access_key_id=None, 
+    # aws_secret_access_key,
+    # dynamodb_region_name=None, 
+    # mongodb_connection_string='connection_string',
+    # mongodb_database_name='database_name',
+    # mongo_uri=None, 
+    # mongo_db_name=None
 
 class MemorySettings(SystemSettings) : 
     configuration: MemoryConfig
+    name : str ="Memory",
+    description : str ="Memory is an abstract memory adapter",         
 
 class Memory(abc.ABC):
 
     default_settings = MemorySettings(
             name="new_memory",
-            description="Memory is an abstract memory adapter design to interact with NoSQL back-end ",
-            configuration= MemoryConfig(memory_adapter=MemoryAdapterType.NOSQL_JSON_FILE, json_file_path='path/to/json'),
+            description="Memory is an abstract memory adapter",
+            configuration= MemoryConfig(
+                                        memory_adapter=MemoryAdapterType.NOSQL_JSON_FILE, 
+                                        json_file_path=str(Path("~/auto-gpt/data/").expanduser().resolve()),
+                                        # sqllikejson_file_path=str(Path("~/auto-gpt/sqlikejsondata/").expanduser().resolve()),
+                                        # cosmos_endpoint=None, 
+                                        # cosmos_key=None, 
+                                        # cosmos_database_name=None,
+                                        # aws_access_key_id=None, 
+                                        # aws_secret_access_key,
+                                        # dynamodb_region_name=None, 
+                                        # mongodb_connection_string='connection_string',
+                                        # mongodb_database_name='database_name',
+                                        # mongo_uri=None, 
+                                        # mongo_db_name=None
+                                        ),
         )
+    _instances = {}
 
     """
     Abstract class representing a memory storage system for storing and retrieving data.
@@ -78,16 +108,19 @@ class Memory(abc.ABC):
         The `Memory` class is an abstract class, and you should use one of its concrete
         subclasses like `JSONFileMemory` or `RedisMemory` for actual implementations.
     """
-
-    # TABLE_CLASS = BaseTable
     
     @abc.abstractmethod
-    def __init__(self):
-        pass
+    def __init__(self,
+                 settings: MemorySettings,
+                logger: Logger,):
+        Memory._instances = {}
+        self._configuration = settings.configuration
+        self._logger = logger
+        
 
     @classmethod
     def get_adapter(
-        cls, config: MemoryConfig, logger=Logger, *args, **kwargs
+        cls, memory_settings: MemorySettings, logger=Logger, *args, **kwargs
     ) -> "Memory":
         """
         Get an instance of a memory adapter based on the provided configuration.
@@ -108,26 +141,34 @@ class Memory(abc.ABC):
             config = {"memory_adapter": "json_file", "json_file_path": "~/auto-gpt/data/"}
             memory = Memory.get_adapter(config)
         """
+        adapter_type = memory_settings.configuration.memory_adapter
+        config_key = base64.b64encode(json.dumps(memory_settings.configuration.dict()).encode()).decode()
 
-        if config.memory_adapter == MemoryAdapterType.NOSQL_JSON_FILE.value:
+        if config_key in Memory._instances:
+            return Memory._instances[config_key]
+        
+        if adapter_type == MemoryAdapterType.NOSQL_JSON_FILE:
             
             from autogpt.core.memory.nosql.jsonfile import JSONFileMemory
-            return JSONFileMemory(config=config, logger=logger)
+            instance=  JSONFileMemory(settings=memory_settings, logger=logger)
         
-        elif config.memory_adapter == MemoryAdapterType.SQLLIKE_JSON_FILE.value:
+        elif adapter_type == MemoryAdapterType.SQLLIKE_JSON_FILE:
             raise NotImplementedError("SQLLikeJSONFileMemory") 
                
-        elif config.memory_adapter == MemoryAdapterType.DYNAMODB.value:
+        elif adapter_type == MemoryAdapterType.DYNAMODB:
             raise NotImplementedError("DynamoDBMemory")
 
-        elif config.memory_adapter == MemoryAdapterType.COSMOSDB.value:
+        elif adapter_type == MemoryAdapterType.COSMOSDB:
             raise NotImplementedError("CosmosDBMemory")
 
-        elif config.memory_adapter == MemoryAdapterType.MONGODB.value:
+        elif adapter_type == MemoryAdapterType.MONGODB:
             raise NotImplementedError("MongoDBMemory")
 
         else:
             raise ValueError("Invalid memory_adapter type")
+        
+        Memory._instances[config_key] = instance # Store the newly created instance
+        return instance
 
     abc.abstractmethod
     def get_table(self, table_name: str) -> BaseTable:
@@ -165,8 +206,6 @@ class Memory(abc.ABC):
         elif table_name == "users_informations":
             from autogpt.core.memory.table.base import UsersInformationsTable
             return UsersInformationsTable(memory=self)
-        # elif table_name == "users_agents":
-        #     return UsersAgentsTable(memory=self)
         else:
             raise ValueError(f"Unknown table: {table_name}")
 
