@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from logging import Logger
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import boto3
 from botocore.exceptions import NoCredentialsError
 
+if TYPE_CHECKING :
+    from autogpt.core.memory.base import MemorySettings
 from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
 
@@ -17,17 +19,33 @@ class DynamoDBMemory(NoSQLMemory):
         Memory (_type_): _description_
     """
 
-    def __init__(self, logger: Logger):
+    def __init__(self,
+                 settings: MemorySettings,
+                    logger: Logger,):
+        super().__init__(settings, logger)
         self._dynamodb = None
         self._logger = logger
 
-    def connect(self, **kwargs):
-        region_name = kwargs.get("region_name")
-        self._dynamodb = boto3.resource("dynamodb", region_name=region_name)
-
-        # Test connection by trying to list tables
+    def connect(self, dynamodb_region_name=None, aws_access_key_id=None, aws_secret_access_key=None):
+        # Connecting to DynamoDB with specified region and credentials
+        dynamodb_region_name = dynamodb_region_name | self.dynamodb_region_name
+        aws_access_key_id = aws_access_key_id | self.aws_access_key_id  
+        aws_secret_access_key = aws_secret_access_key | self.aws_secret_access_key  
+        dynamodb_resource = boto3.resource(
+            "dynamodb",
+            region_name=dynamodb_region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
+        )
+        return dynamodb_resource
         try:
-            dynamodb_client = boto3.client("dynamodb", region_name=region_name)
+            # Test connection by trying to list tables
+            dynamodb_client = boto3.client(
+                "dynamodb",
+                region_name=dynamodb_region_name,
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key
+            )
             dynamodb_client.list_tables()
         except NoCredentialsError:
             self._logger.error("No AWS credentials found.")
