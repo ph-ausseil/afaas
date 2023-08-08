@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from logging import Logger
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from azure.cosmos import CosmosClient
+
+if TYPE_CHECKING :
+    from autogpt.core.memory.base import MemorySettings
 
 from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
@@ -16,15 +19,18 @@ class CosmosDBMemory(NoSQLMemory):
         Memory (_type_): _description_
     """
 
-    def __init__(self, logger: Logger):
+    def __init__(self,
+                 settings: MemorySettings,
+                    logger: Logger,):
+        super().__init__(settings, logger)
         self._client = None
         self._database = None
         self._logger = logger
 
-    def connect(self, **kwargs):
-        endpoint = kwargs.get("COSMOS_ENDPOINT")
-        key = kwargs.get("COSMOS_KEY")
-        db_name = kwargs.get("DB_NAME")
+    def connect(self, cosmos_endpoint=None, cosmos_key=None, cosmos_database_name=None):
+        endpoint = cosmos_endpoint | self.cosmos_endpoint
+        db_name= cosmos_database_name | self.cosmos_database_name
+        key = cosmos_key | self.cosmos_key
         self._client = CosmosClient(endpoint, key)
         self._database = self._client.get_database_client(db_name)
         try:

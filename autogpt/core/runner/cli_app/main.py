@@ -28,6 +28,7 @@ async def run_auto_gpt(user_configuration: dict):
     agent_dict_list = SimpleAgent.get_agentsetting_list_from_memory(user_id=user_id,logger=client_logger)
 
     agent_from_list = None
+    agent_from_memory = None
     # NOTE : This is a demonstration
     # In our demonstration we will instanciate the first agent of a given user if it exists
     if agent_dict_list:
@@ -53,6 +54,7 @@ async def run_auto_gpt(user_configuration: dict):
             client_logger.debug(f"Agents from get_agent_from_memory : {agent_from_memory.agent_id}")
     
     # NOTE : We continue our tests with the agent from the memory as it more realistic
+
     agent = agent_from_memory
     #if not agent_workspace:  # We don't have an agent yet.
     if not agent :  # We don't have an agent matching this ID
