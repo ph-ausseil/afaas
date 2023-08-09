@@ -1,6 +1,6 @@
 import click
 
-from autogpt.core.agent import AgentSettings, SimpleAgent
+from autogpt.core.agent import BaseAgentSettings, SimpleAgent
 from autogpt.core.runner.client_lib.logging import get_client_logger
 from autogpt.core.runner.client_lib.parser import (
     parse_ability_result,
@@ -16,7 +16,7 @@ async def run_auto_gpt(user_configuration: dict):
     client_logger.debug("Getting agent settings")
 
     # Step 1. Collate the user's settings with the default system settings.
-    agent_settings: AgentSettings = SimpleAgent.compile_settings(
+    agent_settings: BaseAgentSettings = SimpleAgent.compile_settings(
         client_logger,
         user_configuration,
     )

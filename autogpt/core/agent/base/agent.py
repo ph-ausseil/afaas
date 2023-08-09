@@ -5,137 +5,34 @@ import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, List
-from pydantic import BaseModel, Field
-"""
+
 if TYPE_CHECKING:
     from autogpt.core.agent.base.loop import (  # Import only where it's needed
         BaseLoop,
         BaseLoopHook,
     )
-"""
 
-from autogpt.core.ability import AbilityRegistrySettings
-"""
+from autogpt.core.ability import AbilityRegistry
 from autogpt.core.agent.base.models import (
     BaseAgentConfiguration,
     BaseAgentSettings,
     BaseAgentSystems,
     BaseAgentSystemSettings,
 )
-"""
 from autogpt.core.configuration import Configurable
-from autogpt.core.configuration import SystemConfiguration, SystemSettings
-from autogpt.core.memory.base import MemorySettings
+from autogpt.core.memory.base import Memory
 from autogpt.core.plugin.simple import SimplePluginService
-from autogpt.core.planning import PlannerSettings
-from autogpt.core.plugin.simple import PluginLocation
-from autogpt.core.resource.model_providers import OpenAISettings
-from autogpt.core.workspace.simple import WorkspaceSettings
-
-class AgentSystems(SystemConfiguration):
-    ability_registry: PluginLocation
-    memory: PluginLocation
-    openai_provider: PluginLocation
-    planning: PluginLocation
-    workspace: PluginLocation
-
-class AgentConfiguration(SystemConfiguration):
-    cycle_count: int
-    max_task_cycle_count: int
-    creation_time: str
-    systems: AgentSystems
-    user_id: Optional[uuid.UUID] = Field(default=None)
-    agent_id: Optional[uuid.UUID] = Field(default=None)
-    agent_name: str = Field(default='New Agent')
-    agent_role: Optional[str] = Field(default=None)
-    agent_goals: Optional[list[str]] = Field(default=None)
-
-class AgentSystemSettings(SystemSettings):
-    configuration: AgentConfiguration
-    user_id: Optional[uuid.UUID] = Field(default=None)
-    agent_id: Optional[uuid.UUID] = Field(default=None)
-
-
-class AgentSettings(BaseModel):
-    agent: AgentSystemSettings
-    ability_registry: AbilityRegistrySettings
-    memory: MemorySettings
-    openai_provider: OpenAISettings
-    planning: PlannerSettings
-    workspace: WorkspaceSettings
-    user_id: Optional[uuid.UUID] = Field(default=None)
-    agent_id: Optional[uuid.UUID] = Field(default=None)
-    agent_name: str = Field(default='New Agent')
-    agent_role: Optional[str] = Field(default=None)
-    agent_goals: Optional[list] = Field(default=None)
-
-    class Config:
-         # This is a list of Field to Exclude during serialization
-        json_encoders = {
-            uuid.UUID: lambda v: str(v)  # Custom encoder for UUID4
-        }
-        default_exclude = {
-                            "workspace", 
-                           "planning", 
-                           "openai_provider", 
-                           "memory", 
-                           "ability_registry"
-                           }
-            
-
-    def dict(self, remove_technical_values=True, *args, **kwargs):
-        self.prepare_values_before_serialization()  # Call the custom treatment before .dict()
-
-        kwargs['exclude'] = kwargs.get('exclude', set())  # Get the exclude_arg
-        if remove_technical_values:
-            # Add the default technical fields to exclude_arg
-            kwargs['exclude'] |= self.__class__.Config.default_exclude
-
-        # Call the .dict() method with the updated exclude_arg
-        return super().dict( *args, **kwargs)
-       
-
-    def json(self, *args, **kwargs):
-        self.prepare_values_before_serialization()  # Call the custom treatment before .json()
-        return super().json(*args, **kwargs)
-
-
-    def update_agent_name_and_goals(self, agent_goals: dict) -> None:
-        self.agent.configuration.agent_name = agent_goals["agent_name"]
-        self.agent.configuration.agent_role = agent_goals["agent_role"]
-        self.agent.configuration.agent_goals = agent_goals["agent_goals"]
-
-        self.agent_name = 'New'+ agent_goals["agent_name"]
-        self.agent_role = 'New'+ agent_goals["agent_role"]
-        self.agent_goals = agent_goals["agent_goals"]
-
-   
-    
-        
-    # NOTE : To be implemented in the future
-    def load_root_values(self, *args, **kwargs):
-        self.agent_name = self.agent.configuration.agent_name
-        self.agent_role = self.agent.configuration.agent_role
-        self.agent_goals = self.agent.configuration.agent_goals
-    
-    def prepare_values_before_serialization(self):
-        self.agent_name = self.agent.configuration.agent_name
-        self.agent_role = self.agent.configuration.agent_role
-        self.agent_goals = self.agent.configuration.agent_goals
+from autogpt.core.workspace import Workspace
 
 class BaseAgent(abc.ABC):
-    """ 
     AGENT_SYSTEM_SETINGS = BaseAgentSystemSettings
     AGENT_CONFIGURATION = BaseAgentConfiguration
     AGENT_SETTINGS = BaseAgentSettings
     AGENT_SYSTEMS = BaseAgentSystems
-    """
 
     @classmethod
     def get_agent_class(cls) -> Agent:
-        print(cls)
         return cls
 
     @abc.abstractmethod
@@ -146,28 +43,31 @@ class BaseAgent(abc.ABC):
     @abc.abstractmethod
     def get_agent_from_settings(
         cls,
-        workspace_path: Path,
+        agent_settings: BaseAgentSettings,
         logger: logging.Logger,
-    ) -> "Agent":
+    ) -> "BaseAgent":
         ...
 
     @abc.abstractmethod
     def __repr__(self):
         ...
 
+    _loop : BaseLoop = None
+    _loophooks : List[BaseLoop.LoophooksDict] = []
 
 class Agent(BaseAgent):
-    """
-    def __call__(
+    def __init__(
         self,
         settings: BaseAgentSystemSettings,
         logger: logging.Logger,
         ability_registry: AbilityRegistry,
         memory: Memory,
         workspace: Workspace,
+        user_id: uuid.UUID,
+        agent_id: uuid.UUID = None,
     ) -> Any:
-        print("BEGIN CALL : Agent.__call.__ : self.__class__\n")
-        print(self.__class__)
+        logger.debug("BEGIN CALL : Agent.__call.__ : self.__class__\n")
+        logger.debug(self.__class__)
         self._configuration = settings.configuration
         self._logger = logger
         self._ability_registry = ability_registry
@@ -181,21 +81,24 @@ class Agent(BaseAgent):
         self._next_ability = None
         self._isrunning = True
 
-        print("END CALL : Agent.__call.__ : self\n")
-        print(self)
-        return super().__call__(
+        self.user_id = user_id
+        self.agent_id = agent_id
+
+        logger.debug("END CALL : Agent.__call.__ : self\n")
+        logger.debug(self)
+        return super().__init__(
             self, settings, logger, ability_registry, memory, workspace
         )
 
-    @property
-    @abc.abstractmethod
-    def _loophooks(self) -> List[BaseLoop.LoophooksDict]:
-        pass
+    # @property
+    # @abc.abstractmethod
+    # def loophooks(self) -> List[BaseLoop.LoophooksDict]:
+    #     pass
 
-    @property
-    @abc.abstractmethod
-    def loop(self) -> BaseLoop:
-        pass
+    # @property
+    # @abc.abstractmethod
+    # def loop(self) -> BaseLoop:
+    #     pass
 
     def add_hook(self, name: str, hook: BaseLoopHook, hook_id: uuid.UUID):
         self._loophooks[name][hook_id] = hook
@@ -254,19 +157,19 @@ class Agent(BaseAgent):
     def exit(self, *kwargs) -> None:
         if self.loop.isrunning:
             self.loop.isrunning = False
-    """
+
     @classmethod
     @abc.abstractmethod
     def get_agent_from_settings(
         cls,
-        agent_settings: AgentSettings,
+        agent_settings: BaseAgentSettings,
         logger: logging.Logger,
     ) -> Agent:
-        # if TYPE_CHECKING:
+
         from autogpt.core.workspace import SimpleWorkspace
 
-        if not isinstance(agent_settings, AgentSettings):
-            agent_settings: AgentSettings = agent_settings
+        if not isinstance(agent_settings, BaseAgentSettings):
+            agent_settings: BaseAgentSettings = agent_settings
         agent_args = {}
 
         agent_args['user_id'] = agent_settings.user_id
@@ -306,7 +209,24 @@ class Agent(BaseAgent):
         cls, 
         logger: logging.Logger, 
         user_configuration: dict
-    ) -> AgentSettings:
+    ) -> BaseAgentSettings:
+        
+        # from pydantic import Field, BaseSettings
+        # from typing import Optional
+        # from autogpt.core.planning import PlannerSettings
+        # from autogpt.core.ability import AbilityRegistrySettings
+        # from autogpt.core.resource.model_providers import OpenAISettings
+        # class SimpleAgentSettings(BaseAgentSettings):
+        #     openai_provider: OpenAISettings
+        #     ability_registry: AbilityRegistrySettings
+        #     planning: PlannerSettings
+        #     user_id: Optional[uuid.UUID] = Field(default=None)
+        #     agent_id: Optional[uuid.UUID] = Field(default=None)
+        #     agent_name: str = Field(default='New Agent')
+        #     agent_role: Optional[str] = Field(default=None)
+        #     agent_goals: Optional[list] = Field(default=None)
+
+
         """Compile the user's configuration with the defaults."""
         logger.debug("Processing agent system configuration.")
         logger.debug("compile_settings" + str(cls))
@@ -328,10 +248,9 @@ class Agent(BaseAgent):
                 ).dict()
             else :
                 configuration_dict[system_name] = system_location
-        return AgentSettings.parse_obj(configuration_dict)
-        """
+
         return cls.AGENT_SETTINGS.parse_obj(configuration_dict)
-        """
+
     ################################################################
     # Factory interface for agent bootstrapping and initialization #
     ################################################################
@@ -341,20 +260,22 @@ class Agent(BaseAgent):
 
     @classmethod
     def create_agent(cls,
-        agent_settings: AgentSettings,
+        agent_settings: BaseAgentSettings,
         logger: logging.Logger,) -> uuid.UUID:
         """Create a new agent."""
-        cls._create_workspace(agent_settings=agent_settings, logger=logger)
         agent_id = cls.create_agent_in_memory(agent_settings=agent_settings, 
                                               logger=logger,
                                               user_id = agent_settings.user_id)
+        agent_settings.agent.agent_id = agent_id
+        agent_settings.agent_id = agent_id
+        cls._create_workspace(agent_settings=agent_settings, logger=logger)
         return agent_id
 
     
     @classmethod
     def _create_workspace(
         cls,
-        agent_settings: AgentSettings,
+        agent_settings: BaseAgentSettings,
         logger: logging.Logger,
     ):
         from autogpt.core.workspace import SimpleWorkspace
@@ -367,7 +288,7 @@ class Agent(BaseAgent):
     @classmethod
     def create_agent_in_memory(
         cls,
-        agent_settings: AgentSettings,
+        agent_settings: BaseAgentSettings,
         logger: logging.Logger,
         user_id : uuid.UUID
     ) -> uuid.UUID:
@@ -376,12 +297,12 @@ class Agent(BaseAgent):
         )        
         # TODO : Remove the user_id argument
         # NOTE : Monkey Patching
-        AgentSettings.Config.extra = "allow"
-        SystemSettings.Config.extra = "allow"   
-        AgentSystems.Config.extra = "allow" 
-        AgentConfiguration.Config.extra = "allow"
+        BaseAgentSettings.Config.extra = "allow"
+        BaseAgentSystemSettings.Config.extra = "allow"   
+        BaseAgentSystems.Config.extra = "allow" 
+        BaseAgentConfiguration.Config.extra = "allow"
         agent_settings.agent.configuration.user_id = str(user_id)
-        AgentSystems.user_id: uuid.UUID
+        BaseAgentSystems.user_id: uuid.UUID
         agent_settings.user_id= str(user_id)
 
         from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig
@@ -398,11 +319,14 @@ class Agent(BaseAgent):
     def _get_system_instance(
         cls,
         system_name: str,
-        agent_settings: dict,
+        agent_settings: BaseAgentSettings,
         logger: logging.Logger,
         *args,
         **kwargs,
     ):
+        print("\ncls._get_system_instance : " + str(cls))
+        print("\n_get_system_instance agent_settings: " + str(agent_settings))
+        print("\n_get_system_instance system_name: " + str(system_name))
         system_locations = agent_settings.agent.configuration.systems.dict()
 
         system_settings = getattr(agent_settings, system_name)

@@ -3,53 +3,46 @@ from __future__ import annotations
 import logging
 import uuid
 from pathlib import Path
-from typing import Any, TYPE_CHECKING, Awaitable, Callable, List
+from typing import TYPE_CHECKING, Awaitable, Callable, List
 
-from pydantic import BaseModel
-
-from autogpt.core.ability import (
-    AbilityRegistrySettings,
-    AbilityResult,
-    SimpleAbilityRegistry,
+from autogpt.core.ability import AbilityResult, SimpleAbilityRegistry
+from autogpt.core.agent.base.agent import Agent
+from autogpt.core.agent.simple.loop import SimpleLoop
+from autogpt.core.agent.simple.models import (
+    SimpleAgentConfiguration,
+    SimpleAgentSettings,
+    SimpleAgentSystems,
+    SimpleAgentSystemSettings,
 )
-from autogpt.core.agent.base import (
-    AgentConfiguration,
-    AgentSettings,
-    AgentSystems,
-    AgentSystemSettings,
-    BaseAgent,
-    Agent
-)
-from autogpt.core.configuration import Configurable, SystemConfiguration, SystemSettings
-from autogpt.core.memory.base import Memory, MemorySettings
-from autogpt.core.planning import PlannerSettings, SimplePlanner, Task, TaskStatus
+from autogpt.core.configuration import Configurable
+from autogpt.core.memory.base import Memory
+from autogpt.core.planning import SimplePlanner, Task, TaskStatus
 from autogpt.core.plugin.simple import (
     PluginLocation,
     PluginStorageFormat,
-    SimplePluginService,
+    
 )
-from autogpt.core.resource.model_providers import OpenAIProvider, OpenAISettings
-from autogpt.core.workspace.simple import SimpleWorkspace, WorkspaceSettings
+from autogpt.core.resource.model_providers import OpenAIProvider
+from autogpt.core.workspace.simple import SimpleWorkspace
 
-""" 
 if TYPE_CHECKING:
     from autogpt.core.agent.base.loop import BaseLoopHook
-"""
+
 
 class SimpleAgent(Agent, Configurable):
     ################################################################################
     ##################### REFERENCE SETTINGS FOR FACTORY ###########################
     ################################################################################
-    """
+
     AGENT_SYSTEM_SETINGS = SimpleAgentSystemSettings
     AGENT_CONFIGURATION = SimpleAgentConfiguration
     AGENT_SETTINGS = SimpleAgentSettings
     AGENT_SYSTEMS = SimpleAgentSystems
-    """
-    default_settings = AgentSystemSettings(
+
+    default_settings = SimpleAgentSystemSettings(
         name="simple_agent",
         description="A simple agent.",
-        configuration=AgentConfiguration(
+        configuration=SimpleAgentConfiguration(
             agent_name="Entrepreneur-GPT",
             agent_role=(
                 "An AI designed to autonomously develop and run businesses with "
@@ -63,9 +56,7 @@ class SimpleAgent(Agent, Configurable):
             cycle_count=0,
             max_task_cycle_count=3,
             creation_time="",
-            # user_id=None,
-            # agent_id=None,
-            systems=AgentSystems(
+            systems=SimpleAgentSystems(
                 ability_registry=PluginLocation(
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
                     storage_route="autogpt.core.ability.SimpleAbilityRegistry",
@@ -86,98 +77,72 @@ class SimpleAgent(Agent, Configurable):
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
                     storage_route="autogpt.core.workspace.SimpleWorkspace",
                 ),
-                # user_id=None,
-                # agent_id=None,
             ),
         ),
-        # user_id=None,
-        # agent_id=None,
     )
 
     def __init__(
         self,
-        settings: AgentSystemSettings,
+        settings: SimpleAgentSystemSettings,
         logger: logging.Logger,
         ability_registry: SimpleAbilityRegistry,
         memory: Memory,
         openai_provider: OpenAIProvider,
-        planning: SimplePlanner,
         workspace: SimpleWorkspace,
+        planning: SimplePlanner,
         user_id: uuid.UUID,
         agent_id: uuid.UUID = None,
     ):
-        self._configuration = settings.configuration
-        self._logger = logger
-        self._ability_registry = ability_registry
-        self._memory = memory
-        # FIXME: Need some work to make this work as a dict of providers
-        #  Getting the construction of the config to work is a bit tricky
-        
-        """ 
-        # # All these should be managed by __call__
-        # self._configuration = settings.configuration
-        # self._logger = logger
-        # self._ability_registry = ability_registry
-        # self._memory = memory
-        # # FIXME: Need some work to make this work as a dict of providers
-        # #  Getting the construction of the config to work is a bit tricky
-        # self._workspace = workspace
-        # self._task_queue = []
-        # self._completed_tasks = []
-        # self._current_task = None
-        # self._next_ability = None
-        # self._isrunning = True
+        super().__init__(
+        settings,
+        logger,
+        ability_registry,
+        memory,
+        workspace,
+        user_id,
+        agent_id,
+        )
 
         # These are specific
-        """
         self._openai_provider = openai_provider
         self._planning = planning
-        self._workspace = workspace
-        self._task_queue = []
-        self._completed_tasks = []
-        self._current_task = None
-        self._next_ability = None
+
         self.agent_role = settings.configuration.agent_role
         self.agent_goals = settings.configuration.agent_goals
         self.agent_name = settings.configuration.agent_name
-        self.user_id = user_id
-        self.agent_id = agent_id
+
         logger.debug("MID INIT  : SimpleAgent.__init.__ : self\n")
         logger.debug(self)
 
-    """
-        # TODO: Will provide another PR with the logic migrated to SimpleLoop once approved
+        # TODO Will provide another PR with the logic migrated to SimpleLoop once approved
         # self.default_callback = {
         #     #'a_hook_key' = MyCallable(arg)
         # }
 
-        self.loop = SimpleLoop(
-            settings=settings,
-            logger=logger,
-            ability_registry=ability_registry,
-            memory=memory,
-            openai_provider=openai_provider,
-            planning=planning,
-            workspace=workspace,
+        self._loop = SimpleLoop(
+            agent=self
         )
-        self.add_hook("add_hook(self, name, hook, uuid)")
+        
+        # NOTE : MOVE ADD HOOD TO BaseLoop
 
-    ###############
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
 
-    @property
-    def _loophooks(self) -> List[SimpleLoop.LoophooksDict]:
+    def loophooks(self) -> List[SimpleLoop.LoophooksDict]:
         if not self._loophooks:
             self._loophooks = []
         return self._loophooks
 
-    @_loophooks.setter
+    def loop(self) -> SimpleLoop:
+        return self._loop 
+    
     def add_hook(self, name: str, hook: BaseLoopHook, uuid: uuid.UUID):
         super().add_hook(self, name, hook, uuid)
 
-    @property
-    def loop(self) -> SimpleLoop:
-        return self.loop
 
+        
     # @property
     # def default_callback(self, hook_name: str, result: Any) -> None:
     #     return None
@@ -189,8 +154,7 @@ class SimpleAgent(Agent, Configurable):
     ################################################################################
     ####### SIMPLE AGENT IS AN AGENT SPECIALIZED IN PLANNING #######################
     ################################################################################
-    """
- 
+
 
     async def build_initial_plan(self) -> dict:
         plan = await self._planning.make_initial_plan(
@@ -284,9 +248,6 @@ class SimpleAgent(Agent, Configurable):
         # TODO: store knowledge and summaries in memory and in relevant tasks
         # TODO: evaluate whether the task is complete
 
-    def __repr__(self):
-        return "SimpleAgent()"
-    """
     ################################################################################
     ################################ LOOP MANAGEMENT################################
     ################################################################################
@@ -326,7 +287,6 @@ class SimpleAgent(Agent, Configurable):
             user_message_handler=user_message_handler,
         )
         return return_var
-    """ 
 
     ################################################################################
     ################################FACTORY SPECIFIC################################
@@ -336,7 +296,7 @@ class SimpleAgent(Agent, Configurable):
     @classmethod
     def get_agent_from_settings(
         cls,
-        agent_settings: AgentSettings,
+        agent_settings: SimpleAgentSettings,
         logger: logging.Logger,
     ) -> Agent:
         agent_settings, agent_args = super().get_agent_from_settings(
@@ -370,7 +330,7 @@ class SimpleAgent(Agent, Configurable):
     async def determine_agent_name_and_goals(
         cls,
         user_objective: str,
-        agent_settings: AgentSettings,
+        agent_settings: SimpleAgentSettings,
         logger: logging.Logger,
     ) -> dict:
         logger.debug("Loading OpenAI provider.")
@@ -398,7 +358,7 @@ class SimpleAgent(Agent, Configurable):
     ################################################################################
     
     @classmethod
-    def get_agentsetting_list_from_memory(self, user_id: uuid.UUID, logger: logging.Logger ) -> list[AgentSettings]:
+    def get_agentsetting_list_from_memory(self, user_id: uuid.UUID, logger: logging.Logger ) -> list[SimpleAgentSettings]:
         from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig, MemorySettings
         from autogpt.core.memory.table.base import AgentsTable, BaseTable
         """Warning !!!
@@ -422,7 +382,11 @@ class SimpleAgent(Agent, Configurable):
         return agent_list
    
     @classmethod
-    def get_agent_from_memory(cls, agent_settings : AgentSettings, agent_id: uuid.UUID, user_id: uuid.UUID, logger: logging.Logger ) -> BaseAgent:
+    def get_agent_from_memory(cls, 
+                              agent_settings : SimpleAgentSettings, 
+                              agent_id: uuid.UUID, 
+                              user_id: uuid.UUID, 
+                              logger: logging.Logger ) -> Agent:
         from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig, MemorySettings
         from autogpt.core.memory.table.base import AgentsTable
 
@@ -442,5 +406,5 @@ class SimpleAgent(Agent, Configurable):
         )
         return agent
 
-
-
+    def __repr__(self):
+        return "SimpleAgent()"

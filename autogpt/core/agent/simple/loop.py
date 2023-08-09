@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Awaitable, Callable, List
 from typing_extensions import TypedDict
 
 from autogpt.core.ability import AbilityResult
-from autogpt.core.agent import BaseLoop, BaseLoopHook
+from autogpt.core.agent.base import BaseLoop, BaseLoopHook
 from autogpt.core.planning import Task, TaskStatus
 from autogpt.core.runner.client_lib.parser import (
     parse_ability_result,
@@ -25,6 +25,10 @@ class SimpleLoop(BaseLoop):
         after_determine_next_ability: List[BaseLoopHook]
         before_execute_next_ability: List[BaseLoopHook]
         before_build_initial_plan: List[BaseLoopHook]
+
+    def __init__(self, agent: Agent) -> None:
+        super().__init__(agent)
+        self._active = False
 
     async def run(
         self,

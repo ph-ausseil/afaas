@@ -24,7 +24,7 @@ class BaseLoopHook(NamedTuple):
     callback_function: Optional[Callable[..., Any]]
 
 
-class BaseLoop(abc.ABC, metaclass=BaseLoopMeta):  # Import only where it's needed
+class BaseLoop(abc.ABC, metaclass=BaseLoopMeta):  
     class LoophooksDict(TypedDict):
         pass
 
