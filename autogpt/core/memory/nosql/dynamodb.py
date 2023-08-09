@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from logging import Logger
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import boto3
 from botocore.exceptions import NoCredentialsError
 
 if TYPE_CHECKING :
     from autogpt.core.memory.base import MemorySettings
+
 from autogpt.core.memory.nosqlmemory import NoSQLMemory
 
 
