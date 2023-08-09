@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import uuid
-from pathlib import Path
 from typing import TYPE_CHECKING, Awaitable, Callable, List
 
 from autogpt.core.ability import AbilityResult, SimpleAbilityRegistry
@@ -17,11 +16,7 @@ from autogpt.core.agent.simple.models import (
 from autogpt.core.configuration import Configurable
 from autogpt.core.memory.base import Memory
 from autogpt.core.planning import SimplePlanner, Task, TaskStatus
-from autogpt.core.plugin.simple import (
-    PluginLocation,
-    PluginStorageFormat,
-    
-)
+from autogpt.core.plugin.simple import PluginLocation, PluginStorageFormat
 from autogpt.core.resource.model_providers import OpenAIProvider
 from autogpt.core.workspace.simple import SimpleWorkspace
 
@@ -359,7 +354,11 @@ class SimpleAgent(Agent, Configurable):
     
     @classmethod
     def get_agentsetting_list_from_memory(self, user_id: uuid.UUID, logger: logging.Logger ) -> list[SimpleAgentSettings]:
-        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig, MemorySettings
+        from autogpt.core.memory.base import (
+            Memory,
+            MemoryConfig,
+            MemorySettings,
+        )
         from autogpt.core.memory.table.base import AgentsTable, BaseTable
         """Warning !!!
         Returns a list of agent settings not a list of agent
@@ -387,10 +386,11 @@ class SimpleAgent(Agent, Configurable):
                               agent_id: uuid.UUID, 
                               user_id: uuid.UUID, 
                               logger: logging.Logger ) -> Agent:
-        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig, MemorySettings
+        from autogpt.core.memory.base import (
+            Memory,
+        )
         from autogpt.core.memory.table.base import AgentsTable
 
-        
         # memory_settings = MemorySettings(configuration=agent_settings.memory)
         memory_settings = agent_settings.memory
 

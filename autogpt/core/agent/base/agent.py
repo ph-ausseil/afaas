@@ -4,7 +4,6 @@ import abc
 import logging
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, List
 
 if TYPE_CHECKING:
@@ -20,7 +19,6 @@ from autogpt.core.agent.base.models import (
     BaseAgentSystems,
     BaseAgentSystemSettings,
 )
-from autogpt.core.configuration import Configurable
 from autogpt.core.memory.base import Memory
 from autogpt.core.plugin.simple import SimplePluginService
 from autogpt.core.workspace import Workspace
@@ -90,15 +88,6 @@ class Agent(BaseAgent):
             self, settings, logger, ability_registry, memory, workspace
         )
 
-    # @property
-    # @abc.abstractmethod
-    # def loophooks(self) -> List[BaseLoop.LoophooksDict]:
-    #     pass
-
-    # @property
-    # @abc.abstractmethod
-    # def loop(self) -> BaseLoop:
-    #     pass
 
     def add_hook(self, name: str, hook: BaseLoopHook, hook_id: uuid.UUID):
         self._loophooks[name][hook_id] = hook
@@ -166,7 +155,7 @@ class Agent(BaseAgent):
         logger: logging.Logger,
     ) -> Agent:
 
-        from autogpt.core.workspace import SimpleWorkspace
+        pass
 
         if not isinstance(agent_settings, BaseAgentSettings):
             agent_settings: BaseAgentSettings = agent_settings
@@ -180,7 +169,7 @@ class Agent(BaseAgent):
             agent_settings,
             logger,
         )
-        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig
+        
         memory_settings = agent_settings.memory
         agent_args["memory"] =  Memory.get_adapter(memory_settings= memory_settings, logger=logger)
 
@@ -210,22 +199,6 @@ class Agent(BaseAgent):
         logger: logging.Logger, 
         user_configuration: dict
     ) -> BaseAgentSettings:
-        
-        # from pydantic import Field, BaseSettings
-        # from typing import Optional
-        # from autogpt.core.planning import PlannerSettings
-        # from autogpt.core.ability import AbilityRegistrySettings
-        # from autogpt.core.resource.model_providers import OpenAISettings
-        # class SimpleAgentSettings(BaseAgentSettings):
-        #     openai_provider: OpenAISettings
-        #     ability_registry: AbilityRegistrySettings
-        #     planning: PlannerSettings
-        #     user_id: Optional[uuid.UUID] = Field(default=None)
-        #     agent_id: Optional[uuid.UUID] = Field(default=None)
-        #     agent_name: str = Field(default='New Agent')
-        #     agent_role: Optional[str] = Field(default=None)
-        #     agent_goals: Optional[list] = Field(default=None)
-
 
         """Compile the user's configuration with the defaults."""
         logger.debug("Processing agent system configuration.")
@@ -305,8 +278,7 @@ class Agent(BaseAgent):
         BaseAgentSystems.user_id: uuid.UUID
         agent_settings.user_id= str(user_id)
 
-        from autogpt.core.memory.base import Memory, MemoryAdapterType, MemoryConfig
-        # memory_settings = MemorySettings(configuration=agent_settings.memory)
+        from autogpt.core.memory.base import Memory
         memory_settings = agent_settings.memory
 
         memory = Memory.get_adapter(memory_settings= memory_settings, logger=logger)

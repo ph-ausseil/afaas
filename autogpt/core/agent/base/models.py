@@ -1,6 +1,7 @@
 
 import uuid
-from typing import Any, Optional
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from autogpt.core.configuration import SystemConfiguration, SystemSettings

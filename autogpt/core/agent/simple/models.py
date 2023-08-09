@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import uuid
-from typing import Optional
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING, Optional
+
+from pydantic import Field
 
 from autogpt.core.ability import AbilityRegistrySettings
 from autogpt.core.agent.base.models import (
