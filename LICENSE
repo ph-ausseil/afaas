@@ -1,21 +1,15 @@
-MIT License
+Temporary Contributor License for my-personal-agpt-ext-that-I-have-created-for-my-own-reasearch-on-my-spare-time-and-would-like-to-release-one-day
 
-Copyright (c) 2023 Toran Bruce Richards
+Copyright (c) 2023, Pierre-Henri AUSSEIL
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This temporary license is granted to any individual receiving a copy of the software and its accompanying documentation files (the "Software"). The purpose of this license is to allow individuals to use, analyze, review, and contribute to the development of the Software, while ensuring contributors are protected from potential legal issues.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+It is crucial to clarify that this license is designed as a stopgap measure, intended to remain in effect only until the initial official release of the Software under a permissive open-source license. Once the official release occurs, this license will be supplanted or revised. All users and contributors are required to consult the updated licensing terms to gain a comprehensive understanding of their rights and responsibilities.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Under this temporary license, you are authorized to use, examine, and make contributions to the Software for bug identification, research, and critical assessment. However, please note that any actions beyond these outlined permissions, including but not limited to modification, merging, publication, distribution, or sale of copies of the Software, are explicitly prohibited at this stage.
+
+It's important to emphasize that the ultimate goal of this project is to transition to an open-source and permissive licensing model, such as the MIT License, in the long term. This transition will enable broader use, modification, distribution, and integration of the Software with other projects, aligning with the principles of the open-source community.
+
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE, OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Contact: ph.ausseil@gmail.com
