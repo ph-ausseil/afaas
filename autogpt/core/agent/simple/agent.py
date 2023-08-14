@@ -23,6 +23,8 @@ from autogpt.core.workspace.simple import SimpleWorkspace
 if TYPE_CHECKING:
     from autogpt.core.agent.base.loop import BaseLoopHook
 
+from autogpt.core.agent.base.loop import BaseLoopHook
+
 
 class SimpleAgent(Agent, Configurable):
     ################################################################################
@@ -106,8 +108,8 @@ class SimpleAgent(Agent, Configurable):
         self.agent_goals = settings.configuration.agent_goals
         self.agent_name = settings.configuration.agent_name
 
-        logger.info("MID INIT  : SimpleAgent.__init.__ : self\n")
-        logger.info(self)
+
+        logger.info(f"MID SimpleAgent.__init__ : self = {str(self)}\n")
 
         # TODO Will provide another PR with the logic migrated to SimpleLoop once approved
         # self.default_callback = {
@@ -118,23 +120,30 @@ class SimpleAgent(Agent, Configurable):
             agent=self
         )
         
-        # NOTE : MOVE ADD HOOD TO BaseLoop
+        # NOTE : MOVE ADD HOOK TO BaseLoop
+ 
+        self.add_hook(hook= BaseLoopHook(
+                            name = "begin_run",
+                            function = test_hook ,
+                            kwargs= ["foo_bar"],
+                            expected_return = True,
+                            callback_function = None ), 
+                        uuid=uuid.uuid4()
+                    )
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
+        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
 
-        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
-        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
-        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
-        #self.add_hook(name: str, hook: BaseLoopHook, uuid: uuid.UUID)
-
-    def loophooks(self) -> List[SimpleLoop.LoophooksDict]:
-        if not self._loophooks:
-            self._loophooks = {}
-        return self._loophooks
+    def loophooks(self) -> SimpleLoop.LoophooksDict:
+        if not self._loop._loophooks:
+            self._loop._loophooks = {}
+        return self._loop._loophooks
 
     def loop(self) -> SimpleLoop:
         return self._loop 
     
-    def add_hook(self, name: str, hook: BaseLoopHook, uuid: uuid.UUID):
-        super().add_hook(self, name, hook, uuid)
+    def add_hook(self,  hook: BaseLoopHook, uuid: uuid.UUID):
+        super().add_hook( hook, uuid)
 
 
         
@@ -395,3 +404,7 @@ class SimpleAgent(Agent, Configurable):
 
     def __repr__(self):
         return "SimpleAgent()"
+
+def test_hook(**kwargs):
+    for key, value in kwargs.items():
+        print(f"{key}: {value}")

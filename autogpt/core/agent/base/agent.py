@@ -12,6 +12,10 @@ if TYPE_CHECKING:
         BaseLoopHook,
     )
 
+from autogpt.core.agent.base.loop import (  # Import only where it's needed
+        BaseLoopHook,
+    )
+
 from autogpt.core.ability import AbilityRegistry
 from autogpt.core.agent.base.models import (
     BaseAgentConfiguration,
@@ -51,7 +55,7 @@ class BaseAgent(abc.ABC):
         ...
 
     _loop : BaseLoop = None
-    _loophooks: Dict[str, BaseLoop.LoophooksDict] = {}
+    #_loophooks: Dict[str, BaseLoop.LoophooksDict] = {}
 
 class Agent(BaseAgent):
 
@@ -65,36 +69,31 @@ class Agent(BaseAgent):
         user_id: uuid.UUID,
         agent_id: uuid.UUID = None,
     ) -> Any:
-        logger.info("BEGIN CALL : Agent.__call.__ : self.__class__\n")
-        logger.info(self.__class__)
+        logger.info(f"Agent.__init__ : self.__class__ = {str(self.__class__)}\n")
+
+        
         self._configuration = settings.configuration
         self._logger = logger
         self._ability_registry = ability_registry
         self._memory = memory
-        # FIXME: Need some work to make this work as a dict of providers
-        #  Getting the construction of the config to work is a bit tricky
         self._workspace = workspace
-        self._task_queue = []
-        self._completed_tasks = []
-        self._current_task = None
-        self._next_ability = None
 
         self.user_id = user_id
         self.agent_id = agent_id
+        self.agent_type = self.__class__.__name__
 
-        logger.info("END CALL : Agent.__call.__ : self\n")
-        logger.info(self)
+        logger.debug(f"Agent.__init__ : self = {str(self)}\n")
         return super().__init__(
             self, settings, logger, ability_registry, memory, workspace
         )
 
 
-    def add_hook(self, name: str, hook: BaseLoopHook, hook_id: uuid.UUID):
-        self._loophooks[name][hook_id] = hook
+    def add_hook(self, hook: BaseLoopHook, hook_id: uuid.UUID = uuid.uuid4()):
+        self._loop._loophooks[hook['name']][str(hook_id)] = hook
 
     def remove_hook(self, name: str, hook_id: uuid.UUID) -> bool:
-        if name in self._loophooks and hook_id in self._loophooks[name]:
-            del self._loophooks[name][hook_id]
+        if name in self._loop._loophooks and hook_id in self._loop._loophooks[name]:
+            del self._loop._loophooks[name][hook_id]
             return True
         return False
 
@@ -142,7 +141,7 @@ class Agent(BaseAgent):
 
             await self._loop.run(
                 agent=self,
-                hooks=self._loophooks,
+                hooks=self._loop._loophooks,
                 user_input_handler=user_input_handler,
                 user_message_handler=user_message_handler,
                 #*kwargs,
@@ -163,8 +162,6 @@ class Agent(BaseAgent):
         agent_settings: BaseAgentSettings,
         logger: logging.Logger,
     ) -> Agent:
-
-        pass
 
         if not isinstance(agent_settings, BaseAgentSettings):
             agent_settings: BaseAgentSettings = agent_settings
@@ -305,9 +302,9 @@ class Agent(BaseAgent):
         *args,
         **kwargs,
     ):
-        logger.info("\ncls._get_system_instance : " + str(cls))
-        logger.info("\n_get_system_instance agent_settings: " + str(agent_settings))
-        logger.info("\n_get_system_instance system_name: " + str(system_name))
+        logger.debug("\ncls._get_system_instance : " + str(cls))
+        logger.debug("\n_get_system_instance agent_settings: " + str(agent_settings))
+        logger.debug("\n_get_system_instance system_name: " + str(system_name))
         system_locations = agent_settings.agent.configuration.systems.dict()
 
         system_settings = getattr(agent_settings, system_name)
