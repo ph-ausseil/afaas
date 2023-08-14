@@ -106,8 +106,8 @@ class SimpleAgent(Agent, Configurable):
         self.agent_goals = settings.configuration.agent_goals
         self.agent_name = settings.configuration.agent_name
 
-        logger.debug("MID INIT  : SimpleAgent.__init.__ : self\n")
-        logger.debug(self)
+        logger.info("MID INIT  : SimpleAgent.__init.__ : self\n")
+        logger.info(self)
 
         # TODO Will provide another PR with the logic migrated to SimpleLoop once approved
         # self.default_callback = {
@@ -127,7 +127,7 @@ class SimpleAgent(Agent, Configurable):
 
     def loophooks(self) -> List[SimpleLoop.LoophooksDict]:
         if not self._loophooks:
-            self._loophooks = []
+            self._loophooks = {}
         return self._loophooks
 
     def loop(self) -> SimpleLoop:
@@ -247,25 +247,12 @@ class SimpleAgent(Agent, Configurable):
     ################################ LOOP MANAGEMENT################################
     ################################################################################
 
-    async def run(
-        self,
-        user_input_handler: Callable[[str], Awaitable[str]],
-        user_message_handler: Callable[[str], Awaitable[str]],
-        goal: str,
-    ):
-        super.run(
-            user_input_handler=user_input_handler,
-            user_message_handler=user_message_handler,
-            goal=goal,
-        )
-
     async def start(
         self,
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
     ):
         return_var = await super().start(
-            agent=self,
             user_input_handler=user_input_handler,
             user_message_handler=user_message_handler,
         )

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class SimpleLoop(BaseLoop):
-    class AgentLoophooksDict(TypedDict):
+    class LoophooksDict(BaseLoop.LoophooksDict):
         before_build_initial_plan: List[BaseLoopHook]
         after_build_initial_plan: List[BaseLoopHook]
         before_determine_next_ability: List[BaseLoopHook]
@@ -33,43 +33,70 @@ class SimpleLoop(BaseLoop):
     async def run(
         self,
         agent: Agent,
-        hooks: AgentLoophooksDict,
+        hooks: LoophooksDict,
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
     ) -> None:
         # step 1 : build initial plan
-        self.handle_hooks("before_build_initial_plan", hooks, agent)
+        await self.handle_hooks( hook_key="before_build_initial_plan", 
+                                hooks=hooks,
+                                agent=agent, 
+                                user_input_handler = user_input_handler ,
+                                user_message_handler = user_message_handler)
         plan = await self.build_initial_plan()
-        self.handle_hooks("after_build_initial_plan", hooks, agent)
+        await self.handle_hooks( hook_key="after_build_initial_plan", 
+                                hooks=hooks,
+                                agent=agent, 
+                                user_input_handler = user_input_handler ,
+                                user_message_handler = user_message_handler)
         # TODO : Move to hook
-        user_message_handler(parse_agent_plan(plan))
+        await user_message_handler(parse_agent_plan(plan))
 
-        while self.isrunning:
+        loop_count = 0
+        while self._is_running:
+            loop_count += 1
+            self._agent._logger.info(f"Starting loop iteration number {loop_count}")
             if self._active:
                 # step 2 : determine_next_ability
 
-                self.handle_hooks("before_determine_next_ability", hooks, agent)
+                await self.handle_hooks( hook_key="before_determine_next_ability", 
+                                hooks=hooks,
+                                agent=agent, 
+                                user_input_handler = user_input_handler ,
+                                user_message_handler = user_message_handler)
                 current_task, next_ability = await self.determine_next_ability(plan)
-                self.handle_hooks("after_determine_next_ability", hooks, agent)
+                await self.handle_hooks( hook_key="after_determine_next_ability", 
+                                hooks=hooks,
+                                agent=agent, 
+                                user_input_handler = user_input_handler ,
+                                user_message_handler = user_message_handler)
                 # TODO : Move to hook
-                user_message_handler(parse_next_ability(current_task, next_ability))
+                await user_message_handler(parse_next_ability(current_task, next_ability))
                 user_input = await user_input_handler(
                     "Should the agent proceed with this ability?"
                 )
 
                 # step 3 : execute_next_ability
 
-                self.handle_hooks("before_execute_next_ability", hooks, agent)
+                await self.handle_hooks( hook_key="before_execute_next_ability", 
+                                hooks=hooks,
+                                agent=agent, 
+                                user_input_handler = user_input_handler ,
+                                user_message_handler = user_message_handler)
                 ability_result = await self.execute_next_ability(user_input)
-                self.handle_hooks("after_execute_next_ability", hooks, agent)
+                await self.handle_hooks( hook_key="after_execute_next_ability", 
+                                hooks=hooks,
+                                agent=agent, 
+                                user_input_handler = user_input_handler ,
+                                user_message_handler = user_message_handler)
                 # TODO : Move to hook after_execute_next_ability
-                user_message_handler(parse_ability_result(ability_result))
+                await user_message_handler(parse_ability_result(ability_result))
 
     async def build_initial_plan(self) -> dict:
         plan = await self._agent._planning.make_initial_plan(
-            agent_name=self._agent._configuration.name,
-            agent_role=self._agent._configuration.role,
-            agent_goals=self._agent._configuration.goals,
+            agent_name=self._agent._configuration.agent_name,
+            agent_role=self._agent._configuration.agent_role,
+            agent_goals=self._agent._configuration.agent_goals,
             abilities=self._agent._ability_registry.list_abilities(),
         )
         tasks = [Task.parse_obj(task) for task in plan.content["task_list"]]

@@ -30,7 +30,7 @@ class BaseLoop(abc.ABC, metaclass=BaseLoopMeta):
 
     @abc.abstractmethod
     def __init__(self, agent: Agent):
-        self.is_running: bool = False
+        self._is_running: bool = False
         self._agent = agent
         self._active = False
         self._task_queue = []
@@ -48,28 +48,36 @@ class BaseLoop(abc.ABC, metaclass=BaseLoopMeta):
     ) -> None:
         ...
 
-    async def handle_hooks(self, hook_key: str, hooks: LoophooksDict, agent: Agent):
-        # user_input_handler: Callable[[str], Awaitable[str]],
-        # user_message_handler: Callable[[str], Awaitable[str]],
+    async def handle_hooks(self, 
+                           hook_key: str, 
+                           hooks: LoophooksDict, 
+                           agent: Agent,
+                            user_input_handler: Callable[[str], Awaitable[str]],
+                            user_message_handler: Callable[[str], Awaitable[str]]):
 
-        # if hooks.get(hook_key):
-        #     for hook in hooks[hook_key]:
-        #         await self.execute_hook(hook, agent)
-        for hook in agent._loophooks[hook_key]:
-            await self.execute_hook(hook, agent)
-            # user_input_handler: Callable[[str], Awaitable[str]],
-            # user_message_handler: Callable[[str], Awaitable[str]],
+        if agent._loophooks.get(hook_key):
+            for key, hook in agent._loophooks[hook_key]:
+                if isinstance(hook, BaseLoopHook):
+                    self._agent._logger.debug(f"Executing hook {key}")
+                    self._agent._logger.info(f"hook class is {hook.__class__}'")
+                    await self.execute_hook(hook = hook, 
+                                            agent = agent,
+                                            user_input_handler=user_input_handler,
+                                            user_message_handler=user_message_handler)
+                else :
+                    raise TypeError(f"Hook {key} is not a BaseLoopHook but is a {hook.__class__}")
 
-    async def execute_hook(self, hook=BaseLoopHook, agent="Agent"):
+
+    async def execute_hook(self, 
+                           hook : BaseLoopHook, 
+                           agent: Agent,
+                            user_input_handler: Callable[[str], Awaitable[str]],
+                            user_message_handler: Callable[[str], Awaitable[str]]):
         hook_name, function, arguments, expected_result, callback = hook
         result = function(*arguments)
         if result != expected_result:
             if callback is not None:
                 callback(self, agent, *arguments)
-            # else:
-            #     self._agent.default_callback[hook_name](result = result ,
-            #                                             expected_result = expected_result ,
-            #                                             arguments = arguments)
 
     async def start(
         self,
@@ -77,7 +85,10 @@ class BaseLoop(abc.ABC, metaclass=BaseLoopMeta):
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
     ) -> None:
+        self._agent._logger.debug("Starting loop")
         self._active = True
+        self._user_input_handler = user_input_handler
+        self._user_message_handler = user_message_handler
 
     async def stop(
         self,
@@ -85,7 +96,10 @@ class BaseLoop(abc.ABC, metaclass=BaseLoopMeta):
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
     ) -> None:
+        self._agent._logger.debug("Stoping loop")
         self._active = False
+        self._user_input_handler = user_input_handler
+        self._user_message_handler = user_message_handler
 
     def __repr__(self):
-        return "AgentLoop()"
+        return "BaseLoop()"

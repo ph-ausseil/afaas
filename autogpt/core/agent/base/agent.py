@@ -4,7 +4,7 @@ import abc
 import logging
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, List , Dict
 
 if TYPE_CHECKING:
     from autogpt.core.agent.base.loop import (  # Import only where it's needed
@@ -51,9 +51,10 @@ class BaseAgent(abc.ABC):
         ...
 
     _loop : BaseLoop = None
-    _loophooks : List[BaseLoop.LoophooksDict] = []
+    _loophooks: Dict[str, BaseLoop.LoophooksDict] = {}
 
 class Agent(BaseAgent):
+
     def __init__(
         self,
         settings: BaseAgentSystemSettings,
@@ -64,8 +65,8 @@ class Agent(BaseAgent):
         user_id: uuid.UUID,
         agent_id: uuid.UUID = None,
     ) -> Any:
-        logger.debug("BEGIN CALL : Agent.__call.__ : self.__class__\n")
-        logger.debug(self.__class__)
+        logger.info("BEGIN CALL : Agent.__call.__ : self.__class__\n")
+        logger.info(self.__class__)
         self._configuration = settings.configuration
         self._logger = logger
         self._ability_registry = ability_registry
@@ -77,13 +78,12 @@ class Agent(BaseAgent):
         self._completed_tasks = []
         self._current_task = None
         self._next_ability = None
-        self._isrunning = True
 
         self.user_id = user_id
         self.agent_id = agent_id
 
-        logger.debug("END CALL : Agent.__call.__ : self\n")
-        logger.debug(self)
+        logger.info("END CALL : Agent.__call.__ : self\n")
+        logger.info(self)
         return super().__init__(
             self, settings, logger, ability_registry, memory, workspace
         )
@@ -93,17 +93,17 @@ class Agent(BaseAgent):
         self._loophooks[name][hook_id] = hook
 
     def remove_hook(self, name: str, hook_id: uuid.UUID) -> bool:
-        if hook_id in self._loophooks[name].keys():
-            self._loophooks[name][hook_id].remove()
+        if name in self._loophooks and hook_id in self._loophooks[name]:
+            del self._loophooks[name][hook_id]
             return True
         return False
 
     async def start(
         self,
-        agent: Agent,
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
     ) -> None:
+        self._logger.info( str(self.__class__)+".start()")
         return_var = await self._loop.start(
             agent=self,
             user_input_handler=user_input_handler,
@@ -113,7 +113,6 @@ class Agent(BaseAgent):
 
     async def stop(
         self,
-        agent: Agent,
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
     ) -> None:
@@ -128,24 +127,34 @@ class Agent(BaseAgent):
         self,
         user_input_handler: Callable[[str], Awaitable[str]],
         user_message_handler: Callable[[str], Awaitable[str]],
-        *kwargs,
+        **kwargs,
     ) -> None:
-        print("BaseAgent.run() *kwarg : " + str(kwargs))
-        if not self.loop.isrunning:
-            self.loop.isrunning = True
-            self.loop.run(
+        
+        self._logger.debug(str(self.__class__) + ".run() *kwarg : " + str(kwargs))
+
+        if not self._loop._is_running:
+            self._loop._is_running = True
+            # Very important, start the loop :-)
+            await self.start(
+                user_input_handler=user_input_handler,
+                user_message_handler=user_message_handler,
+                )
+
+            await self._loop.run(
                 agent=self,
                 hooks=self._loophooks,
                 user_input_handler=user_input_handler,
                 user_message_handler=user_message_handler,
-                *kwargs,
+                #*kwargs,
             )
+
         else:
             raise BaseException("Agent Already Running")
+        
 
     def exit(self, *kwargs) -> None:
-        if self.loop.isrunning:
-            self.loop.isrunning = False
+        if self._loop._is_running:
+            self._loop._is_running = False
 
     @classmethod
     @abc.abstractmethod
@@ -296,9 +305,9 @@ class Agent(BaseAgent):
         *args,
         **kwargs,
     ):
-        print("\ncls._get_system_instance : " + str(cls))
-        print("\n_get_system_instance agent_settings: " + str(agent_settings))
-        print("\n_get_system_instance system_name: " + str(system_name))
+        logger.info("\ncls._get_system_instance : " + str(cls))
+        logger.info("\n_get_system_instance agent_settings: " + str(agent_settings))
+        logger.info("\n_get_system_instance system_name: " + str(system_name))
         system_locations = agent_settings.agent.configuration.systems.dict()
 
         system_settings = getattr(agent_settings, system_name)
