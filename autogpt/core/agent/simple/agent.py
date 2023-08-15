@@ -160,97 +160,97 @@ class SimpleAgent(Agent, Configurable):
     ################################################################################
 
 
-    async def build_initial_plan(self) -> dict:
-        plan = await self._planning.make_initial_plan(
-            agent_name=self._configuration.agent_name,
-            agent_role=self._configuration.agent_role,
-            agent_goals=self._configuration.agent_goals,
-            abilities=self._ability_registry.list_abilities(),
-        )
-        tasks = [Task.parse_obj(task) for task in plan.content["task_list"]]
+    # async def build_initial_plan(self) -> dict:
+    #     plan = await self._planning.make_initial_plan(
+    #         agent_name=self._configuration.agent_name,
+    #         agent_role=self._configuration.agent_role,
+    #         agent_goals=self._configuration.agent_goals,
+    #         abilities=self._ability_registry.list_abilities(),
+    #     )
+    #     tasks = [Task.parse_obj(task) for task in plan.content["task_list"]]
 
-        # TODO: Should probably do a step to evaluate the quality of the generated tasks,
-        #  and ensure that they have actionable ready and acceptance criteria
+    #     # TODO: Should probably do a step to evaluate the quality of the generated tasks,
+    #     #  and ensure that they have actionable ready and acceptance criteria
 
-        self._task_queue.extend(tasks)
-        self._task_queue.sort(key=lambda t: t.priority, reverse=True)
-        self._task_queue[-1].context.status = TaskStatus.READY
-        return plan.content
+    #     self._task_queue.extend(tasks)
+    #     self._task_queue.sort(key=lambda t: t.priority, reverse=True)
+    #     self._task_queue[-1].context.status = TaskStatus.READY
+    #     return plan.content
 
-    async def determine_next_ability(self, *args, **kwargs):
-        if not self._task_queue:
-            return {"response": "I don't have any tasks to work on right now."}
+    # async def determine_next_ability(self, *args, **kwargs):
+    #     if not self._task_queue:
+    #         return {"response": "I don't have any tasks to work on right now."}
 
-        self._configuration.cycle_count += 1
-        task = self._task_queue.pop()
-        self._logger.info(f"Working on task: {task}")
+    #     self._configuration.cycle_count += 1
+    #     task = self._task_queue.pop()
+    #     self._logger.info(f"Working on task: {task}")
 
-        task = await self._evaluate_task_and_add_context(task)
-        next_ability = await self._choose_next_ability(
-            task,
-            self._ability_registry.dump_abilities(),
-        )
+    #     task = await self._evaluate_task_and_add_context(task)
+    #     next_ability = await self._choose_next_ability(
+    #         task,
+    #         self._ability_registry.dump_abilities(),
+    #     )
 
-        if next_ability.content != None : 
-            self._current_task = task
-            self._next_ability = next_ability.content
-            return self._current_task, self._next_ability
-        else : 
-            return_var , second_return_var = await self.determine_next_ability() 
-            return return_var , second_return_var 
+    #     if next_ability.content != None : 
+    #         self._current_task = task
+    #         self._next_ability = next_ability.content
+    #         return self._current_task, self._next_ability
+    #     else : 
+    #         return_var , second_return_var = await self.determine_next_ability() 
+    #         return return_var , second_return_var 
 
-    async def execute_next_ability(self, user_input: str, *args, **kwargs):
-        if user_input == "y":
-            ability = self._ability_registry.get_ability(
-                self._next_ability["next_ability"]
-            )
-            ability_response = await ability(**self._next_ability["ability_arguments"])
-            await self._update_tasks_and_memory(ability_response)
-            if self._current_task.context.status == TaskStatus.DONE:
-                self._completed_tasks.append(self._current_task)
-            else:
-                self._task_queue.append(self._current_task)
-            self._current_task = None
-            self._next_ability = None
+    # async def execute_next_ability(self, user_input: str, *args, **kwargs):
+    #     if user_input == "y":
+    #         ability = self._ability_registry.get_ability(
+    #             self._next_ability["next_ability"]
+    #         )
+    #         ability_response = await ability(**self._next_ability["ability_arguments"])
+    #         await self._update_tasks_and_memory(ability_response)
+    #         if self._current_task.context.status == TaskStatus.DONE:
+    #             self._completed_tasks.append(self._current_task)
+    #         else:
+    #             self._task_queue.append(self._current_task)
+    #         self._current_task = None
+    #         self._next_ability = None
 
-            return ability_response.dict()
-        else:
-            raise NotImplementedError
+    #         return ability_response.dict()
+    #     else:
+    #         raise NotImplementedError
 
-    async def _evaluate_task_and_add_context(self, task: Task) -> Task:
-        """Evaluate the task and add context to it."""
-        if task.context.status == TaskStatus.IN_PROGRESS:
-            # Nothing to do here
-            return task
-        else:
-            self._logger.debug(f"Evaluating task {task} and adding relevant context.")
-            # TODO: Look up relevant memories (need working memory system)
-            # TODO: Evaluate whether there is enough information to start the task (language model call).
-            task.context.enough_info = True
-            task.context.status = TaskStatus.IN_PROGRESS
-            return task
+    # async def _evaluate_task_and_add_context(self, task: Task) -> Task:
+    #     """Evaluate the task and add context to it."""
+    #     if task.context.status == TaskStatus.IN_PROGRESS:
+    #         # Nothing to do here
+    #         return task
+    #     else:
+    #         self._logger.debug(f"Evaluating task {task} and adding relevant context.")
+    #         # TODO: Look up relevant memories (need working memory system)
+    #         # TODO: Evaluate whether there is enough information to start the task (language model call).
+    #         task.context.enough_info = True
+    #         task.context.status = TaskStatus.IN_PROGRESS
+    #         return task
 
-    async def _choose_next_ability(self, task: Task, ability_schema: list[dict]):
-        """Choose the next ability to use for the task."""
-        self._logger.debug(f"Choosing next ability for task {task}.")
-        if task.context.cycle_count > self._configuration.max_task_cycle_count:
-            # Don't hit the LLM, just set the next action as "breakdown_task" with an appropriate reason
-            raise NotImplementedError
-        elif not task.context.enough_info:
-            # Don't ask the LLM, just set the next action as "breakdown_task" with an appropriate reason
-            raise NotImplementedError
-        else:
-            next_ability = await self._planning.determine_next_ability(
-                task, ability_schema
-            )
-            return next_ability
+    # async def _choose_next_ability(self, task: Task, ability_schema: list[dict]):
+    #     """Choose the next ability to use for the task."""
+    #     self._logger.debug(f"Choosing next ability for task {task}.")
+    #     if task.context.cycle_count > self._configuration.max_task_cycle_count:
+    #         # Don't hit the LLM, just set the next action as "breakdown_task" with an appropriate reason
+    #         raise NotImplementedError
+    #     elif not task.context.enough_info:
+    #         # Don't ask the LLM, just set the next action as "breakdown_task" with an appropriate reason
+    #         raise NotImplementedError
+    #     else:
+    #         next_ability = await self._planning.determine_next_ability(
+    #             task, ability_schema
+    #         )
+    #         return next_ability
 
-    async def _update_tasks_and_memory(self, ability_result: AbilityResult):
-        self._current_task.context.cycle_count += 1
-        self._current_task.context.prior_actions.append(ability_result)
-        # TODO: Summarize new knowledge
-        # TODO: store knowledge and summaries in memory and in relevant tasks
-        # TODO: evaluate whether the task is complete
+    # async def _update_tasks_and_memory(self, ability_result: AbilityResult):
+    #     self._current_task.context.cycle_count += 1
+    #     self._current_task.context.prior_actions.append(ability_result)
+    #     # TODO: Summarize new knowledge
+    #     # TODO: store knowledge and summaries in memory and in relevant tasks
+    #     # TODO: evaluate whether the task is complete
 
     ################################################################################
     ################################ LOOP MANAGEMENT################################
@@ -406,5 +406,6 @@ class SimpleAgent(Agent, Configurable):
         return "SimpleAgent()"
 
 def test_hook(**kwargs):
+    test = "foo_bar"
     for key, value in kwargs.items():
         print(f"{key}: {value}")

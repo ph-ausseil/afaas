@@ -39,6 +39,8 @@ class SimpleLoop(BaseLoop):
                                 agent=agent, 
                                 user_input_handler = user_input_handler ,
                                 user_message_handler = user_message_handler)
+        
+        #Agent.create_agent(agent_name = "UCC (User Context Checker)" )
 
         # step 2 : BUIL INITIAL PLAN
         self._plan = await self.build_initial_plan()
@@ -106,8 +108,8 @@ class SimpleLoop(BaseLoop):
         task = self._task_queue.pop()
         self._agent._logger.info(f"Working on task: {task}")
 
-        task = await self._agent._evaluate_task_and_add_context(task)
-        next_ability = await self._agent._choose_next_ability(
+        task = await self._evaluate_task_and_add_context(task)
+        next_ability = await self._choose_next_ability(
             task,
             self._agent._ability_registry.dump_abilities(),
         )
@@ -121,7 +123,7 @@ class SimpleLoop(BaseLoop):
                 self._next_ability["next_ability"]
             )
             ability_response = await ability(**self._next_ability["ability_arguments"])
-            await self._agent._update_tasks_and_memory(ability_response)
+            await self._update_tasks_and_memory(ability_response)
             if self._current_task.context.status == TaskStatus.DONE:
                 self._completed_tasks.append(self._current_task)
             else:
