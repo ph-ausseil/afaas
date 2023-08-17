@@ -42,6 +42,8 @@ class SimpleLoop(BaseLoop):
         
         #Agent.create_agent(agent_name = "UCC (User Context Checker)" )
 
+        self._agent.save_agent_in_memory()
+        
         # step 2 : BUIL INITIAL PLAN
         self._plan = await self.build_initial_plan()
         await self.handle_hooks( hook_key="after_build_initial_plan", 

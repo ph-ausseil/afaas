@@ -26,12 +26,13 @@ from autogpt.core.agent.base.models import (
 from autogpt.core.memory.base import Memory
 from autogpt.core.plugin.simple import SimplePluginService
 from autogpt.core.workspace import Workspace
+from autogpt.core.configuration import Configurable
 
 class BaseAgent(abc.ABC):
-    AGENT_SYSTEM_SETINGS = BaseAgentSystemSettings
-    AGENT_CONFIGURATION = BaseAgentConfiguration
-    AGENT_SETTINGS = BaseAgentSettings
-    AGENT_SYSTEMS = BaseAgentSystems
+    CLASS_SYSTEM_SETINGS = BaseAgentSystemSettings
+    CLASS_CONFIGURATION = BaseAgentConfiguration
+    CLASS_SETTINGS = BaseAgentSettings
+    CLASS_SYSTEMS = BaseAgentSystems
 
     @classmethod
     def get_agent_class(cls) -> Agent:
@@ -57,7 +58,7 @@ class BaseAgent(abc.ABC):
     _loop : BaseLoop = None
     #_loophooks: Dict[str, BaseLoop.LoophooksDict] = {}
 
-class Agent(BaseAgent):
+class Agent(Configurable , BaseAgent):
 
     def __init__(
         self,
@@ -80,7 +81,9 @@ class Agent(BaseAgent):
 
         self.user_id = user_id
         self.agent_id = agent_id
-        self.agent_type = self.__class__.__name__
+        
+        # TODO : Move to Configurable class ?
+        self.agent_class = f"{self.__class__.__module__}.{self.__class__.__name__}"
 
         logger.debug(f"Agent.__init__ : self = {str(self)}\n")
         return super().__init__(
@@ -228,7 +231,7 @@ class Agent(BaseAgent):
             else :
                 configuration_dict[system_name] = system_location
 
-        return cls.AGENT_SETTINGS.parse_obj(configuration_dict)
+        return cls.CLASS_SETTINGS.parse_obj(configuration_dict)
 
     ################################################################
     # Factory interface for agent bootstrapping and initialization #
@@ -291,7 +294,18 @@ class Agent(BaseAgent):
         agent_table = memory.get_table("agents")
         agent_id = agent_table.add(agent_settings)
         return agent_id
-
+    
+    def save_agent_in_memory(
+        self
+    ) -> uuid.UUID:
+        
+        self._logger.debug(self._memory) 
+        agent_table = self._memory.get_table("agents")
+        agent_id = agent_table.update(agent_id = self.agent_id ,
+                                       user_id = self.user_id,
+                                       value= self
+        )
+        return agent_id
 
     @classmethod
     def _get_system_instance(

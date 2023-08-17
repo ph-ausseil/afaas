@@ -82,8 +82,9 @@ async def run_auto_gpt(user_configuration: dict):
             )
         #print(parse_agent_name_and_goals(name_and_goals))
         # Finally, update the agent settings with the name and goals.
+        name_and_goals['agent_class'] = 'SimpleAgent'
         agent_settings.update_agent_name_and_goals(name_and_goals)
-        agent_settings.load_root_values()
+        #agent_settings.load_root_values()
 
         # Step 3. Create the agent.
         # TODO : Create a single method that create an agent & the workspace 
