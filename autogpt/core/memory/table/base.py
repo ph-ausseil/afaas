@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import uuid
+from pathlib import Path
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -100,22 +101,76 @@ class BaseNoSQLTable(BaseTable):
     secondary_key: Optional[str]   
 
 
-    # Recursive function to convert non-serializable objects
+    def deserialize(dct):
+        if "_type_" in dct:
+            parts = dct["_type_"].rsplit(".", 1)
+            module = __import__(parts[0])
+            class_ = getattr(module, parts[1])
+            obj = class_()
+            for key, value in dct.items():
+                if key != "_type_":
+                    setattr(obj, key, value)
+            return obj
+        return dct
+
+    # NOTE : Move to marshmallow ?!? 
+    # https://marshmallow.readthedocs.io/en/stable/quickstart.html#serializing-objects-dumping
     @classmethod
-    def serialize_value(self, value):
-        if isinstance(value, (str, int, float, bool, type(None))):
-            return value
-        elif isinstance(value, dict):
-            return {k: self.serialize_value(v) for k, v in value.items()}
-        elif isinstance(value, list):
-            return [self.serialize_value(v) for v in value]
-        elif isinstance(value, uuid.UUID):
-            return str(value)
-        else:
-            try:
-                return str(value)
-            except Exception as e:
-                raise TypeError(f"Unable to serialize value {value}: {e}")
+    def serialize_value(self, value) -> dict:
+        stack = [(value, {}, None)]
+        root_dict = stack[0][1]
+        count = 0
+        while stack:
+            count += 1
+            print(f"\n\n\ncount : {count}")
+            curr_obj, parent_dict, key = stack.pop()
+
+            if isinstance(curr_obj, (str, int, float, bool, type(None))):
+                serialized_value = curr_obj
+            elif isinstance(curr_obj, uuid.UUID):
+                serialized_value = str(curr_obj)
+            elif isinstance(curr_obj, Path):
+                serialized_value = str(curr_obj)
+            elif isinstance(curr_obj, dict):
+                new_dict = {}
+                for k, v in curr_obj.items():
+                    stack.append((v, new_dict, k))
+                serialized_value = new_dict
+            elif isinstance(curr_obj, (list, tuple)):
+                new_list = [None] * len(curr_obj)
+                for idx, val in enumerate(curr_obj):
+                    stack.append((val, new_list, idx))
+                serialized_value = new_list
+            elif isinstance(curr_obj, set):
+                new_list = [None] * len(curr_obj)
+                for idx, val in enumerate(list(curr_obj)):
+                    stack.append((val, new_list, idx))
+                serialized_value = new_list
+            elif isinstance(curr_obj, BaseModel):
+                serialized_value = curr_obj.dict()
+            elif hasattr(curr_obj, "__dict__"):
+                new_dict = {}
+                new_dict["_type_"] = f"{curr_obj.__class__.__module__}.{curr_obj.__class__.__name__}"
+                for attr, attr_value in curr_obj.__dict__.items():
+                    if not (attr.startswith('_') 
+                            or attr in value.__class__.CLASS_SETTINGS.Config.default_exclude):
+                        stack.append((attr_value, new_dict, attr))
+                serialized_value = new_dict
+            else:
+                serialized_value = str(curr_obj)
+            
+            if key is not None:
+                parent_dict[key] = serialized_value
+
+            if (key) : 
+                print( "key = " , key )
+            if parent_dict : 
+                print( "parent_dict = " ,parent_dict )
+            if curr_obj : 
+                print( "curr_obj = " , curr_obj  )
+
+        return parent_dict
+
 
     def add(self, value: dict) -> uuid.UUID:
 
@@ -139,23 +194,34 @@ class BaseNoSQLTable(BaseTable):
         self.memory.add(key=key, value=value, table_name=self.table_name)
         return id
 
+    @abc.abstractmethod
+    def update(self, key: BaseNoSQLTable.Key, value: dict):
+
+        # Serialize non-serializable objects
+        if isinstance(value, BaseModel):
+            value = value.dict()
+    
+        value = self.__class__.serialize_value(value)
+
+        # key = {"primary_key": id}
+        # if hasattr(self, "secondary_key") and self.secondary_key in value:
+        #     key["secondary_key"] = value[self.secondary_key]
+
+        self.memory._logger.debug('update new ' + str(self.__class__) + 'with keys ' + str(key))
+        self.memory._logger.debug('update new ' + str(self.__class__) + 'with values ' + str(value))
+
+        self.memory.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
     def get(self, key: BaseNoSQLTable.Key) -> Any:
         return self.memory.get(key=key, table_name=self.table_name)
 
-    @abc.abstractmethod
-    def update(self, key: BaseNoSQLTable.Key, value: dict):
-        key = {"primary_key": id}
-        if hasattr(self, "secondary_key") and self.secondary_key in value:
-            key["secondary_key"] = value[self.secondary_key]
-        self.memory.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
     def delete(self, key: BaseNoSQLTable.Key):
-        key = {"primary_key": id}
-        if hasattr(self, "secondary_key") and self.secondary_key:
-            key["secondary_key"] = self.secondary_key
+        # key = {"primary_key": id}
+        # if hasattr(self, "secondary_key") and self.secondary_key:
+        #     key["secondary_key"] = self.secondary_key
         self.memory.delete(key=key, table_name=self.table_name)
 
     def list(
