@@ -1,9 +1,24 @@
 import abc
 
+from pydantic import validator
+
 from autogpt.core.configuration import SystemConfiguration
 from autogpt.core.planning.schema import (
     LanguageModelClassification,
     LanguageModelPrompt,
+)
+
+from autogpt.core.configuration import (
+    Configurable,
+    SystemConfiguration,
+    SystemSettings,
+    UserConfigurable,
+)
+
+from autogpt.core.resource.model_providers import (
+    LanguageModelProvider,
+    ModelProviderName,
+    OpenAIModelName,
 )
 
 # class Planner(abc.ABC):
@@ -59,7 +74,44 @@ from autogpt.core.planning.schema import (
 #         ...
 
 
+class PromptStrategiesConfiguration(SystemConfiguration):
+    pass
+
+
+
+class LanguageModelConfiguration(SystemConfiguration):
+    """Struct for model configuration."""
+
+    model_name: str = UserConfigurable()
+    provider_name: ModelProviderName = UserConfigurable()
+    temperature: float = UserConfigurable()
+
+
+class PlannerConfiguration(SystemConfiguration):
+    """Configuration for the Planner subsystem."""
+
+    models: dict[LanguageModelClassification, LanguageModelConfiguration]
+
+    @validator("models")
+    def validate_models(cls, models):
+        expected_keys = set(LanguageModelClassification)
+        actual_keys = set(models.keys())
+
+        if expected_keys != actual_keys:
+            missing_keys = expected_keys - actual_keys
+            raise ValueError(f"Missing keys in 'models': {missing_keys}")
+
+        return models
+
+class PlannerSettings(SystemSettings):
+    """Settings for the Planner subsystem."""
+
+    configuration: PlannerConfiguration
+
+
+
 class PromptStrategy(abc.ABC):
+    STRATEGY_NAME : str
     default_configuration: SystemConfiguration
 
     @property
@@ -74,3 +126,9 @@ class PromptStrategy(abc.ABC):
     @abc.abstractmethod
     def parse_response_content(self, response_content: dict) -> dict:
         ...
+
+class BasePromptStrategy (PromptStrategy):
+    
+    @property
+    def model_classification(self) -> LanguageModelClassification:
+        return self._model_classification

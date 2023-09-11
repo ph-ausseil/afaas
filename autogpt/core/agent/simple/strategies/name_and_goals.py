@@ -1,10 +1,11 @@
+from logging import Logger 
 from autogpt.core.configuration import SystemConfiguration, UserConfigurable
-from autogpt.core.planning.base import PromptStrategy
+from autogpt.core.planning.base import BasePromptStrategy,PromptStrategy
 from autogpt.core.planning.schema import (
     LanguageModelClassification,
     LanguageModelPrompt,
 )
-from autogpt.core.planning.strategies.utils import json_loads
+from autogpt.core.planning.utils import json_loads
 from autogpt.core.resource.model_providers import (
     LanguageModelFunction,
     LanguageModelMessage,
@@ -16,10 +17,11 @@ class NameAndGoalsConfiguration(SystemConfiguration):
     model_classification: LanguageModelClassification = UserConfigurable()
     system_prompt: str = UserConfigurable()
     user_prompt_template: str = UserConfigurable()
-    create_agent_function: dict = UserConfigurable()
+    strategy_functions: list[dict] = UserConfigurable()
 
 
-class NameAndGoals(PromptStrategy):
+class NameAndGoals(BasePromptStrategy):
+    STRATEGY_NAME='name_and_goals'
     DEFAULT_SYSTEM_PROMPT = (
         "Your job is to respond to a user-defined task by invoking the `create_agent` function "
         "to generate an autonomous agent to complete the task. You should supply a role-based "
@@ -45,7 +47,7 @@ class NameAndGoals(PromptStrategy):
 
     DEFAULT_USER_PROMPT_TEMPLATE = "'{user_objective}'"
 
-    DEFAULT_CREATE_AGENT_FUNCTION = {
+    DEFAULT_CREATE_AGENT_FUNCTION = [{
         "name": "create_agent",
         "description": ("Create a new autonomous AI agent to complete a given task."),
         "parameters": {
@@ -75,26 +77,27 @@ class NameAndGoals(PromptStrategy):
             },
             "required": ["agent_name", "agent_role", "agent_goals"],
         },
-    }
-
+    }]
     default_configuration = NameAndGoalsConfiguration(
-        model_classification=LanguageModelClassification.SMART_MODEL,
+        model_classification=LanguageModelClassification.SMART_MODEL_8K,
         system_prompt=DEFAULT_SYSTEM_PROMPT,
         user_prompt_template=DEFAULT_USER_PROMPT_TEMPLATE,
-        create_agent_function=DEFAULT_CREATE_AGENT_FUNCTION,
+        strategy_functions=DEFAULT_CREATE_AGENT_FUNCTION,
     )
 
     def __init__(
         self,
+        logger : Logger,
         model_classification: LanguageModelClassification,
         system_prompt: str,
         user_prompt_template: str,
-        create_agent_function: str,
+        strategy_functions: list[dict],
     ):
+        self._logger = logger
         self._model_classification = model_classification
         self._system_prompt_message = system_prompt
         self._user_prompt_template = user_prompt_template
-        self._create_agent_function = create_agent_function
+        self._strategy_functions = strategy_functions
 
     @property
     def model_classification(self) -> LanguageModelClassification:
@@ -111,12 +114,12 @@ class NameAndGoals(PromptStrategy):
                 user_objective=user_objective,
             ),
         )
-        create_agent_function = LanguageModelFunction(
-            json_schema=self._create_agent_function,
+        strategy_functions = LanguageModelFunction(
+            self._strategy_functions,
         )
         prompt = LanguageModelPrompt(
             messages=[system_message, user_message],
-            functions=[create_agent_function],
+            functions=strategy_functions,
             # TODO
             tokens_used=0,
         )

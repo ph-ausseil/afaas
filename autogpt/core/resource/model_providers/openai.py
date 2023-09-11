@@ -39,8 +39,11 @@ class OpenAIModelName(str, enum.Enum):
     ADA = "text-embedding-ada-002"
     GPT3 = "gpt-3.5-turbo-0613"
     GPT3_16K = "gpt-3.5-turbo-16k-0613"
-    GPT4 = "gpt-4-0613"
+    GPT3_FINE_TUNED = "gpt-3.5-turbo" + ""
+    # GPT4 = "gpt-4-0613" # TODO for tests
+    GPT4 = "gpt-3.5-turbo-0613"
     GPT4_32K = "gpt-4-32k-0613"
+
 
 
 OPEN_AI_EMBEDDING_MODELS = {
@@ -72,6 +75,14 @@ OPEN_AI_LANGUAGE_MODELS = {
         prompt_token_cost=0.003,
         completion_token_cost=0.002,
         max_tokens=16384,
+    ),
+    OpenAIModelName.GPT3_FINE_TUNED: LanguageModelProviderModelInfo(
+        name=OpenAIModelName.GPT3_FINE_TUNED,
+        service=ModelProviderService.LANGUAGE,
+        provider_name=ModelProviderName.OPENAI,
+        prompt_token_cost=0.0120,
+        completion_token_cost=0.0160,
+        max_tokens=4096,
     ),
     OpenAIModelName.GPT4: LanguageModelProviderModelInfo(
         name=OpenAIModelName.GPT4,
@@ -306,7 +317,7 @@ async def _create_completion(
     """
     messages = [message.dict() for message in messages]
     if "functions" in kwargs:
-        kwargs["functions"] = [function.json_schema for function in kwargs["functions"]]
+         kwargs["functions"] = [function.dict() for function in kwargs["functions"]]
     return await openai.ChatCompletion.acreate(
         messages=messages,
         **kwargs,

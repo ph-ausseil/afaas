@@ -1,6 +1,9 @@
+from __future__ import annotations
 import abc
 import enum
-from typing import Callable, ClassVar
+
+
+from typing import TypedDict, Union, List, Any, Callable, ClassVar, Dict, Optional,TYPE_CHECKING
 
 from pydantic import BaseModel, Field, SecretStr, validator
 
@@ -13,7 +16,6 @@ from autogpt.core.resource.schema import (
     ProviderUsage,
     ResourceType,
 )
-
 
 class ModelProviderService(str, enum.Enum):
     """A ModelService describes what kind of service the model provides."""
@@ -38,10 +40,43 @@ class LanguageModelMessage(BaseModel):
     content: str
 
 
+# Basic structure for a single property
+class Property(BaseModel):
+    type: str
+    description: str
+    items: Optional[Union['Property', Dict]]
+    properties: Optional[dict]  # Allows nested properties
+
+# Defines a function's parameters
+class FunctionParameters(BaseModel):
+    type: str
+    properties: Dict[str, Property]
+    required: List[str]
+
 class LanguageModelFunction(BaseModel):
-    json_schema: dict
+    name: str
+    description: str
+    parameters: FunctionParameters
 
+    def _remove_none_entries(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        cleaned_data = {}
+        for key, value in data.items():
+            if value is not None:
+                if isinstance(value, dict):
+                    cleaned_data[key] = self._remove_none_entries(value)
+                else:
+                    cleaned_data[key] = value
+        return cleaned_data
 
+    def dict(self, *args, **kwargs):
+        # Call the parent class's dict() method to get the original dictionary
+        data = super().dict(*args, **kwargs)
+        
+        # Remove entries with None values recursively
+        cleaned_data = self._remove_none_entries(data)
+        
+        return cleaned_data
+    
 class ModelProviderModelInfo(BaseModel):
     """Struct for model information.
 

@@ -1,12 +1,14 @@
+
+import logging
 from autogpt.core.configuration import SystemConfiguration, UserConfigurable
-from autogpt.core.planning.base import PromptStrategy
+from autogpt.core.planning.base import BasePromptStrategy,PromptStrategy
 from autogpt.core.planning.schema import (
     LanguageModelClassification,
     LanguageModelPrompt,
     Task,
     TaskType,
 )
-from autogpt.core.planning.strategies.utils import json_loads, to_numbered_list
+from autogpt.core.planning.utils import json_loads, to_numbered_list
 from autogpt.core.resource.model_providers import (
     LanguageModelFunction,
     LanguageModelMessage,
@@ -19,10 +21,11 @@ class InitialPlanConfiguration(SystemConfiguration):
     system_prompt_template: str = UserConfigurable()
     system_info: list[str] = UserConfigurable()
     user_prompt_template: str = UserConfigurable()
-    create_plan_function: dict = UserConfigurable()
+    strategy_functions: list[dict] = UserConfigurable()
 
 
-class InitialPlan(PromptStrategy):
+class InitialPlan(BasePromptStrategy):
+    STRATEGY_NAME='initial_plan'
     DEFAULT_SYSTEM_PROMPT_TEMPLATE = (
         "You are an expert project planner. You're responsibility is to create work plans for autonomous agents. "
         "You will be given a name, a role, set of goals for the agent to accomplish. Your job is to "
@@ -42,9 +45,10 @@ class InitialPlan(PromptStrategy):
 
     DEFAULT_USER_PROMPT_TEMPLATE = (
         "You are {agent_name}, {agent_role}\n" "Your goals are:\n" "{agent_goals}"
+        "You are {agent_name}, {agent_role}\n" "Your goals are:\n" "{agent_goal_sentence}"
     )
 
-    DEFAULT_CREATE_PLAN_FUNCTION = {
+    DEFAULT_CREATE_PLAN_FUNCTION = [{
         "name": "create_initial_agent_plan",
         "description": "Creates a set of tasks that forms the initial plan for an autonomous agent.",
         "parameters": {
@@ -96,29 +100,31 @@ class InitialPlan(PromptStrategy):
                 },
             },
         },
-    }
+    }]
 
     default_configuration = InitialPlanConfiguration(
-        model_classification=LanguageModelClassification.SMART_MODEL,
+        model_classification=LanguageModelClassification.SMART_MODEL_8K,
         system_prompt_template=DEFAULT_SYSTEM_PROMPT_TEMPLATE,
         system_info=DEFAULT_SYSTEM_INFO,
         user_prompt_template=DEFAULT_USER_PROMPT_TEMPLATE,
-        create_plan_function=DEFAULT_CREATE_PLAN_FUNCTION,
+        strategy_functions=DEFAULT_CREATE_PLAN_FUNCTION,
     )
 
     def __init__(
         self,
+        logger : logging.Logger,
         model_classification: LanguageModelClassification,
         system_prompt_template: str,
         system_info: list[str],
         user_prompt_template: str,
-        create_plan_function: dict,
+        strategy_functions: list[dict],
     ):
+        self._logger = logger
         self._model_classification = model_classification
         self._system_prompt_template = system_prompt_template
         self._system_info = system_info
         self._user_prompt_template = user_prompt_template
-        self._create_plan_function = create_plan_function
+        self._strategy_functions = strategy_functions
 
     @property
     def model_classification(self) -> LanguageModelClassification:
@@ -129,6 +135,7 @@ class InitialPlan(PromptStrategy):
         agent_name: str,
         agent_role: str,
         agent_goals: list[str],
+        agent_goal_sentence: str,
         abilities: list[str],
         os_info: str,
         api_budget: float,
@@ -145,7 +152,8 @@ class InitialPlan(PromptStrategy):
         }
         template_kwargs["agent_goals"] = to_numbered_list(
             agent_goals, **template_kwargs
-        )
+        ),
+        template_kwargs["agent_goal_sentence"] = agent_goal_sentence,
         template_kwargs["abilities"] = to_numbered_list(abilities, **template_kwargs)
         template_kwargs["system_info"] = to_numbered_list(
             self._system_info, **template_kwargs
@@ -159,13 +167,13 @@ class InitialPlan(PromptStrategy):
             role=MessageRole.USER,
             content=self._user_prompt_template.format(**template_kwargs),
         )
-        create_plan_function = LanguageModelFunction(
-            json_schema=self._create_plan_function,
+        strategy_functions = LanguageModelFunction(
+            self._strategy_functions,
         )
 
         return LanguageModelPrompt(
             messages=[system_prompt, user_prompt],
-            functions=[create_plan_function],
+            functions=strategy_functions,
             # TODO:
             tokens_used=0,
         )

@@ -2,7 +2,6 @@ import logging
 import platform
 import time
 
-import distro
 
 from autogpt.core.configuration import (
     Configurable,
@@ -10,8 +9,7 @@ from autogpt.core.configuration import (
     SystemSettings,
     UserConfigurable,
 )
-from autogpt.core.planning import strategies
-from autogpt.core.planning.base import PromptStrategy
+from autogpt.core.planning.base import BasePromptStrategy,PromptStrategy , PromptStrategiesConfiguration, PlannerConfiguration, PlannerSettings, LanguageModelConfiguration
 from autogpt.core.planning.schema import (
     LanguageModelClassification,
     LanguageModelResponse,
@@ -25,33 +23,6 @@ from autogpt.core.resource.model_providers import (
 from autogpt.core.workspace import Workspace
 
 
-class LanguageModelConfiguration(SystemConfiguration):
-    """Struct for model configuration."""
-
-    model_name: str = UserConfigurable()
-    provider_name: ModelProviderName = UserConfigurable()
-    temperature: float = UserConfigurable()
-
-
-class PromptStrategiesConfiguration(SystemConfiguration):
-    name_and_goals: strategies.NameAndGoalsConfiguration
-    initial_plan: strategies.InitialPlanConfiguration
-    next_ability: strategies.NextAbilityConfiguration
-
-
-class PlannerConfiguration(SystemConfiguration):
-    """Configuration for the Planner subsystem."""
-
-    models: dict[LanguageModelClassification, LanguageModelConfiguration]
-    prompt_strategies: PromptStrategiesConfiguration
-
-
-class PlannerSettings(SystemSettings):
-    """Settings for the Planner subsystem."""
-
-    configuration: PlannerConfiguration
-
-
 class SimplePlanner(Configurable):
     """Manages the agent's planning and goal-setting by constructing language model prompts."""
 
@@ -60,22 +31,32 @@ class SimplePlanner(Configurable):
         description="Manages the agent's planning and goal-setting by constructing language model prompts.",
         configuration=PlannerConfiguration(
             models={
-                LanguageModelClassification.FAST_MODEL: LanguageModelConfiguration(
+                LanguageModelClassification.FAST_MODEL_4K: LanguageModelConfiguration(
                     model_name=OpenAIModelName.GPT3,
                     provider_name=ModelProviderName.OPENAI,
                     temperature=0.9,
                 ),
-                LanguageModelClassification.SMART_MODEL: LanguageModelConfiguration(
+                LanguageModelClassification.FAST_MODEL_16K: LanguageModelConfiguration(
+                    model_name=OpenAIModelName.GPT3_16K,
+                    provider_name=ModelProviderName.OPENAI,
+                    temperature=0.9,
+                ),
+                LanguageModelClassification.FAST_MODEL_FINE_TUNED_4K: LanguageModelConfiguration(
+                    model_name=OpenAIModelName.GPT3_FINE_TUNED,
+                    provider_name=ModelProviderName.OPENAI,
+                    temperature=0.9,
+                ),
+                LanguageModelClassification.SMART_MODEL_8K: LanguageModelConfiguration(
                     model_name=OpenAIModelName.GPT4,
                     provider_name=ModelProviderName.OPENAI,
                     temperature=0.9,
                 ),
+                LanguageModelClassification.SMART_MODEL_32K: LanguageModelConfiguration(
+                    model_name=OpenAIModelName.GPT4_32K,
+                    provider_name=ModelProviderName.OPENAI,
+                    temperature=0.9,
+                ),
             },
-            prompt_strategies=PromptStrategiesConfiguration(
-                name_and_goals=strategies.NameAndGoals.default_configuration,
-                initial_plan=strategies.InitialPlan.default_configuration,
-                next_ability=strategies.NextAbility.default_configuration,
-            ),
         ),
     )
 
@@ -84,59 +65,107 @@ class SimplePlanner(Configurable):
         settings: PlannerSettings,
         logger: logging.Logger,
         model_providers: dict[ModelProviderName, LanguageModelProvider],
+        strategies: dict[str, PromptStrategy],
         workspace: Workspace = None,  # Workspace is not available during bootstrapping.
     ) -> None:
-        self._configuration = settings.configuration
-        self._logger = logger
+        super().__init__(settings, logger)
+        # self._configuration = settings.configuration
+        # self._logger = logger
         self._workspace = workspace
 
         self._providers: dict[LanguageModelClassification, LanguageModelProvider] = {}
         for model, model_config in self._configuration.models.items():
             self._providers[model] = model_providers[model_config.provider_name]
 
-        self._prompt_strategies = {
-            "name_and_goals": strategies.NameAndGoals(
-                **self._configuration.prompt_strategies.name_and_goals.dict()
-            ),
-            "initial_plan": strategies.InitialPlan(
-                **self._configuration.prompt_strategies.initial_plan.dict()
-            ),
-            "next_ability": strategies.NextAbility(
-                **self._configuration.prompt_strategies.next_ability.dict()
-            ),
-        }
+        # self._prompt_strategies = settings.planning.configuration.prompt_strategies 
+        
+        # self._prompt_strategies = strategies
+        # self._prompt_strategies = {
+        #     "name_and_goals": strategies.NameAndGoals(
+        #         **self._configuration.prompt_strategies.name_and_goals.dict()
+        #     ),
+        #     "initial_plan": strategies.InitialPlan(
+        #         **self._configuration.prompt_strategies.initial_plan.dict()
+        #     ),
+        #     "next_ability": strategies.NextAbility(
+        #         **self._configuration.prompt_strategies.next_ability.dict()
+        #     ),
+        # }
 
-    async def decide_name_and_goals(self, user_objective: str) -> LanguageModelResponse:
-        return await self.chat_with_model(
-            self._prompt_strategies["name_and_goals"],
-            user_objective=user_objective,
-        )
+        ##
+        ## REMOVED DEFAULT STRATEGIES
+        ##
 
-    async def make_initial_plan(
-        self,
-        agent_name: str,
-        agent_role: str,
-        agent_goals: list[str],
-        abilities: list[str],
-    ) -> LanguageModelResponse:
-        return await self.chat_with_model(
-            self._prompt_strategies["initial_plan"],
-            agent_name=agent_name,
-            agent_role=agent_role,
-            agent_goals=agent_goals,
-            abilities=abilities,
-        )
+        # default_strategies = {
+        #     "name_and_goals": strategies.NameAndGoals(),
+        #     "initial_plan": strategies.InitialPlan(),
+        #     "next_ability": strategies.NextAbility(),
+        # }
 
-    async def determine_next_ability(
-        self,
-        task: Task,
-        ability_schema: list[dict],
-    ):
-        return await self.chat_with_model(
-            self._prompt_strategies["next_ability"],
-            task=task,
-            ability_schema=ability_schema,
-        )
+
+        # default_strategies = {
+        #     "name_and_goals": strategies.name_and_goals,
+        #     "initial_plan": strategies.initial_plan,
+        #     "next_ability": strategies.next_ability,
+        # }
+
+        # if strategies is not None:
+        #     default_strategies.update(strategies)
+
+        # self._prompt_strategies = default_strategies
+
+        self._prompt_strategies ={}
+        for strategy in strategies : 
+            self._prompt_strategies[strategy.STRATEGY_NAME] = strategy
+
+        logger.debug(f"Planner created with strategies : {self._prompt_strategies}")
+        # self._prompt_strategies = strategies
+
+    async def execute_strategy(self, strategy_name: str, **kwargs) -> LanguageModelResponse:
+        """
+        await simple_planner.execute_strategy('name_and_goals', user_objective='Learn Python')
+        await simple_planner.execute_strategy('initial_plan', agent_name='Alice', agent_role='Student', agent_goals=['Learn Python'], abilities=['coding'])
+        await simple_planner.execute_strategy('initial_plan', agent_name='Alice', agent_role='Student', agent_goal_sentence=['Learn Python'], abilities=['coding'])
+        """
+        if strategy_name not in self._prompt_strategies:
+            raise ValueError(f"Invalid strategy name {strategy_name}")
+
+        prompt_strategy = self._prompt_strategies[strategy_name]
+        return await self.chat_with_model(prompt_strategy, **kwargs)
+    
+    # async def decide_name_and_goals(self, user_objective: str) -> LanguageModelResponse:
+    #     return await self.chat_with_model(
+    #         self._prompt_strategies["name_and_goals"],
+    #         user_objective=user_objective,
+    #     )
+
+    # async def make_initial_plan(
+    #     self,
+    #     agent_name: str,
+    #     agent_role: str,
+    #     agent_goals: list[str],
+    #     agent_goal_sentence: str,
+    #     abilities: list[str],
+    # ) -> LanguageModelResponse:
+    #     return await self.chat_with_model(
+    #         self._prompt_strategies["initial_plan"],
+    #         agent_name=agent_name,
+    #         agent_role=agent_role,
+    #         agent_goals=agent_goals,
+    #         agent_goals=agent_goal_sentence,
+    #         abilities=abilities,
+    #     )
+
+    # async def determine_next_ability(
+    #     self,
+    #     task: Task,
+    #     ability_schema: list[dict],
+    # ):
+    #     return await self.chat_with_model(
+    #         self._prompt_strategies["next_ability"],
+    #         task=task,
+    #         ability_schema=ability_schema,
+    #     )
 
     async def chat_with_model(
         self,
@@ -171,7 +200,8 @@ class SimplePlanner(Configurable):
         }
         return template_kwargs
 
-
+# FIXME : Only import distro when required
+import distro
 def get_os_info() -> str:
     os_name = platform.system()
     os_info = (

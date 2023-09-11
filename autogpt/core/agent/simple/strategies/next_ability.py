@@ -1,11 +1,12 @@
+from logging import Logger 
 from autogpt.core.configuration import SystemConfiguration, UserConfigurable
-from autogpt.core.planning.base import PromptStrategy
+from autogpt.core.planning.base import BasePromptStrategy,PromptStrategy
 from autogpt.core.planning.schema import (
     LanguageModelClassification,
     LanguageModelPrompt,
     Task,
 )
-from autogpt.core.planning.strategies.utils import json_loads, to_numbered_list
+from autogpt.core.planning.utils import json_loads, to_numbered_list
 from autogpt.core.resource.model_providers import (
     LanguageModelFunction,
     LanguageModelMessage,
@@ -21,7 +22,8 @@ class NextAbilityConfiguration(SystemConfiguration):
     additional_ability_arguments: dict = UserConfigurable()
 
 
-class NextAbility(PromptStrategy):
+class NextAbility(BasePromptStrategy):
+    STRATEGY_NAME = 'next_ability'
     DEFAULT_SYSTEM_PROMPT_TEMPLATE = "System Info:\n{system_info}"
 
     DEFAULT_SYSTEM_INFO = [
@@ -62,7 +64,7 @@ class NextAbility(PromptStrategy):
     }
 
     default_configuration = NextAbilityConfiguration(
-        model_classification=LanguageModelClassification.SMART_MODEL,
+        model_classification=LanguageModelClassification.SMART_MODEL_8K,
         system_prompt_template=DEFAULT_SYSTEM_PROMPT_TEMPLATE,
         system_info=DEFAULT_SYSTEM_INFO,
         user_prompt_template=DEFAULT_USER_PROMPT_TEMPLATE,
@@ -71,21 +73,19 @@ class NextAbility(PromptStrategy):
 
     def __init__(
         self,
+        logger : Logger,
         model_classification: LanguageModelClassification,
         system_prompt_template: str,
         system_info: list[str],
         user_prompt_template: str,
         additional_ability_arguments: dict,
     ):
+        self._logger = logger 
         self._model_classification = model_classification
         self._system_prompt_template = system_prompt_template
         self._system_info = system_info
         self._user_prompt_template = user_prompt_template
         self._additional_ability_arguments = additional_ability_arguments
-
-    @property
-    def model_classification(self) -> LanguageModelClassification:
-        return self._model_classification
 
     def build_prompt(
         self,
@@ -148,7 +148,7 @@ class NextAbility(PromptStrategy):
             content=self._user_prompt_template.format(**template_kwargs),
         )
         functions = [
-            LanguageModelFunction(json_schema=ability) for ability in ability_schema
+            LanguageModelFunction(ability) for ability in ability_schema
         ]
 
         return LanguageModelPrompt(

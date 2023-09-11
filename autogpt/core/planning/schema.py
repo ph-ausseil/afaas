@@ -19,13 +19,17 @@ class LanguageModelClassification(str, enum.Enum):
 
     """
 
-    FAST_MODEL: str = "fast_model"
-    SMART_MODEL: str = "smart_model"
+    FAST_MODEL_4K: str = "FAST_MODEL_4K"
+    FAST_MODEL_16K: str = "FAST_MODEL_16K"
+    FAST_MODEL_FINE_TUNED_4K: str = "FAST_MODEL_FINE_TUNED_4K"
+    SMART_MODEL_8K: str = "SMART_MODEL_8K"
+    SMART_MODEL_32K: str = "SMART_MODEL_32K"
 
 
 class LanguageModelPrompt(BaseModel):
     messages: list[LanguageModelMessage]
     functions: list[LanguageModelFunction] = Field(default_factory=list)
+    function_call : str = 'auto'
 
     def __str__(self):
         return "\n\n".join([f"{m.role.value}: {m.content}" for m in self.messages])
