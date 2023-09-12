@@ -169,6 +169,8 @@ class OpenAIProvider(
         self._create_completion = retry_handler(_create_completion)
         self._create_embedding = retry_handler(_create_embedding)
 
+        self._func_call_fails_count = 0
+
     def get_token_limit(self, model_name: str) -> int:
         """Get the token limit for a given model."""
         return OPEN_AI_MODELS[model_name].max_tokens
@@ -187,17 +189,45 @@ class OpenAIProvider(
     ) -> LanguageModelProviderModelResponse:
         """Create a completion using the OpenAI API."""
         completion_kwargs = self._get_completion_kwargs(model_name, functions, **kwargs)
-        response = await self._create_completion(
-            messages=model_prompt,
-            **completion_kwargs,
-        )
-        response_args = {
-            "model_info": OPEN_AI_LANGUAGE_MODELS[model_name],
-            "prompt_tokens_used": response.usage.prompt_tokens,
-            "completion_tokens_used": response.usage.completion_tokens,
-        }
 
-        message_dict = response.choices[0].message.to_dict_recursive()
+        try : 
+            response = await self._create_completion(
+                messages=model_prompt,
+                **completion_kwargs,
+            )
+ 
+            response_args = {
+                "model_info": OPEN_AI_LANGUAGE_MODELS[model_name],
+                "prompt_tokens_used": response.usage.prompt_tokens,
+                "completion_tokens_used": response.usage.completion_tokens,
+            }
+
+            message_dict = response.choices[0].message.to_dict_recursive()
+            
+            if functions is not None and  not "function_call" in message_dict :
+                self._logger.error(f"attempt number {self._func_call_fails_count +1} : Function Call was expected  ")
+                raise Exception ('Function Call was Expected')
+        except :
+            if self._func_call_fails_count <= 3 :
+                self._func_call_fails_count += 1
+                return await self.create_language_completion(
+
+                model_prompt = model_prompt,
+                functions = functions,
+                model_name  = model_name,
+                completion_parser = completion_parser,
+                **kwargs,
+                ) 
+            else : 
+                # FIXME : Provide self improvement mechanism 
+                # TODO : Provide self improvement mechanism
+                # NOTE : Provide self improvement mechanism
+                pass
+            
+            message_dict["function_call"] = None
+            response.choices[0].message ["function_call"] = None
+
+        self._func_call_fails_count = 0
         if not "function_call" in message_dict : 
             print('Warning : No "function_call" in message_dict')
             message_dict["function_call"] = None
