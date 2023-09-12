@@ -25,118 +25,143 @@ class RefineUserContext(BasePromptStrategy):
     SYSTEM_PROMPT_INIT = (
 "### Instruction :\n\n"
 #"You are an AI tasked with assisting a user in formulating their requirements to achieve its goal .\n\n"
-# "You are an AI tasked with assisting a user in formulating their requirements.\n\n"
+"You are an AI tasked with assisting a user in expressing their requirements."
+"To achieve this task effectively, you are provided with a set of functions :{functions_list}.\n\n"
+
+"Use these functions at your disposal to guide your interactions and responses.\n\n"
+
 # "To achieve effective assistance, it is essential that the goal provided by the user adheres to the following principles (**COCE Framework**):\n\n"
-"To achieve effective assistance, it is essential that the requirements provided by the user adheres to the following principles (**COCE Framework**):\n\n"
+"To ensure the user's requirements adhere to our standards, follow the **COCE Framework**:\n\n"
 " - **Comprehensible**: Your AI needs to be able to understand the goal, even within its limited context window. Minimize ambiguity, and use specific terminologies or semantics that the AI can comprehend.\n"
 " - **Outcome-driven**: Focus on the end results or macro-goals that the AI should achieve, rather than measurable micro-goals or the steps that need to be taken to get there.\n"
 " - **Context-aware**: The goal should be aware of and clearly define the context in which the AI is expected to function. This is especially important if the AI has a limited understanding of the world or the domain in which it operates.\n"
 " - **Explicitness**: The goal must explicitly state what the AI needs to do. There should be no hidden assumptions or implied requirements. Everything that the AI needs to know to complete the goal should be explicitly stated.\n\n"
 "Your primary role is to assist the user in adhering to these principles and guide them through the process of formulating requirements that meet these criteria. Please use your capabilities to ensure that the user's goal aligns with these principles by generating questions that guide him closer to our expectations in term of user requirement expression. \n\n"
-"### Example:\n\n"
-"Imagine a user approaches you with the following request: \"I want to plan a vacation.\" Your task is to assist the user in specifying their vacation plans while adhering to the principles of comprehensibility, outcome-driven focus, context-awareness, and explicitness as outlined above.\n"
-"Feel free to adapt this framework to suit the specific needs of your project and provide additional guidance as necessary.\n\n")
 
-    NEW_SYSTEM_PROMPT = ("###  User's Requirements:\n"
-#"So far the user have expressed this requirements :\n"
-"\"{user_response}\"\n\n"
-)
-    NEW_ASSISTANT_PROMPT = "How can I help you ?\n"
-    NEW_USER_PROMPT = "These are my requirement : {user_response}\n"
+# """Your main objective is to guide the user to express their requirements that align with the COCE Framework. To do so:
+# 1. Use the user's previous requirements and their most recent answer to inform your questions and responses.
+# 2. Stay true to the user's expressions and avoid making suppositions.
+# 3. Aim to reformulate goals to align as closely as possible with the COCE Framework, again without making assumptions.
+# 4. Formulate questions that will extract more detailed and explicit information, guiding the user to provide responses that fit within the COCE Framework.\n\n"""
 
+"""### Explicit Steps for Guidance:
+1. **Utilize User's Input**: ALWAYS use the user's prior requirements and their recent responses to inform your responses.
+2. **No Assumptions**: NEVER make assumptions. Always align with the user's original expressions.
+3. **Adhere to COCE**: Your reformulations, questions, and interactions should aim to get the user's requirements to fit the COCE Framework.
+4. **Use Functions**: You MUST use the provided functions: refine_goal, request_second_confirmation, and validate_goal in your interactions.
 
-    REFINED_ONCE_SYSTEM_PROMPT = ("### User's Journey:\n"
-#"So far the user have expressed these requirements :\n"
-"\"{user_response}\"\n\n"
-"- **Your questions**:\n" 
-"{last_questions}\n"
-"- **User's Response**: \n"
-"{user_response}\n\n"
+It's crucial to use the user's input, make no assumptions, align with COCE, and use the provided functions. Prioritize the user's input and remain faithful to the COCE principles."""
 )
 
-    REFINED_SYSTEM_PROMPT = ("### User's Journey:\n"
-#"So far the user have expressed these requirements :\n"
-"'{user_last_goal}'\n\n"
-"- **Your full history of Questions**:\n" 
-"'{questions_history_full}\n"
-"- **Your Last Questions**:\n" 
-"{last_questions}\n"
-"- **User's Last Response**:\n"
-"{user_response}\n\n"
-)
+#     NEW_SYSTEM_PROMPT = ("###  User's Requirements:\n"
+# #"So far the user have expressed this requirements :\n"
+# "\"{user_response}\"\n\n"
+# )
+    NEW_SYSTEM_PROMPT = ''
+    NEW_ASSISTANT_PROMPT = "What are your requirements ?\n"
+    #NEW_USER_PROMPT = "These are my requirement : \"{user_response}\"\n"
+    NEW_USER_PROMPT = "{user_response}"
+
+
+#     REFINED_ONCE_SYSTEM_PROMPT = ("### User's Journey:\n"
+# #"So far the user have expressed these requirements :\n"
+# "\"{user_response}\"\n\n"
+# "- **Your questions**:\n" 
+# "{last_questions}\n"
+# "- **User's Response**: \n"
+# "{user_response}\n\n"
+# )
+
+#     REFINED_SYSTEM_PROMPT = ("### User's Journey:\n"
+# #"So far the user have expressed these requirements :\n"
+# "'{user_last_goal}'\n\n"
+# "- **Your full history of Questions**:\n" 
+# "'{questions_history_full}\n"
+# "- **Your Last Questions**:\n" 
+# "{last_questions}\n"
+# "- **User's Last Response**:\n"
+# "{user_response}\n\n"
+# )
+
+
     #     REFINED_SYSTEM_PROMPT = ("### User's Journey:\n"
     # "So far the user have expressed these requirements :\n"
     # "'{user_last_goal}'\n")
-    # REFINED_ASSISTANT_PROMPT = "{last_questions}"
-    # REFINED_USER_PROMPT = "{user_response}"
+    REFINED_SYSTEM_PROMPT = ''
+    REFINED_USER_PROMPT_A =  "{user_last_goal}"
+    REFINED_ASSISTANT_PROMPT = "{last_questions}"
+    REFINED_USER_PROMPT_B = "{user_response}"
 
-    SYSTEM_PROMPT_FOOTER = ("Guide the user closer to a refined goal by referencing the above journey and adhering to the **COCE Framework**. Provide actionable insights and questions.\n\n"    
-"### Note:\n"
-"This is an iterative process. Your generated `reformulated_goal` will serve as the user's next goal and the questions will gather further details from the user.\n"
-)
+#     SYSTEM_PROMPT_FOOTER = ("Guide the user closer to a refined goal by referencing the above journey and adhering to the **COCE Framework**. Provide actionable insights and questions.\n\n"    
+# "### Note:\n"
+# "This is an iterative process. Your generated `reformulated_goal` will serve as the user's next goal and the questions will gather further details from the user.\n"
+# )
+    SYSTEM_PROMPT_FOOTER = ''
     
-    SYSTEM_PROMPT_NOTICE = "**IMPORTANT** : YOU MUST USE FUNCTIONS AT YOUR DISPOSAL"
+    # SYSTEM_PROMPT_NOTICE = "**IMPORTANT** : YOU MUST USE FUNCTIONS AT YOUR DISPOSAL"
+    SYSTEM_PROMPT_NOTICE = ''
     
 
 
 
     FUNCTION_REFINE_USER_CONTEXT  = {
-            "name": "refine_goal",
-            "description": "Assists users in refining their requirements using the COCE Framework",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "reformulated_goal": {
-                        "type": "string",
-                        "description": f"Reformulated user's requirements expressed in {CONTEXT_MIN_TOKENS} to {CONTEXT_MAX_TOKENS} words, formatted preferably using Markdown. This version **WARNING** It **must** stay true to the user's intent and user requirements."
-                        # f"A reformulated version of the user's requirements that should follow the COCE Framework if possible.  This should be between {CONTEXT_MIN_TOKENS} and {CONTEXT_MAX_TOKENS} words, formatted preferably using Markdown."
-                    },
-                    "questions": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "description": "List of one to five questions designed extract more detailed and explicit information from the user."
-                    }
-                },
-                "required": ["reformulated_goal", "questions"]
+    "name": "refine_requirements",
+    "description": "This function refines and clarifies user requirements by reformulating them and generating pertinent questions to extract more detailed and explicit information from the user, all while adhering to the COCE Framework.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "reformulated_goal": {
+                "type": "string",
+                "description": f"Users requirements as interpreted from their initial expressed requirements and their most recent answer, making sure it adheres to the COCE Framework and remains true to the user's intent. It should be formatted using Markdown and expressed in {CONTEXT_MIN_TOKENS} to {CONTEXT_MAX_TOKENS} words."
             },
-        }
+            "questions": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "A list of one to five questions designed to extract more detailed and explicit information from the user, guiding them towards a clearer expression of their requirements while staying within the COCE Framework."
+            }
+        },
+        "required": ["reformulated_goal", "questions"]
+    }
+}
     
 
-    FUNCTION_VALIDATE_GOAL = {
-        "name": "validate_goal",
-        "description": "Validate requirements when the users request it. Typically activated by user inputs like 'ok', 'yes', 'next', or 'I'm done with it'.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "goal_list": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "description": "User requirements structured as list"
-                }
-            },
-        "required": ["goal_list"]
-        }
-    }
+
 
     FUNCTION_REQUEST_SECOND_CONFIRMATION = {
-        "name": "request_second_confirmation",
-        "description": "Ask the user to confirm he validates the requirements yes/no question to confirm their decision.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "confirmation_question": {
-                    "type": "string",
-                    "description": "A simple yes/no question crafted by to confirm the user's intent. It should be phrased in a way that encourages the user to either affirm their intent validate the current goals with a 'yes' or to reconsider with a 'no'."
-                }
-            },
-            "required": ["confirmation_question"]
-        }
+    "name": "request_second_confirmation",
+    "description": "Double-check the user's intent to end the iterative requirement refining process. It poses a simple yes/no question to ensure that the user truly wants to conclude refining and proceed to the validation step.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "confirmation_question": {
+                "type": "string",
+                "description": "A question aimed at reconfirming the user's intention to finalize their requirements. The question should be phrased in a manner that lets the user easily signify continuation ('no') or conclusion ('yes') of the refining process."
+            }
+        },
+        "required": ["confirmation_question"]
     }
+}
 
+
+    FUNCTION_VALIDATE_GOAL = {
+    "name": "validate_goal",
+    "description": "Seals the iterative process of refining requirements. It gets activated when the user communicates satisfaction with the requirements, signaling readiness to finalize the current list of goals.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "goal_list": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "The curated list of user requirements that emerged from prior interactions. Each entry in the list stands for a distinct requirement or aim expressed by the user."
+            }
+        },
+        "required": ["goal_list"]
+    }
+}
 
     default_configuration = RefineUserContextConfiguration(
         model_classification=LanguageModelClassification.FAST_MODEL_4K,
@@ -174,17 +199,40 @@ class RefineUserContext(BasePromptStrategy):
         Re =LanguageModelFunction(
             **RefineUserContext.FUNCTION_REFINE_USER_CONTEXT,
         )
-        Se= LanguageModelFunction(
-            **RefineUserContext.FUNCTION_REQUEST_SECOND_CONFIRMATION,
-        )
         Va =LanguageModelFunction(
             **RefineUserContext.FUNCTION_VALIDATE_GOAL,
         )
-        strategy_functions =  [Re,Se ,Va]
+        Se= LanguageModelFunction(
+            **RefineUserContext.FUNCTION_REQUEST_SECOND_CONFIRMATION,
+        )
+        strategy_functions =  [Re ,Va,Se]
         
         #
         # Step 2 A : Build the Sytem Promp
         #
+
+        # NEW 
+        first_system_message = self.SYSTEM_PROMPT_INIT
+        first_system_message += self.SYSTEM_PROMPT_FOOTER
+        #first_assistant_message = self.NEW_ASSISTANT_PROMPT
+        first_user_message = self.NEW_USER_PROMPT
+        #second_system_message = self.SYSTEM_PROMPT_NOTICE
+        # #second_assistant_message = "Ok ! I will only answer using one of this functions : \n{functions_list}".format(
+        #         functions_list = to_numbered_list([item.name for item in strategy_functions])
+        #         )
+        
+        # REFINED 
+        first_system_message = self.SYSTEM_PROMPT_INIT
+        first_system_message += self.SYSTEM_PROMPT_FOOTER
+        first_user_message = self.NEW_USER_PROMPT
+        first_assistant_message = self.REFINED_ASSISTANT_PROMPT
+        first_assistant_message = self.REFINED_USER_PROMPT
+        # second_system_message = self.SYSTEM_PROMPT_NOTICE
+        # second_assistant_message = "Ok ! I will only answer using one of this functions :\n{functions_list}".format(
+        #         functions_list = to_numbered_list([item.name for item in strategy_functions])
+        #         )
+
+
         self._system_prompt_message = self.SYSTEM_PROMPT_INIT
         if not self._last_questions or not self._user_last_goal:
             self._system_prompt_message += self.NEW_SYSTEM_PROMPT
@@ -194,6 +242,8 @@ class RefineUserContext(BasePromptStrategy):
             else : 
                 self._system_prompt_message += self.REFINED_ONCE_SYSTEM_PROMPT
         self._system_prompt_message += self.SYSTEM_PROMPT_FOOTER
+
+
 
         system_message = LanguageModelMessage(
             role=MessageRole.SYSTEM,
@@ -216,9 +266,7 @@ class RefineUserContext(BasePromptStrategy):
 
         assistant_acknowledgement = LanguageModelMessage(
             role=MessageRole.ASSISTANT,
-            content= "Ok ! I will only answer using one of this functions : \n {functions_list}".format(
-                functions_list = to_numbered_list([item.name for item in strategy_functions])
-                )        
+            content= second_assistant_message    
             )
 
         messages = [system_message, system_warning, assistant_acknowledgement]
@@ -230,7 +278,7 @@ class RefineUserContext(BasePromptStrategy):
         # NOTE : Avoid Alucinations 
         function_call = 'auto'
         if self._count == 0 : 
-           function_call =  'refine_goal'
+           function_call =  'refine_requirements'
 
         prompt = LanguageModelPrompt(
             #messages=[system_message, user_message],
@@ -267,7 +315,7 @@ class RefineUserContext(BasePromptStrategy):
         # TODO : Type Questions in a Class ?
         #
         save_questions = False 
-        if response_content["function_call"]["name"] == "refine_goal":
+        if response_content["function_call"]["name"] == "refine_requirements":
 
             questions_with_uuid = [{"id": "Q" + str(uuid.uuid4()), "question": q} for q in parsed_response["questions"]]
             save_questions = True 
