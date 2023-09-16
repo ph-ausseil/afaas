@@ -1,9 +1,18 @@
 """
 /agents (GET): Returns a list of all agents.
+AP alias /agent/tasks (GET): Returns a list of all agents.
     => Need Agent (Parent) to define this properties : agent_id, client_facing, status
+
+    
 /agent (POST): Create a new agent.
+AP alias /agent/tasks (POST): Create a new agent.
     => TODO : Save an Agent (or SimpleAgent) in the workspace (can't find the method still reading the code)
+
+    
 /agent/{agent_id} (GET): Get an agent from its ID & return an agent.
+AP alias /agent/tasks/{agent_id} (GET): Get an agent from its ID & return an agent.
+
+
 /agent/{agent_id}/start (POST): Send a message to an agent.
 /agent/{agent_id}/message (POST): Sends a message to the agent.
 /agent/{agent_id}/messagehistory (GET): Get message history for an agent.
@@ -36,6 +45,7 @@ router = APIRouter()
 
 
 @router.get("/agents")
+@router.get("/agent/tasks")
 async def get_agents(request: Request):
     """
     Description: Returns a list of all agents.
@@ -69,6 +79,7 @@ async def get_agents(request: Request):
 
 
 @router.post("/agent")
+@router.post("/agent/tasks")
 async def create_agent(request: Request):
     """
     Create a new agent.
@@ -81,6 +92,7 @@ async def create_agent(request: Request):
 
 
 @router.get("/agent/{agent_id}")
+@router.get("/agent/tasks/{agent_id}")
 async def get_agent_by_id(request: Request, agent_id: str):
     """
     Get an agent from it's ID & return an agent
