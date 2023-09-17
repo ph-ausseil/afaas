@@ -1,3 +1,6 @@
+projects
+docs/tech/
+
 ## Original ignores
 prv*
 autogpt/keys.py
@@ -6,6 +9,7 @@ auto_gpt_workspace/*
 *.mpeg
 prv*
 .env
+.env-*
 azure.yaml
 ai_settings.yaml
 last_run_ai_settings.yaml
