@@ -43,8 +43,9 @@ class SimpleAbilityRegistry(AbilityRegistry, Configurable):
         workspace: Workspace,
         model_providers: dict[ModelProviderName, LanguageModelProvider],
     ):
-        self._configuration = settings.configuration
-        self._logger = logger
+        super().__init__(settings, logger)
+        # self._configuration = settings.configuration
+        # self._logger = logger
         self._memory = memory
         self._workspace = workspace
         self._model_providers = model_providers

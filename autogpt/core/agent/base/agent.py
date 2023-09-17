@@ -4,7 +4,7 @@ import abc
 import logging
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, List , Dict
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, List , Dict, Tuple
 
 if TYPE_CHECKING:
     from autogpt.core.agent.base.loop import (  # Import only where it's needed
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
         BaseLoopHook,
     )
 
-from autogpt.core.agent.base.loop import (  # Import only where it's needed
+from autogpt.core.agent.base.loop import ( 
         BaseLoopHook,
     )
 
@@ -64,31 +64,27 @@ class Agent(Configurable , BaseAgent):
         self,
         settings: BaseAgentSystemSettings,
         logger: logging.Logger,
-        ability_registry: AbilityRegistry,
         memory: Memory,
         workspace: Workspace,
         user_id: uuid.UUID,
         agent_id: uuid.UUID = None,
     ) -> Any:
-        logger.info(f"Agent.__init__ : self.__class__ = {str(self.__class__)}\n")
-
         
+        self._settings = settings
         self._configuration = settings.configuration
         self._logger = logger
-        self._ability_registry = ability_registry
         self._memory = memory
         self._workspace = workspace
 
         self.user_id = user_id
         self.agent_id = agent_id
         
-        # TODO : Move to Configurable class ?
-        self.agent_class = f"{self.__class__.__module__}.{self.__class__.__name__}"
+        # NOTE : Move to Configurable class ?
+        self.agent_class = f"{self.__class__.__name__}"
 
-        logger.debug(f"Agent.__init__ : self = {str(self)}\n")
-        return super().__init__(
-            self, settings, logger, ability_registry, memory, workspace
-        )
+        # return super().__init__(
+        #     self, settings, logger, ability_registry, memory, workspace
+        # )
 
 
     def add_hook(self, hook: BaseLoopHook, hook_id: uuid.UUID = uuid.uuid4()):
@@ -159,15 +155,16 @@ class Agent(Configurable , BaseAgent):
             self._loop._is_running = False
 
     @classmethod
-    @abc.abstractmethod
     def get_agent_from_settings(
         cls,
         agent_settings: BaseAgentSettings,
         logger: logging.Logger,
     ) -> Agent:
 
-        if not isinstance(agent_settings, BaseAgentSettings):
-            agent_settings: BaseAgentSettings = agent_settings
+        # if not isinstance(agent_settings, BaseAgentSettings):
+        #     agent_settings: BaseAgentSettings = agent_settings
+        if not isinstance(agent_settings, cls.CLASS_SETTINGS):
+            agent_settings = cls.CLASS_SETTINGS.parse_obj(agent_settings)
         agent_args = {}
 
         agent_args['user_id'] = agent_settings.user_id
@@ -181,6 +178,35 @@ class Agent(Configurable , BaseAgent):
         
         memory_settings = agent_settings.memory
         agent_args["memory"] =  Memory.get_adapter(memory_settings= memory_settings, logger=logger)
+
+        from importlib import import_module
+        module_path, class_name = agent_settings._type_.rsplit('.', 1)
+        module = import_module(module_path)
+        agent_class = getattr(module, class_name)
+
+        
+        agent_settings, agent_args = agent_class._get_agent_from_settings(
+            agent_settings = agent_settings,
+            agent_args = agent_args,
+            logger = logger
+        )
+
+        agent = agent_class(**agent_args)
+
+        items = agent_settings.dict().items()
+        for key, value in items:
+            if key not in agent_class.CLASS_SETTINGS.Config.default_exclude :
+                setattr(agent, key, value)
+
+        return agent
+        
+    
+    @classmethod
+    @abc.abstractmethod
+    def _get_agent_from_settings(cls,               
+            agent_settings : BaseAgentSettings,
+            agent_args : list, 
+            logger : logging.Logger ) -> Tuple[BaseAgentSettings, list]:
 
         return agent_settings, agent_args
 
@@ -212,11 +238,15 @@ class Agent(Configurable , BaseAgent):
         """Compile the user's configuration with the defaults."""
         logger.debug("Processing agent system configuration.")
         logger.debug("compile_settings" + str(cls))
-        configuration_dict = {
-            "agent": cls.build_agent_configuration(
+        configuration_dict = user_configuration
+        configuration_dict['agent'] = cls.build_agent_configuration(
                 user_configuration.get("agent", {})
-            ).dict(),
-        }
+            ).dict()
+        # configuration_dict = {
+        #     "agent": cls.build_agent_configuration(
+        #         user_configuration.get("agent", {})
+        #     ).dict(),
+        # }
 
         system_locations = configuration_dict["agent"]["configuration"]["systems"]
 
@@ -225,8 +255,9 @@ class Agent(Configurable , BaseAgent):
             if system_location is not None and not isinstance(system_location, uuid.UUID):
                 logger.debug(f"Compiling configuration for system {system_name}")
                 system_class = SimplePluginService.get_plugin(system_location)
+                system_configuration = user_configuration.get(system_name, {})
                 configuration_dict[system_name] = system_class.build_agent_configuration(
-                    user_configuration.get(system_name, {})
+                    system_configuration
                 ).dict()
             else :
                 configuration_dict[system_name] = system_location
@@ -242,33 +273,41 @@ class Agent(Configurable , BaseAgent):
 
     @classmethod
     def create_agent(cls,
-        agent_settings: BaseAgentSettings,
-        logger: logging.Logger,) -> uuid.UUID:
+        agent_settings : BaseAgentSettings,
+        logger : logging.Logger,
+        ) -> BaseAgent:
         """Create a new agent."""
-        agent_id = cls.create_agent_in_memory(agent_settings=agent_settings, 
+        logger.info(f"Starting creation of {cls.__name__}")
+        logger.debug( f"{cls.__module__}.{cls.__name__}")
+
+        if not isinstance(agent_settings, cls.CLASS_SETTINGS):
+            agent_settings = cls.CLASS_SETTINGS.parse_obj(agent_settings)
+
+        agent_id = cls._create_agent_in_memory(agent_settings=agent_settings, 
                                               logger=logger,
                                               user_id = agent_settings.user_id)
+        
+        logger.info(f"{cls.__name__} id #{agent_id} created in memory. Now, finalizing creation...")
+        
+        # Adding agent_id to the settings
         agent_settings.agent.agent_id = agent_id
         agent_settings.agent_id = agent_id
-        cls._create_workspace(agent_settings=agent_settings, logger=logger)
-        return agent_id
 
-    
+        # Processing to custom treatments
+        cls._create_agent_custom_treatment(agent_settings=agent_settings, logger=logger)
+        
+        logger.debug(agent_settings.__dict__)
+        logger.info(f"Created Agent ({cls}) with ID {agent_id}")
+
+        agent = cls.get_agent_from_settings(
+            agent_settings=agent_settings,
+            logger=logger,
+        )
+
+        return agent
+
     @classmethod
-    def _create_workspace(
-        cls,
-        agent_settings: BaseAgentSettings,
-        logger: logging.Logger,
-    ):
-        from autogpt.core.workspace import SimpleWorkspace
-        return SimpleWorkspace.create_workspace(
-            user_id=agent_settings.user_id, 
-            agent_id=agent_settings.agent_id,  
-            settings = agent_settings, 
-            logger=logger)
-    
-    @classmethod
-    def create_agent_in_memory(
+    def _create_agent_in_memory(
         cls,
         agent_settings: BaseAgentSettings,
         logger: logging.Logger,
@@ -316,9 +355,9 @@ class Agent(Configurable , BaseAgent):
         *args,
         **kwargs,
     ):
-        logger.debug("\ncls._get_system_instance : " + str(cls))
-        logger.debug("\n_get_system_instance agent_settings: " + str(agent_settings))
-        logger.debug("\n_get_system_instance system_name: " + str(system_name))
+        #logger.debug("\ncls._get_system_instance : " + str(cls))
+        #logger.debug("\n_get_system_instance agent_settings: " + str(agent_settings))
+        #logger.debug("\n_get_system_instance system_name: " + str(system_name))
         system_locations = agent_settings.agent.configuration.systems.dict()
 
         system_settings = getattr(agent_settings, system_name)
@@ -331,6 +370,66 @@ class Agent(Configurable , BaseAgent):
         )
         return system_instance
 
+
+    ################################################################################
+    ################################ DB INTERACTIONS ################################
+    ################################################################################
+    
+    @classmethod
+    def get_agentsetting_list_from_memory(self, user_id: uuid.UUID, logger: logging.Logger ) -> list[BaseAgentSettings]:
+        from autogpt.core.memory.base import (
+            Memory,
+            MemoryConfig,
+            MemorySettings,
+        )
+        from autogpt.core.memory.table.base import AgentsTable, BaseTable
+        """Warning !!!
+        Returns a list of agent settings not a list of agent
+
+        Returns:
+            /
+        """
+        
+        memory_settings = MemorySettings(configuration=MemoryConfig())
+
+        memory = Memory.get_adapter(memory_settings= memory_settings, logger=logger)
+        agent_table : AgentsTable  =memory.get_table("agents")
+       
+        filter = BaseTable.FilterDict( {
+                                        "user_id" : 
+                                       [BaseTable.FilterItem(value=str(user_id), operator= BaseTable.Operators.EQUAL_TO)], 
+                                       "agent_class" : 
+                                       [BaseTable.FilterItem(value=str(self.__name__), operator= BaseTable.Operators.EQUAL_TO)]
+                                       } 
+                                    )
+        agent_list = agent_table.list(filter = filter)
+        return agent_list
+   
+    @classmethod
+    def get_agent_from_memory(cls, 
+                              agent_settings : BaseAgentSettings, 
+                              agent_id: uuid.UUID, 
+                              user_id: uuid.UUID, 
+                              logger: logging.Logger ) -> Agent:
+        from autogpt.core.memory.base import (
+            Memory,
+        )
+        from autogpt.core.memory.table.base import AgentsTable
+
+        # memory_settings = MemorySettings(configuration=agent_settings.memory)
+        memory_settings = agent_settings.memory
+
+        memory = Memory.get_adapter(memory_settings= memory_settings, logger=logger)
+        agent_table : AgentsTable  = memory.get_table("agents" )
+        agent = agent_table.get(agent_id= str(agent_id), user_id=str(user_id))
+        
+        if not agent :
+            return None
+        agent = cls.get_agent_from_settings(
+            agent_settings=agent_settings,
+            logger=logger,
+        )
+        return agent
 
 def _prune_empty_dicts(d: dict) -> dict:
     """

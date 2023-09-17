@@ -111,6 +111,8 @@ OPEN_AI_MODELS = {
 
 class OpenAIConfiguration(SystemConfiguration):
     retries_per_request: int = UserConfigurable()
+    maximum_retry = 1
+    maximum_retry_before_default_function = 1
 
 
 class OpenAIModelProviderBudget(ModelProviderBudget):
@@ -185,11 +187,14 @@ class OpenAIProvider(
         functions: list[LanguageModelFunction],
         model_name: OpenAIModelName,
         completion_parser: Callable[[dict], dict],
+        function_call : str,
+        default_function_call : str, # This one would be called after 3 failed attemps(cf : try/catch block)
         **kwargs,
     ) -> LanguageModelProviderModelResponse:
         """Create a completion using the OpenAI API."""
-        completion_kwargs = self._get_completion_kwargs(model_name, functions, **kwargs)
 
+        completion_kwargs = self._get_completion_kwargs(model_name, functions,  **kwargs)
+        completion_kwargs['function_call'] = function_call
         try : 
             response = await self._create_completion(
                 messages=model_prompt,
@@ -205,36 +210,48 @@ class OpenAIProvider(
             message_dict = response.choices[0].message.to_dict_recursive()
             
             if functions is not None and  not "function_call" in message_dict :
-                self._logger.error(f"attempt number {self._func_call_fails_count +1} : Function Call was expected  ")
-                raise Exception ('Function Call was Expected')
+                self._logger.error(f"Attempt number {self._func_call_fails_count + 1} : Function Call was expected  ")
+                raise Exception('function_call was expected')
         except :
-            if self._func_call_fails_count <= 3 :
-                self._func_call_fails_count += 1
-                return await self.create_language_completion(
+            if self._func_call_fails_count <= self._configuration.maximum_retry :
+                if self._func_call_fails_count >= self._configuration.maximum_retry_before_default_function : 
+                    completion_kwargs['function_call'] = default_function_call
+                else :
+                    if 'function_call' not in completion_kwargs :
+                        completion_kwargs['function_call'] = 'auto'
+                        
+                if 'default_function_call' not in completion_kwargs :
+                    completion_kwargs['default_function_call'] = default_function_call
 
+                self._func_call_fails_count += 1                    
+                return  await self.create_language_completion(
                 model_prompt = model_prompt,
-                functions = functions,
+                #functions = functions,
                 model_name  = model_name,
                 completion_parser = completion_parser,
-                **kwargs,
+                **completion_kwargs,
                 ) 
+                
             else : 
                 # FIXME : Provide self improvement mechanism 
                 # TODO : Provide self improvement mechanism
                 # NOTE : Provide self improvement mechanism
+
+                # NOTE : In any case leave these notes as this block may also serve to automaticaly generate bug report on a bug tracking platform (if a users allows to share this kind of data)
                 pass
             
             message_dict["function_call"] = None
             response.choices[0].message ["function_call"] = None
 
         self._func_call_fails_count = 0
-        if not "function_call" in message_dict : 
-            print('Warning : No "function_call" in message_dict')
-            message_dict["function_call"] = None
-            response.choices[0].message ["function_call"] = None
+        # if not "function_call" in message_dict : 
+        #     print('Warning : No "function_call" in message_dict')
+        #     message_dict["function_call"] = None
+        #     response.choices[0].message ["function_call"] = None
+        
         parsed_response = completion_parser(
-                message_dict
-            )
+                 message_dict
+             )
         response = LanguageModelProviderModelResponse(
             content=parsed_response, **response_args
         )
@@ -348,6 +365,8 @@ async def _create_completion(
     messages = [message.dict() for message in messages]
     if "functions" in kwargs:
          kwargs["functions"] = [function.dict() for function in kwargs["functions"]]
+    if kwargs["function_call"] != 'auto' :
+        kwargs["function_call"] = {'name' : kwargs["function_call"] }
     return await openai.ChatCompletion.acreate(
         messages=messages,
         **kwargs,

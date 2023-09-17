@@ -249,6 +249,7 @@ class LanguageModelProvider(ModelProvider):
         functions: list[LanguageModelFunction],
         model_name: str,
         completion_parser: Callable[[dict], dict],
+        function_call : str,
         **kwargs,
     ) -> LanguageModelProviderModelResponse:
         ...

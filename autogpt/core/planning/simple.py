@@ -188,6 +188,8 @@ class SimplePlanner(Configurable):
             functions=prompt.functions,
             **model_configuration,
             completion_parser=prompt_strategy.parse_response_content,
+            function_call = prompt.function_call,
+            default_function_call = prompt.default_function_call
         )
         return LanguageModelResponse.parse_obj(response.dict())
 

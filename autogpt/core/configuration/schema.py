@@ -1,6 +1,7 @@
 import abc
 import typing
 from typing import Any, Generic, TypeVar
+import logging
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +38,11 @@ class Configurable(abc.ABC, Generic[S]):
 
     prefix: str = ""
     default_settings: typing.ClassVar[S]
+
+    def __init__(self, settings: S, logger: logging.Logger):
+        self._settings = settings
+        self._configuration = settings.configuration
+        self._logger = logger
 
     @classmethod
     def get_user_config(cls) -> dict[str, Any]:

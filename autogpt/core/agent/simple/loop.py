@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Awaitable, Callable, List, Dict
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Dict, Optional
 
 from typing_extensions import TypedDict
 
@@ -15,7 +15,14 @@ from autogpt.core.runner.client_lib.parser import (
 
 if TYPE_CHECKING:
     from autogpt.core.agent.base.agent import Agent
+    from autogpt.core.agent.simple import SimpleAgentSettings
 
+# NOTE : This is an example of customization that allow to share part of a project in Github while keeping part not released
+try:
+    from autogpt.core.agent.usercontext import UserContextAgent, UserContextAgentSettings
+    usercontext = True
+except ImportError:
+    usercontext = False
 
 class SimpleLoop(BaseLoop):
     class LoophooksDict(BaseLoop.LoophooksDict):
@@ -30,28 +37,80 @@ class SimpleLoop(BaseLoop):
         self,
         agent: Agent,
         hooks: LoophooksDict,
-        user_input_handler: Callable[[str], Awaitable[str]],
-        user_message_handler: Callable[[str], Awaitable[str]],
+        user_input_handler: Optional[Callable[[str], Awaitable[str]]] = None, 
+        user_message_handler: Optional[Callable[[str], Awaitable[str]]] = None,
     ) -> None:
+        if isinstance(user_input_handler, Callable) and user_input_handler is not None:
+            self._user_input_handler = user_input_handler
+        elif self._user_input_handler is None:
+            raise TypeError("`user_input_handler` must be a callable or set previously.")
+            
+        if isinstance(user_message_handler, Callable) and user_message_handler is not None:
+            self._user_message_handler = user_message_handler
+        elif self._user_message_handler is None:
+            raise TypeError("`user_message_handler` must be a callable or set previously.")
+
         # step 1 : BEGIN WITH A HOOK
         await self.handle_hooks( hook_key="begin_run", 
                                 hooks=hooks,
                                 agent=agent, 
-                                user_input_handler = user_input_handler ,
-                                user_message_handler = user_message_handler)
+                                user_input_handler = self._user_input_handler ,
+                                user_message_handler = self._user_message_handler)
         
-        #Agent.create_agent(agent_name = "UCC (User Context Checker)" )
+        # Step 2 : USER CONTEXT AGENT : IF USER CONTEXT AGENT EXIST
+        if usercontext : 
+            # USER CONTEXT AGENT : Configure the agent to our context
+            usercontextagent_configuration = {
+                'user_id' : self._agent.user_id,
+                'agent_name' : "UCC (User Context Checker)" ,
+                'agent_goals': self._agent.agent_goals,
+                'agent_goal_sentence': self._agent.agent_goal_sentence,
+                'parent_agent_id' : self._agent.agent_id,
+                'memory' :  self._agent._memory._settings.dict(),
+                'workspace' :  self._agent._workspace._settings.dict(),
+                #_type_ = 'autogpt.core.agent.usercontext.agent.UserContextAgent',
+                #agent_class = 'UserContextAgent'
+            }
+            
+            
+            # USER CONTEXT AGENT : Create Agent Settings
+            usercontext_settings : UserContextAgentSettings = UserContextAgent.compile_settings(
+                            logger = self._agent._logger, 
+                            user_configuration = usercontextagent_configuration
+                        ) 
+            #usercontext_settings = UserContextAgent.build_agent_configuration(configuration=agent_settings)
+            
+            # USER CONTEXT AGENT : Save UserContextAgent Settings in DB (for POW / POC)
+            new_user_context_agent = UserContextAgent.create_agent(agent_settings = usercontext_settings, 
+                                                     logger = self._agent._logger)
+            
+            # USER CONTEXT AGENT : Get UserContextAgent from DB (for POW / POC)
+            usercontext_settings.agent_id = new_user_context_agent.agent_id
+            user_context_agent = UserContextAgent.get_agent_from_settings(
+                agent_settings=usercontext_settings,
+                logger=self._agent._logger,
+            )
+            #
+            #
+            #
+            user_context_return = await user_context_agent.run( 
+                user_input_handler = self._user_input_handler ,
+                user_message_handler=self._user_message_handler)
+            
+            self._agent.agent_goal_sentence = user_context_return.agent_goal_sentence
+            self._agent.agent_goals = user_context_return.agent_goals
 
+        
         self._agent.save_agent_in_memory()
         
-        # step 2 : BUIL INITIAL PLAN
+        # step 3 : BUIL INITIAL PLAN
         self._plan = await self.build_initial_plan()
         await self.handle_hooks( hook_key="after_build_initial_plan", 
                                 hooks=hooks,
                                 agent=agent, 
-                                user_input_handler = user_input_handler ,
-                                user_message_handler = user_message_handler)
-        await user_message_handler(parse_agent_plan(self._plan))
+                                user_input_handler = self._user_input_handler ,
+                                user_message_handler = self._user_message_handler)
+        await self._user_message_handler(parse_agent_plan(self._plan))
 
         self.loop_count = 0
         # _is_running is important because it avoid having two concurent loop in the same agent (cf : Agent.run())
@@ -67,12 +126,12 @@ class SimpleLoop(BaseLoop):
                 await self.handle_hooks( hook_key="after_determine_next_ability", 
                                 hooks=hooks,
                                 agent=agent, 
-                                user_input_handler = user_input_handler ,
-                                user_message_handler = user_message_handler)
+                                user_input_handler = self._user_input_handler ,
+                                user_message_handler = self._user_message_handler)
                 
                 # step 4 : ask user feedback to execute_next_ability
-                await user_message_handler(parse_next_ability(current_task, next_ability))
-                user_input = await user_input_handler(
+                await self._user_message_handler(parse_next_ability(current_task, next_ability))
+                user_input = await self._user_input_handler(
                     "Should the agent proceed with this ability?"
                 )
 
@@ -81,15 +140,16 @@ class SimpleLoop(BaseLoop):
                 await self.handle_hooks( hook_key="after_execute_next_ability", 
                                 hooks=hooks,
                                 agent=agent, 
-                                user_input_handler = user_input_handler ,
-                                user_message_handler = user_message_handler)
-                await user_message_handler(parse_ability_result(ability_result))
+                                user_input_handler = self._user_input_handler ,
+                                user_message_handler = self._user_message_handler)
+                await self._user_message_handler(parse_ability_result(ability_result))
 
     async def build_initial_plan(self) -> dict:
         plan = await self._agent._planning.make_initial_plan(
             agent_name=self._agent._configuration.agent_name,
             agent_role=self._agent._configuration.agent_role,
             agent_goals=self._agent._configuration.agent_goals,
+            agent_goal_sentence=self._agent._configuration.agent_goal_sentence,
             abilities=self._agent._ability_registry.list_abilities(),
         )
         tasks = [Task.parse_obj(task) for task in plan.content["task_list"]]

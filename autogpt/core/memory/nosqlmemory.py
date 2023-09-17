@@ -8,7 +8,7 @@ from autogpt.core.memory.base import Memory
 if TYPE_CHECKING:
     from autogpt.core.memory.table.base import BaseTable
 
-class NoSQLMemory(Memory, Configurable):
+class NoSQLMemory(Memory):
    
     def get_table(self, table_name: str) -> BaseTable:
         if self.__class__ == NoSQLMemory:

@@ -1,12 +1,14 @@
 from logging import Logger
 from autogpt.core.planning.base import BasePromptStrategy,PromptStrategiesConfiguration
 from autogpt.core.agent.usercontext.strategies.refine_user_context import (
-    RefineUserContext,
+    RefineUserContextStrategy,
     RefineUserContextConfiguration,
+    RefineUserContextFunctionNames
 )
 
 class StrategiesConfiguration(PromptStrategiesConfiguration):
-    refine_user_context: RefineUserContextConfiguration
+    refine_user_context: RefineUserContextConfiguration 
+
 
 class Strategies() :
     from autogpt.core.planning.base import BasePromptStrategy,PromptStrategy
@@ -14,5 +16,5 @@ class Strategies() :
     @staticmethod
     def get_strategies(logger = Logger) -> list[BasePromptStrategy] :
         return [
-            RefineUserContext(logger = logger, **RefineUserContext.default_configuration.dict()),
+            RefineUserContextStrategy(logger = logger, **RefineUserContextStrategy.default_configuration.dict()),
         ]

@@ -6,6 +6,7 @@ from autogpt.core.configuration import SystemConfiguration
 from autogpt.core.planning.schema import (
     LanguageModelClassification,
     LanguageModelPrompt,
+    LanguageModelFunction
 )
 
 from autogpt.core.configuration import (
@@ -112,7 +113,7 @@ class PlannerSettings(SystemSettings):
 
 class PromptStrategy(abc.ABC):
     STRATEGY_NAME : str
-    default_configuration: SystemConfiguration
+    default_configuration: PromptStrategiesConfiguration
 
     @property
     @abc.abstractmethod
@@ -132,3 +133,16 @@ class BasePromptStrategy (PromptStrategy):
     @property
     def model_classification(self) -> LanguageModelClassification:
         return self._model_classification
+    
+    
+    # TODO : This implementation is shit :) 
+    # + Move to BasePromptStrategy
+    def get_functions(self) -> list[LanguageModelFunction]:
+        return self._functions
+        
+    # TODO : This implementation is shit :) 
+    # + Move to BasePromptStrategy
+    def get_functions_names(self) -> list[str]:
+       return [item.name for item in self._functions]
+    #     re = [Re,Se ,Va]
+        

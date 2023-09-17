@@ -112,8 +112,26 @@ class BaseAgentSettings(BaseModel):
         self.agent_name = self.agent.configuration.agent_name
         self.agent_role = self.agent.configuration.agent_role
         self.agent_goals = self.agent.configuration.agent_goals
+        self.agent_goal_sentence = self.agent.configuration.agent_goal_sentence
     
     # TODO Implement a BaseSettings class and move it to the BaseSettings ?
     def prepare_values_before_serialization(self):
         self.agent_setting_module = f"{self.__class__.__module__}.{self.__class__.__name__}"
         self.agent_setting_class = self.__class__.__name__
+
+    def update_agent_name_and_goals(self, agent_goals: dict) -> None:
+
+        for key, value in agent_goals.items():
+            #if key != 'agent' and key != 'workspace'  : 
+            setattr(self, key, value)
+
+        # self.agent_name = agent_goals["agent_name"]
+        # self.agent_name = agent_goal_sentence["agent_name"]
+        # self.agent_role = agent_goals["agent_role"]
+        # self.agent_role = agent_goal_sentence["agent_role"]
+        # self.agent_goals = agent_goals["agent_goals"]
+        # self.agent_goals = agent_goals["agent_goal_sentence"]
+        # self.agent_class = agent_goals["agent_class"]
+        # self.agent_class = agent_goal_sentence["agent_class"]
+        # self.agent_id = agent_goals["agent_id"]
+        # self.agent_id = agent_goal_sentence["agent_id"]

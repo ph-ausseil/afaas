@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Awaitable, Callable, List
+from typing import TYPE_CHECKING, Awaitable, Callable, List, Tuple
 
 from autogpt.core.ability import AbilityResult, SimpleAbilityRegistry
 from autogpt.core.agent.base.agent import Agent
@@ -50,6 +50,11 @@ class SimpleAgent(Agent):
                 "Grow Twitter Account",
                 "Develop and manage multiple businesses autonomously",
             ],
+            agent_goal_sentence=   
+                """Increase net worth
+                and Grow Twitter Account
+                and Develop and manage multiple businesses autonomously"""
+            ,
             cycle_count=0,
             max_task_cycle_count=3,
             creation_time="",
@@ -60,7 +65,7 @@ class SimpleAgent(Agent):
                 ),
                 memory=PluginLocation(
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
-                    storage_route="autogpt.core.memory.Memory",
+                    storage_route="autogpt.core.memory.base.Memory",
                 ),
                 openai_provider=PluginLocation(
                     storage_format=PluginStorageFormat.INSTALLED_PACKAGE,
@@ -91,30 +96,18 @@ class SimpleAgent(Agent):
         agent_id: uuid.UUID = None,
     ):
         super().__init__(
-        settings,
-        logger,
-        ability_registry,
-        memory,
-        workspace,
-        user_id,
-        agent_id,
+        settings=settings,
+        logger=logger,
+        memory=memory,
+        workspace=workspace,
+        user_id=user_id,
+        agent_id=agent_id,
         )
 
         # These are specific
         self._openai_provider = openai_provider
         self._planning = planning
-
-        # self.agent_role = settings.configuration.agent_role
-        # self.agent_goals = settings.configuration.agent_goals
-        # self.agent_name = settings.configuration.agent_name
-
-
-        logger.info(f"MID SimpleAgent.__init__ : self = {str(self)}\n")
-
-        # TODO Will provide another PR with the logic migrated to SimpleLoop once approved
-        # self.default_callback = {
-        #     #'a_hook_key' = MyCallable(arg)
-        # }
+        self._ability_registry = ability_registry
 
         self._loop = SimpleLoop(
             agent=self
@@ -176,27 +169,79 @@ class SimpleAgent(Agent):
     ################################FACTORY SPECIFIC################################
     ################################################################################
 
-
+    
     @classmethod
-    def get_agent_from_settings(
+    def _create_agent_custom_treatment(
+        cls,
+        agent_settings : SimpleAgentSettings,
+        logger : logging.Logger
+       ) -> None:
+        return cls._create_workspace(agent_settings=agent_settings, logger=logger)
+    
+    @classmethod
+    def _create_workspace(
+            cls,
+            agent_settings: SimpleAgentSettings,
+            logger: logging.Logger,
+            ):
+        
+        from autogpt.core.workspace import SimpleWorkspace
+        return SimpleWorkspace.create_workspace(
+            user_id=agent_settings.user_id, 
+            agent_id=agent_settings.agent_id,  
+            settings = agent_settings, 
+            logger=logger)
+    
+    @classmethod
+    def _get_agent_from_settings(
         cls,
         agent_settings: SimpleAgentSettings,
+        agent_args : list, 
         logger: logging.Logger,
-    ) -> Agent:
-        agent_settings, agent_args = super().get_agent_from_settings(
-            agent_settings=agent_settings, 
-            logger=logger
-        )
+    ) -> Tuple[SimpleAgentSettings, list]:
         agent_args["openai_provider"] = cls._get_system_instance(
             "openai_provider",
             agent_settings,
             logger,
         )
+
+        # TODO : Continue refactorization => move to loop ?
+        from autogpt.core.agent.simple import strategies 
+        from autogpt.core.agent.simple.strategies import Strategies, StrategiesConfiguration
+        # strategies_config = SimplePromptStrategiesConfiguration(
+        #         name_and_goals=strategies.NameAndGoals.default_configuration,
+        #         initial_plan=strategies.InitialPlan.default_configuration,
+        #         next_ability=strategies.NextAbility.default_configuration,)
+        # #agent_settings.planning.configuration.prompt_strategies = strategies_config
+        
+        # #
+        # # Dynamicaly load all strategies 
+        # # To do so Intanciate all class that inherit from PromptStrategy in package Strategy
+        # #
+        # simple_strategies = {}
+        # import inspect
+        # from  autogpt.core.planning.base import PromptStrategy
+        # for strategy_name, strategy_config in strategies_config.__dict__.items():
+        #     strategy_module = getattr(strategies, strategy_name)  
+        #     # Filter classes that are subclasses of PromptStrategy and are defined within that module
+        #     strategy_classes = [member for name, member in inspect.getmembers(strategy_module) 
+        #                         if inspect.isclass(member) and 
+        #                         issubclass(member, PromptStrategy) and 
+        #                         member.__module__ == strategy_module.__name__]
+        #     if not strategy_classes:
+        #         raise ValueError(f"No valid class found in module {strategy_name}")
+        #     strategy_instance = strategy_classes[0](**strategy_config.dict())
+            
+        #     simple_strategies[strategy_name] = strategy_instance
+        
+        simple_strategies = Strategies.get_strategies(logger = logger)
+        # NOTE : Can't be moved to super() because require agent_args["openai_provider"]
         agent_args["planning"] = cls._get_system_instance(
             "planning",
             agent_settings,
             logger,
             model_providers={"openai": agent_args["openai_provider"]},
+            strategies = simple_strategies
         )
 
         # NOTE : Can't be moved to super() because require agent_args["openai_provider"]
@@ -209,14 +254,14 @@ class SimpleAgent(Agent):
             model_providers={"openai": agent_args["openai_provider"]},
         )
 
-        agent = cls(**agent_args)
+        # agent = cls(**agent_args)
 
-        items = agent_settings.dict().items()
-        for key, value in items:
-            if key not in agent_settings.__class__.Config.default_exclude:
-                setattr(agent, key, value)
+        # items = agent_settings.dict().items()
+        # for key, value in items:
+        #     if key not in agent_settings.__class__.Config.default_exclude:
+        #         setattr(agent, key, value)
 
-        return agent
+        return agent_settings, agent_args
 
     @classmethod
     async def determine_agent_name_and_goals(
@@ -244,64 +289,6 @@ class SimpleAgent(Agent):
         )
 
         return model_response.content
-
-    ################################################################################
-    ################################ DB INTERACTIONS ################################
-    ################################################################################
-    
-    @classmethod
-    def get_agentsetting_list_from_memory(self, user_id: uuid.UUID, logger: logging.Logger ) -> list[SimpleAgentSettings]:
-        from autogpt.core.memory.base import (
-            Memory,
-            MemoryConfig,
-            MemorySettings,
-        )
-        from autogpt.core.memory.table.base import AgentsTable, BaseTable
-        """Warning !!!
-        Returns a list of agent settings not a list of agent
-
-        Returns:
-            _type_: _description_
-        """
-        
-        memory_settings = MemorySettings(configuration=MemoryConfig())
-
-        memory = Memory.get_adapter(memory_settings= memory_settings, logger=logger)
-        agent_table : AgentsTable  =memory.get_table("agents")
-       
-        filter = BaseTable.FilterDict({
-                                        "user_id" : 
-                                       [BaseTable.FilterItem(value=str(user_id), operator= BaseTable.Operators.EQUAL_TO)]
-                                       } 
-                                       )
-        agent_list = agent_table.list(filter = filter)
-        return agent_list
-   
-    @classmethod
-    def get_agent_from_memory(cls, 
-                              agent_settings : SimpleAgentSettings, 
-                              agent_id: uuid.UUID, 
-                              user_id: uuid.UUID, 
-                              logger: logging.Logger ) -> Agent:
-        from autogpt.core.memory.base import (
-            Memory,
-        )
-        from autogpt.core.memory.table.base import AgentsTable
-
-        # memory_settings = MemorySettings(configuration=agent_settings.memory)
-        memory_settings = agent_settings.memory
-
-        memory = Memory.get_adapter(memory_settings= memory_settings, logger=logger)
-        agent_table : AgentsTable  = memory.get_table("agents" )
-        agent = agent_table.get(agent_id= str(agent_id), user_id=str(user_id))
-        
-        if not agent :
-            return None
-        agent = SimpleAgent.get_agent_from_settings(
-            agent_settings=agent_settings,
-            logger=logger,
-        )
-        return agent
 
     def __repr__(self):
         return "SimpleAgent()"

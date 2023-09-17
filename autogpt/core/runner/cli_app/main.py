@@ -4,6 +4,17 @@ import logging
 from autogpt.core.agent import BaseAgentSettings, SimpleAgent
 from autogpt.core.runner.client_lib.logging import get_client_logger
 
+async def handle_user_input_request(prompt):
+    user_input = click.prompt(
+        prompt,
+        default="y",
+    )
+    return user_input
+
+async def handle_user_message(prompt):
+    print(prompt)
+
+
 async def run_auto_gpt(user_configuration: dict):
     """Run the Auto-GPT CLI client."""
 
@@ -60,60 +71,52 @@ async def run_auto_gpt(user_configuration: dict):
 
     if not agent :  # We don't have an agent matching this ID
 
-        # Step 2. Get a name and goals for the agent.
-        # First we need to figure out what the user wants to do with the agent.
+        # # Step 2. Get a name and goals for the agent.
+        # # First we need to figure out what the user wants to do with the agent.
+        # if DEMO:
+        #     # We'll use a default objective for the demo.
+        #     name_and_goals = {'agent_name': 'FactoryBuilderTest', 
+        #                       'agent_role': 'An automated engineering expert AI, specializing in settling factories in new countries.', 
+        #                       'agent_goals': ['Provide a step-by-step guide on how to build a plant.', 
+        #                                       'Ensure compliance with local regulation', 
+        #                                       'Identification & selection of partners.', 
+        #                                       'Follow implementation untill completion',
+        #                                         'Ensure realization meet quality standards.'],
+        #                                         }
+        # else : 
+        #     # We'll do this by asking the user for a prompt.
+        #     user_objective = click.prompt("What do you want Auto-GPT to do? (We will make Pancakes for our tests...)")
+        #     # Ask a language model to determine a name and goals for a suitable agent.
+        #     name_and_goals = await SimpleAgent.determine_agent_name_and_goals(
+        #         user_objective,
+        #         agent_settings,
+        #         client_logger,
+        #     )
+
+        # # Finally, update the agent settings with the name and goals.
+        # agent_settings.update_agent_name_and_goals(name_and_goals)
+
+        #
+        # New requirement gathering process
+        #
         if DEMO:
-            # We'll use a default objective for the demo.
-            name_and_goals = {'agent_name': 'FactoryBuilderTest', 
-                              'agent_role': 'An automated engineering expert AI, specializing in settling factories in new countries.', 
-                              'agent_goals': ['Provide a step-by-step guide on how to build a plant.', 
-                                              'Ensure compliance with local regulation', 
-                                              'Identification & selection of partners.', 
-                                              'Follow implementation untill completion',
-                                                'Ensure realization meet quality standards.']}
-        else : 
-            # We'll do this by asking the user for a prompt.
-            user_objective = click.prompt("What do you want Auto-GPT to do? (We will make Pancakes for our tests...)")
-            # Ask a language model to determine a name and goals for a suitable agent.
-            name_and_goals = await SimpleAgent.determine_agent_name_and_goals(
-                user_objective,
-                agent_settings,
-                client_logger,
-            )
-        #print(parse_agent_name_and_goals(name_and_goals))
-        # Finally, update the agent settings with the name and goals.
-        name_and_goals['agent_class'] = 'SimpleAgent'
-        agent_settings.update_agent_name_and_goals(name_and_goals)
+            user_objective = 'Provide a step-by-step guide on how to build a Pizza oven.'
+        else :
+            user_objective = handle_user_input_request("What do you want Auto-GPT to do? (We will make Pancakes for our tests...)")
+
+        agent_settings.agent_goal_sentence = user_objective
+
+        agent_settings.agent_class = 'SimpleAgent'
+        agent_settings._type_ = 'autogpt.core.agent.simple.agent.SimpleAgent'
         #agent_settings.load_root_values()
 
         # Step 3. Create the agent.
-        # TODO : Create a single method that create an agent & the workspace 
-        agent_id = SimpleAgent.create_agent(agent_settings, client_logger)
-
-        agent_settings.agent.agent_id = agent_id
-        agent_settings.agent_id = agent_id
-
-
-        # Step 4. Load the agent.
-        # NOTE : There are currently two way to instanciate an Agent, this need to be rationalized
-        client_logger.info(f"Created agent with ID {agent_id}")
-        agent = SimpleAgent.get_agent_from_settings(
-            agent_settings=agent_settings,
-            logger=client_logger,
-        )
-
+        agent = SimpleAgent.create_agent(   
+                                        agent_settings= agent_settings, 
+                                        logger= client_logger,
+                                        )
 
     await agent.run(user_input_handler = handle_user_input_request,
                     user_message_handler = handle_user_message,
                     goal = None)
 
-
-async def handle_user_input_request(prompt):
-    user_input = click.prompt(
-        prompt,
-        default="y",
-    )
-    return user_input
-
-async def handle_user_message(prompt):
-    print(prompt)

@@ -32,6 +32,7 @@ class SimpleAgentConfiguration(BaseAgentConfiguration):
     agent_name: str = Field(default='New Agent')
     agent_role: Optional[str] = Field(default=None)
     agent_goals: Optional[list[str]] = Field(default=None)
+    agent_goal_sentence: Optional[str]= Field(default=None)
 
     class Config(BaseAgentConfiguration.Config) :
         pass
@@ -55,19 +56,9 @@ class SimpleAgentSettings(BaseAgentSettings):
     agent_name: str = Field(default='New Agent')
     agent_role: Optional[str] = Field(default=None)
     agent_goals: Optional[list] = Field(default=None)
+    agent_goal_sentence: Optional[list] = Field(default=None)
     agent_class : str = Field(default='autogpt.core.agent.simple.agent.SimpleAgent') 
 
     class Config(BaseAgentSettings.Config):
         pass
 
-    def update_agent_name_and_goals(self, agent_goals: dict) -> None:
-
-        for key, value in agent_goals.items():
-            #if key != 'agent' and key != 'workspace'  : 
-            setattr(self, key, value)
-
-        # self.agent_name = agent_goals["agent_name"]
-        # self.agent_role = agent_goals["agent_role"]
-        # self.agent_goals = agent_goals["agent_goals"]
-        # self.agent_class = agent_goals["agent_class"]
-        # self.agent_id = agent_goals["agent_id"]

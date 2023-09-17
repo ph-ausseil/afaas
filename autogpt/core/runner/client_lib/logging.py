@@ -8,7 +8,7 @@ def get_client_logger(logger_level : int = logging.DEBUG):
     client_logger.setLevel(logger_level)
 
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        "%(asctime)s#%(filename)s:%(funcName)s:%(levelname)s:%(message)s"
     )
 
     ch = logging.StreamHandler()

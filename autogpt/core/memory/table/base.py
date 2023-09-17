@@ -122,7 +122,7 @@ class BaseNoSQLTable(BaseTable):
         count = 0
         while stack:
             count += 1
-            print(f"\n\n\ncount : {count}")
+            # print(f"\n\n\ncount : {count}")
             curr_obj, parent_dict, key = stack.pop()
 
             if isinstance(curr_obj, (str, int, float, bool, type(None))):
@@ -162,12 +162,12 @@ class BaseNoSQLTable(BaseTable):
             if key is not None:
                 parent_dict[key] = serialized_value
 
-            if (key) : 
-                print( "key = " , key )
-            if parent_dict : 
-                print( "parent_dict = " ,parent_dict )
-            if curr_obj : 
-                print( "curr_obj = " , curr_obj  )
+            # if (key) : 
+            #     print( "key = " , key )
+            # if parent_dict : 
+            #     print( "parent_dict = " ,parent_dict )
+            # if curr_obj : 
+            #     print( "curr_obj = " , curr_obj  )
 
         return parent_dict
 

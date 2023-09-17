@@ -8,6 +8,7 @@ from enum import Enum
 from logging import Logger
 from pathlib import Path
 from typing import TYPE_CHECKING
+from autogpt.core.configuration import Configurable
 
 from pydantic import Field
 
@@ -56,10 +57,13 @@ class MemoryConfig(SystemConfiguration):
 
 class MemorySettings(SystemSettings) : 
     configuration: MemoryConfig
-    name : str ="Memory",
-    description : str ="Memory is an abstract memory adapter",         
+    name : str ="Memory"
+    description : str ="Memory is an abstract memory adapter"
 
-class Memory(abc.ABC):
+    class Config(SystemSettings.Config):
+        extra = "allow"
+
+class Memory(Configurable, abc.ABC):
 
     default_settings = MemorySettings(
             name="new_memory",
@@ -114,8 +118,9 @@ class Memory(abc.ABC):
                  settings: MemorySettings,
                 logger: Logger,):
         Memory._instances = {}
-        self._configuration = settings.configuration
-        self._logger = logger
+        super().__init__(settings, logger)
+        # self._configuration = settings.configuration
+        # self._logger = logger
         
 
     @classmethod

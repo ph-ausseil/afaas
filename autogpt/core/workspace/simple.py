@@ -45,8 +45,10 @@ class SimpleWorkspace(Configurable, Workspace):
         settings: WorkspaceSettings,
         logger: logging.Logger,
     ):
-        self._configuration = settings.configuration
-        self._logger = logger.getChild("workspace")
+        super().__init__(settings, logger.getChild("workspace"))
+        # self._configuration = settings.configuration
+        # self._logger = logger
+        # self._logger = logger.getChild("workspace")
 
     @property
     def root(self) -> Path:

@@ -29,7 +29,8 @@ class LanguageModelClassification(str, enum.Enum):
 class LanguageModelPrompt(BaseModel):
     messages: list[LanguageModelMessage]
     functions: list[LanguageModelFunction] = Field(default_factory=list)
-    function_call : str = 'auto'
+    function_call : str 
+    default_function_call : str
 
     def __str__(self):
         return "\n\n".join([f"{m.role.value}: {m.content}" for m in self.messages])
