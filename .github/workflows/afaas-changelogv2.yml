@@ -42,7 +42,7 @@ jobs:
       
           if [ $(echo "$MILESTONES" | jq '. | length') -eq 0 ]; then
             echo "No closed milestones found."
-            MILESTONE_CLOSED="false"
+            MILESTONE_CLOSED="true"
           else
             # Process the milestones
             MILESTONE_CLOSED=$(echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" 'any(.closed_at > $last_checked)')
