@@ -38,23 +38,25 @@ jobs:
           # Use GitHub API to fetch milestones
           # Ensure to replace 'owner/repo' with your repository's owner and name
           MILESTONES=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                       "https://api.github.com/repos/owner/repo/milestones?state=closed")
-
-          # Process the milestones to find and log those closed after LAST_CHECKED_TIME
-          echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" '.[] | select(.closed_at > $last_checked) | .title'
-
-          # Update the last checked time (store in a file or a secret)
+                       "https://api.github.com/repos/ph-ausseil/afaas/milestones?state=closed")
+      
+          if [ -z "$MILESTONES" ] || [ "$MILESTONES" == "[]" ]; then
+            echo "No closed milestones found."
+            MILESTONE_CLOSED="true"
+          else
+            MILESTONE_CLOSED=$(echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" 'any(.closed_at > $last_checked)')
+            echo "Milestone closed: $MILESTONE_CLOSED"
+          fi
+      
+          echo "::set-output name=milestone_closed::$MILESTONE_CLOSED"
+      
+          # Update the last checked time
           date -Iseconds > .last_checked_time
           git config --global user.name 'Pierre-Henri AUSSEIL'
           git config --global user.email 'ph.ausseil@gmail.com'
           git add .last_checked_time
           git commit -m "Update last checked time" || echo "No changes to commit"
           git push origin ${{ github.ref }}
-
-
-          MILESTONE_CLOSED=$(echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" 'any(.closed_at > $last_checked)')
-          echo "Milestone closed: $MILESTONE_CLOSED"
-          echo "::set-output name=milestone_closed::$MILESTONE_CLOSED"
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
