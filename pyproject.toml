@@ -129,6 +129,7 @@ exclude = '''
     | .env
     | venv
     | .venv
+    | .github
     | reports
     | dist
     | agent
