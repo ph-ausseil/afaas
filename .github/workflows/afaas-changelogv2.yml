@@ -28,8 +28,12 @@ jobs:
         id: check_milestones
         
         run: |
-          # Fetch the last checked time (this could be from a file or a secret)
-          LAST_CHECKED_TIME=$(cat .last_checked_time || echo "2023-01-01T00:00:00Z")
+          # Fetch the last checked time (this could be from a file or a secret)    
+          if [ -f ".last_checked_time" ]; then
+            LAST_CHECKED_TIME=$(cat .last_checked_time)
+          else
+            LAST_CHECKED_TIME="2000-01-01T00:00:00Z"  # Default old date
+          fi
 
           # Use GitHub API to fetch milestones
           # Ensure to replace 'owner/repo' with your repository's owner and name
@@ -41,8 +45,8 @@ jobs:
 
           # Update the last checked time (store in a file or a secret)
           date -Iseconds > .last_checked_time
-          git config --global user.name 'Your Name'
-          git config --global user.email 'your-email@example.com'
+          git config --global user.name 'Pierre-Henri AUSSEIL'
+          git config --global user.email 'ph.ausseil@gmail.com'
           git add .last_checked_time
           git commit -m "Update last checked time" || echo "No changes to commit"
           git push origin ${{ github.ref }}
@@ -125,8 +129,8 @@ jobs:
 
         - name: Commit formatting changes
           run: |
-                  git config --global user.name 'formatter-bot'
-                  git config --global user.email 'formatter-bot@example.com'
+                  git config --global user.name 'Pierre-Henri AUSSEIL'
+                  git config --global user.email 'ph.ausseil@gmail.com'
                   git add -A
                   git commit -m "Apply code formatting" || echo "No changes to commit"
                   git push origin ${{ github.ref }}
