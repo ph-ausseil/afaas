@@ -40,15 +40,18 @@ jobs:
           MILESTONES=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                        "https://api.github.com/repos/ph-ausseil/afaas/milestones?state=closed")
       
-          if [ -z "$MILESTONES" ] || [ "$MILESTONES" == "[]" ]; then
+          if [ $(echo "$MILESTONES" | jq '. | length') -eq 0 ]; then
             echo "No closed milestones found."
-            MILESTONE_CLOSED="true"
+            MILESTONE_CLOSED="false"
           else
+            # Process the milestones
             MILESTONE_CLOSED=$(echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" 'any(.closed_at > $last_checked)')
             echo "Milestone closed: $MILESTONE_CLOSED"
           fi
       
+          #echo "milestone_closed=$MILESTONE_CLOSED" >> $GITHUB_STATE
           echo "::set-output name=milestone_closed::$MILESTONE_CLOSED"
+
       
           # Update the last checked time
           date -Iseconds > .last_checked_time
