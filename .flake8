@@ -16,3 +16,4 @@ exclude =
     autogpts
     benchmark
     .vscode
+    .github
