@@ -57,9 +57,10 @@ jobs:
           date -Iseconds > .last_checked_time
           git config --global user.name 'Pierre-Henri AUSSEIL'
           git config --global user.email 'ph.ausseil@gmail.com'
+          git pull
           git add .last_checked_time
           git commit -m "Update last checked time" || echo "No changes to commit"
-          git pull
+          
           git push origin ${{ github.ref }}
 
         env:
