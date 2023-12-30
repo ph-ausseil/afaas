@@ -65,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
-    if: needs.check-milestones.outputs.milestone-closed == 'true'
+    
     runs-on: ubuntu-latest
     needs: [check-milestones]
     steps:
