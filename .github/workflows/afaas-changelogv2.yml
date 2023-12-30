@@ -102,9 +102,9 @@ jobs:
             poetry run autoflake --remove-all-unused-imports --remove-unused-variables --in-place --recursive .
             git config --global user.name 'autoflake-bot'
             git config --global user.email 'autoflake-bot@example.com'
+            git pull
             git add -A
             git commit -m "Apply autoflake fixes" || echo "No changes to commit"
-            git pull
             git push origin ${{ github.ref }}
 
         - name: "Build Changelog"
