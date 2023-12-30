@@ -102,7 +102,7 @@ jobs:
             git config --global user.email 'autoflake-bot@example.com'
             git add -A
             git commit -m "Apply autoflake fixes" || echo "No changes to commit"
-            git push origin HEAD:${{ github.ref }}
+            git push origin ${{ github.ref }}
 
         - name: "Build Changelog"
           uses: mikepenz/release-changelog-builder-action@v4.1.0
