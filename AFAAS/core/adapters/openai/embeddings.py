@@ -6,10 +6,7 @@ from openai.resources import AsyncEmbeddings
 
 aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-from AFAAS.core.adapters.openai.common import (
-    OPEN_AI_EMBEDDING_MODELS,
-    OpenAIModelName,
-)
+from AFAAS.core.adapters.openai.common import OPEN_AI_EMBEDDING_MODELS, OpenAIModelName
 from AFAAS.interfaces.adapters.language_model import (
     Embedding,
     EmbeddingModelProvider,

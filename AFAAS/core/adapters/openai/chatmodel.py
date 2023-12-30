@@ -27,10 +27,7 @@ from AFAAS.interfaces.adapters.chatmodel import (
     ChatMessage,
     CompletionModelFunction,
 )
-from AFAAS.interfaces.adapters.language_model import (
-    Embedding,
-    ModelTokenizer,
-)
+from AFAAS.interfaces.adapters.language_model import Embedding, ModelTokenizer
 from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)

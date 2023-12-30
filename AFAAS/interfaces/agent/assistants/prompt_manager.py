@@ -4,7 +4,6 @@ import platform
 import time
 from typing import TYPE_CHECKING, Any
 
-
 from AFAAS.interfaces.agent.features.agentmixin import AgentMixin
 
 if TYPE_CHECKING:

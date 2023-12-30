@@ -23,9 +23,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from AFAAS.interfaces.prompts.strategy import (
-        AbstractChatModelResponse,
-    )
+    from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
     from AFAAS.interfaces.task import AbstractPlan
 
 

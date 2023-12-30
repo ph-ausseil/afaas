@@ -1,6 +1,5 @@
 import uuid
 
-
 from AFAAS.configs.schema import AFAASMessageType
 from AFAAS.lib.message_common import AFAASMessage
 

@@ -199,4 +199,3 @@ class EmbeddingModelProvider(AbstractModelProvider):
 
 class AbstractPromptConfiguration(abc.ABC, SystemConfiguration):
     """Struct for model configuration."""
-

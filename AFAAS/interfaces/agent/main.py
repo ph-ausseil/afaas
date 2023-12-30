@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 
-
 from AFAAS.configs import Configurable
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
 

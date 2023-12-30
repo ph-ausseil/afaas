@@ -7,7 +7,6 @@ from AFAAS.interfaces.workspace import (
 )
 
 
-
 class FileWorkspaceBackendName(str, enum.Enum):
     LOCAL = "local"
     GCS = "gcs"

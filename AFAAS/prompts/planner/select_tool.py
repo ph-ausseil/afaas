@@ -16,9 +16,7 @@ from AFAAS.interfaces.adapters import (
     ChatMessage,
     ChatPrompt,
 )
-from AFAAS.interfaces.prompts.strategy import (
-    DefaultParsedResponse,
-)
+from AFAAS.interfaces.prompts.strategy import DefaultParsedResponse
 from AFAAS.interfaces.prompts.strategy_planning import (
     AbstractPlanningPromptStrategy,
     PlanningPromptStrategiesConfiguration,
