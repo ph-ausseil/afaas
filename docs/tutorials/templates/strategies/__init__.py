@@ -2,9 +2,7 @@
 from logging import Logger
 
 from AFAAS.interfaces.prompts.strategy import (
-    AbstractPromptStrategy,
     PromptStrategiesConfiguration,
-    PromptStrategy,
 )
 
 # Import your custom strategy class from the respective file.

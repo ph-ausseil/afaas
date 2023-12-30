@@ -7,7 +7,6 @@ from AFAAS.prompts.planner.initial_plan import (
     InitialPlanStrategyConfiguration,
 )
 from AFAAS.prompts.planner.select_tool import (
-    SelectToolStrategy,
     SelectToolStrategyConfiguration,
 )
 

@@ -3,13 +3,9 @@ from __future__ import annotations
 import uuid
 from typing import Awaitable, Callable
 
-from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from AFAAS.core.adapters.openai import AFAASChatOpenAI
-from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
 from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
 from AFAAS.interfaces.agent import BaseAgent, BaseLoopHook, BasePromptManager
 from AFAAS.interfaces.db import AbstractMemory

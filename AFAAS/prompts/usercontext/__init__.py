@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from AFAAS.interfaces.prompts.strategy import (
-    AbstractPromptStrategy,
     PromptStrategiesConfiguration,
 )
 from AFAAS.prompts.usercontext.refine_user_context import (
-    RefineUserContextFunctionNames,
     RefineUserContextStrategy,
     RefineUserContextStrategyConfiguration,
 )

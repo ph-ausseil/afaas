@@ -1,6 +1,5 @@
 import warnings
 
-from .. import tools
 
 warnings.warn(
     "AFAAS.core.ability is deprecated and will be removed in a future version. "
@@ -10,4 +9,3 @@ warnings.warn(
 )
 
 # Set up everything from tools to be accessible via ability
-from ..tools import *

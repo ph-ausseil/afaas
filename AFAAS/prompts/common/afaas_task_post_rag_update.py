@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import enum
-import uuid
 from typing import TYPE_CHECKING
-
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.task import AbstractTask
@@ -40,7 +38,7 @@ class PostRagTaskUpdateStrategyConfiguration(PromptStrategiesConfiguration):
 
 
 class AfaasPostRagTaskUpdateStrategy(AbstractPromptStrategy):
-    STRATEGY_NAME = 'afaas_task_post_rag_update'
+    STRATEGY_NAME = "afaas_task_post_rag_update"
     default_configuration = PostRagTaskUpdateStrategyConfiguration()
 
     def __init__(
@@ -66,7 +64,7 @@ class AfaasPostRagTaskUpdateStrategy(AbstractPromptStrategy):
             parameters={
                 "long_description": JSONSchema(
                     type=JSONSchema.Type.STRING,
-                    description=f'New paragraph that should be {str(self.task_context_length * 0.8)} to {str(self.task_context_length *  1.25)} words long.',
+                    description=f"New paragraph that should be {str(self.task_context_length * 0.8)} to {str(self.task_context_length *  1.25)} words long.",
                     required=True,
                 ),
                 "task_workflow": JSONSchema(
@@ -75,9 +73,9 @@ class AfaasPostRagTaskUpdateStrategy(AbstractPromptStrategy):
                         type=JSONSchema.Type.STRING,
                         description=f"The workflow to be used for the task",
                         required=True,
-                        enum=['default' , 'software_developpment', 'fast_tracked'],
+                        enum=["default", "software_developpment", "fast_tracked"],
                     ),
-                )
+                ),
             },
         )
 
@@ -85,14 +83,16 @@ class AfaasPostRagTaskUpdateStrategy(AbstractPromptStrategy):
             self.afaas_task_post_rag_update_function,
         ]
 
-    def build_message(self, 
-                      task: AbstractTask,
-            task_path : list[AbstractTask] = None,
-            task_history : list[AbstractTask] = None,
-            task_followup : list[AbstractTask] = None,
-            task_sibblings : list[AbstractTask] = None,
-            related_tasks : list[AbstractTask] = None,
-            **kwargs) -> ChatPrompt:
+    def build_message(
+        self,
+        task: AbstractTask,
+        task_path: list[AbstractTask] = None,
+        task_history: list[AbstractTask] = None,
+        task_followup: list[AbstractTask] = None,
+        task_sibblings: list[AbstractTask] = None,
+        related_tasks: list[AbstractTask] = None,
+        **kwargs,
+    ) -> ChatPrompt:
         LOG.debug("Building prompt for task : " + task.debug_dump_str())
         self._task: AbstractTask = task
         smart_rag_param = {
