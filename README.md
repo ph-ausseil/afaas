@@ -2,9 +2,78 @@
 
 Welcome to the **afaas: Agent Framework as a Service** project! This project is a fork **AutoGPT** it aims to facilitate developments of AI Agents & AI Autonomous Agents by providing a more simple, modular & extendable architecture.
 
-🚧 **Work in progress** 🚧 
+This is a Project Presentation & a product presentation will be released soon.
 
-Decription/Functionalities, Installation Guide, Documentation & Tutorials  will be released once a MVP + Documentation is achieved.
+<p align="center"><b>🚧 Work in progress 🚧 </b></p>
+
+## Table of Contents
+
+- [Introduction](#afaas-agent-framework-as-a-service)
+- [Status](#status)
+- [Quick Start](#quick-start)
+- [Roadmap](#roadmap)
+<!--- [Contributing](#contributing)
+- [License](#license)-->
+
+## Quick Start
+
+Follow these simple steps to get started with **afaas**:
+
+1. **Clone the Repository:**
+
+   ```bash
+   git clone https://github.com/ph-ausseil/afaas.git
+   cd afaas
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   pip install poetry
+   poetry install
+   ```
+
+3. **Run the Agent**
+
+   ```bash
+   poetry run demo
+   ```
+
+## Status
+
+Autonomous Agent are experimental initiative aiming to set inteligent systems with more or less human involvement. We will try to push research and knowledge beyond what is currently done by AutoGPT, TaskWeaver & AutoGen while providing a service such as ones provided by GPTPilot & Aider.
+
+The project will come with a Framework anyone can extend, an agent anyone can extend @ an app to play with 
+
+### Currently working on
+
+[v0.0.0](https://github.com/ph-ausseil/afaas/milestone/v0.0.0) : Milestone to test the build process & provide basic building blocs.
+
+## Roadmap
+
+- [v0.0.0](https://github.com/ph-ausseil/afaas/milestone/v0.0.0) : Milestone to test the build process & provide basic building blocs (Planned on 31/12/2023)
+  - First Agents
+  - First Prompts System Based on Jinja
+  - First Tools
+  - First LLM adapters
+  - First DB Adapters
+  - First Vector Store adapters
+  - First Agent-User logging system
+- [v0.0.1](https://github.com/ph-ausseil/afaas/milestone/v0.0.1) - Provide a basic agent with no coding capacity (Planned on 07/01/2024)
+  - Provide an agent that can operate with a basic set of API (Arxiv, Wikipedia, Google Places,...)
+- [v0.0.2](https://github.com/ph-ausseil/afaas/milestone/v0.0.2)  - Reduce Technical debt (Planned on 14/01/2024)
+  - Improving & automating tests coverage
+  - Extend the set of tool
+  - Capacity to create own tools
+  - Improve general thinking & planning performances
+- [v0.0.3](https://github.com/ph-ausseil/afaas/milestone/v0.0.3)  - Provide basic coding capacities (Planned on 21/01/2024)
+  - (Namely implement a first Pipeline/Workflow for code)
+- [v0.0.4](https://github.com/ph-ausseil/afaas/milestone/v0.0.4)  - Serve the agent via an API (Planned on 28/01/2024)
+  - TBD
+- [v0.0.5](https://github.com/ph-ausseil/afaas/milestone/v0.0.5)  - User & Technical documentation, CI/CD Pipeline, GUI (TBD)
+  - 80% Test Coverage for API
+  - 50% Test Coverage for Core
+  - A Web Interface (If we receive help)
 
 
 <!--
