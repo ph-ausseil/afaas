@@ -70,7 +70,7 @@ The project will come with a Framework anyone can extend, an agent anyone can ex
   - (Namely implement a first Pipeline/Workflow for code)
 - [v0.0.4](https://github.com/ph-ausseil/afaas/milestone/v0.0.4)  - Serve the agent via an API (Planned on 28/01/2024)
   - TBD
-- [v0.0.5](https://github.com/ph-ausseil/afaas/milestone/v0.0.5)  - User & Technical documentation, CI/CD Pipeline, GUI (TBD)
+- [v0.1.0](https://github.com/ph-ausseil/afaas/milestone/v0.1.0)  - User & Technical documentation, CI/CD Pipeline, GUI (TBD)
   - 80% Test Coverage for API
   - 50% Test Coverage for Core
   - A Web Interface (If we receive help)
