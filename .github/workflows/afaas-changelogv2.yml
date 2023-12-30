@@ -1,16 +1,64 @@
 name: 'AFAAS Changelog CI v2'
 
 on:
-  pull_request:
+  push:
     branches:
       - master
       - test-ci
-    types: [closed]
 
 jobs:
-  release:
-    if: github.event.pull_request.merged == true
+
+  check-milestones:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Install jq if not present
+        run: |
+          if ! command -v jq &> /dev/null
+          then
+              sudo apt-get update
+              sudo apt-get install -y jq
+          fi
+
+      - name: Fetch and log closed milestones
+        id: check_milestones
+        
+        run: |
+          # Fetch the last checked time (this could be from a file or a secret)
+          LAST_CHECKED_TIME=$(cat .last_checked_time || echo "2023-01-01T00:00:00Z")
+
+          # Use GitHub API to fetch milestones
+          # Ensure to replace 'owner/repo' with your repository's owner and name
+          MILESTONES=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                       "https://api.github.com/repos/owner/repo/milestones?state=closed")
+
+          # Process the milestones to find and log those closed after LAST_CHECKED_TIME
+          echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" '.[] | select(.closed_at > $last_checked) | .title'
+
+          # Update the last checked time (store in a file or a secret)
+          date -Iseconds > .last_checked_time
+          git config --global user.name 'Your Name'
+          git config --global user.email 'your-email@example.com'
+          git add .last_checked_time
+          git commit -m "Update last checked time" || echo "No changes to commit"
+          git push origin ${{ github.ref }}
+
+
+          MILESTONE_CLOSED=$(echo "$MILESTONES" | jq --arg last_checked "$LAST_CHECKED_TIME" 'any(.closed_at > $last_checked)')
+          echo "Milestone closed: $MILESTONE_CLOSED"
+          echo "::set-output name=milestone_closed::$MILESTONE_CLOSED"
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    if: needs.check-milestones.outputs.milestone-closed == 'true'
+    runs-on: ubuntu-latest
+    needs: [check-milestones]
     steps:
         - uses: actions/checkout@v4
         - name: Set up Python
@@ -74,5 +122,15 @@ jobs:
                   }
                 ]
                 }
+
+        - name: Commit formatting changes
+          run: |
+                  git config --global user.name 'formatter-bot'
+                  git config --global user.email 'formatter-bot@example.com'
+                  git add -A
+                  git commit -m "Apply code formatting" || echo "No changes to commit"
+                  git push origin ${{ github.ref }}
+                
+                
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
