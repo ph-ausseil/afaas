@@ -103,6 +103,7 @@ jobs:
             git config --global user.email 'autoflake-bot@example.com'
             git add -A
             git commit -m "Apply autoflake fixes" || echo "No changes to commit"
+            git pull
             git push origin ${{ github.ref }}
 
         - name: "Build Changelog"
@@ -141,6 +142,7 @@ jobs:
                   git config --global user.email 'ph.ausseil@gmail.com'
                   git add -A
                   git commit -m "Apply code formatting" || echo "No changes to commit"
+                  git pull
                   git push origin ${{ github.ref }}
                 
                 
