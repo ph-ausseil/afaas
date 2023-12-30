@@ -85,8 +85,7 @@ jobs:
         - name: Run isort
           run: |
             poetry run isort --profile black .
-            git config --global user.name 'isort-bot'
-            git config --global user.email '
+           
 
         - name: Run autopep8
           run: |
