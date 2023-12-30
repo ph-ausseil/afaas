@@ -88,7 +88,6 @@ jobs:
           run: |
             poetry run isort --profile black .
            
-
         - name: Run autopep8
           run: |
             poetry run autopep8 --in-place --recursive .
@@ -113,8 +112,7 @@ jobs:
             configurationJson: |
                 {
                 "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Uncategorized</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
-                "pr_template": "[#{{NUMBER}}](#{{URL}}) - #{{TITLE}} - [@#{{AUTHOR}}](https://github.com/#{{AUTHOR}})
-                ) , #{{LABELS}} \n",
+                "pr_template": "[#{{NUMBER}}](#{{URL}}) - #{{TITLE}} - [@#{{AUTHOR}}](https://github.com/#{{AUTHOR}}), #{{LABELS}} \n",
                 "categories": [
                     {
                         "title": "## 💬 Other",
@@ -141,9 +139,9 @@ jobs:
           run: |
                   git config --global user.name 'Pierre-Henri AUSSEIL'
                   git config --global user.email 'ph.ausseil@gmail.com'
+                  git pull
                   git add -A
                   git commit -m "Apply code formatting" || echo "No changes to commit"
-                  git pull
                   git push origin ${{ github.ref }}
                 
                 
