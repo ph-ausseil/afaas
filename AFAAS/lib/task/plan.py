@@ -39,8 +39,8 @@ class Plan(AbstractPlan):
         self.agent.plan: Plan = self
 
         # Load the tasks from the database
-        from AFAAS.interfaces.db.db import AbstractMemory
         from AFAAS.interfaces.db.table.nosql.base import AbstractTable
+        from AFAAS.interfaces.db.db import AbstractMemory
 
         agent: BaseAgent = kwargs["agent"]
         memory: AbstractMemory = agent.memory

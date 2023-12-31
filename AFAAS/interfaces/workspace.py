@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import IO, Any, BinaryIO, Callable, Literal, Optional, TextIO, overload
 
 from AFAAS.configs.schema import Configurable, SystemConfiguration, UserConfigurable
+from AFAAS.configs.schema import SystemConfiguration
 from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)

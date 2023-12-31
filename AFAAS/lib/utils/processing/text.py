@@ -5,7 +5,10 @@ from typing import Iterator, Optional, TypeVar
 
 import spacy
 
-from AFAAS.interfaces.adapters import AbstractChatModelProvider, ChatMessage
+from AFAAS.interfaces.adapters import (
+    AbstractChatModelProvider,
+    ChatMessage,
+)
 from AFAAS.interfaces.adapters.chatmodel import ChatPrompt
 from AFAAS.interfaces.adapters.language_model import ModelTokenizer
 from AFAAS.lib.sdk.logger import AFAASLogger
