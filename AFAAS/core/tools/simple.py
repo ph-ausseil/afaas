@@ -126,7 +126,7 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         self.categories = {}
 
         for module_name in modules:
-            self.import_tool_module(module_name = module_name)
+            self.add_module(module_name = module_name)
 
     def add_module(self, module_name: str) -> None:
         # LOG.trace(
@@ -311,7 +311,7 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         ```
         """
         for cmd_name in self.tools:
-            cmd = self.commands[cmd_name]
+            cmd = self.tools[cmd_name]
             module = self._import_module(cmd.__module__)
             reloaded_module = self._reload_module(module)
             if hasattr(reloaded_module, "register"):

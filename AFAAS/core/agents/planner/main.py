@@ -13,7 +13,7 @@ from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
 from AFAAS.interfaces.db.db import AbstractMemory
-from AFAAS.core.tools.base import BaseToolsRegistry
+from AFAAS.interfaces.tools.base import BaseToolsRegistry
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan
@@ -125,10 +125,10 @@ class PlannerAgent(BaseAgent):
             self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
             self.create_agent()
 
-            # TODO: Save the message user => agent in db !
             from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
             from AFAAS.lib.message_common import AFAASMessageStack
 
+            #FIXME:v.0.0.1 : The first message seem not to be saved in the DB
             self.message_agent_user: AFAASMessageStack = AFAASMessageStack()
             self.message_agent_user.add(
                 message=MessageAgentUser(

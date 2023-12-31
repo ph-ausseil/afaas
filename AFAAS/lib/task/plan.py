@@ -366,7 +366,7 @@ class Plan(AbstractPlan):
         plan._create_initial_tasks(status=TaskStatusList.READY)
 
         #plan_table.add(plan, id=plan.plan_id)
-        plan.save()
+        plan.save(creation=True)
         return plan
 
     def _create_initial_tasks(self, status: TaskStatusList):
@@ -419,7 +419,7 @@ class Plan(AbstractPlan):
 
         self.add_tasks(tasks=initial_task_list)
 
-    async def save(self):
+    def save(self , creation = False):
         ###
         # Step 1 : Lazy saving : Update Existing Tasks
         ###
@@ -450,10 +450,14 @@ class Plan(AbstractPlan):
         agent = self.agent
         if agent:
             memory = agent.memory
+
             plan_table = memory.get_table("plans")
-            plan_table.update(
-                plan_id=self.plan_id, agent_id=self.agent.agent_id, value=self
-            )
+            if creation:
+                plan_table.add(value=self, id=self.plan_id)
+            else:    
+                plan_table.update(
+                    plan_id=self.plan_id, agent_id=self.agent.agent_id, value=self
+                )
 
     @classmethod
     def get_plan_from_db(cls, plan_id: str, agent: BaseAgent):
@@ -466,6 +470,12 @@ class Plan(AbstractPlan):
         memory: AbstractMemory = agent.memory
         plan_table: AgentsTable = memory.get_table("plans")
         plan_dict = plan_table.get(plan_id=plan_id, agent_id=agent.agent_id)
+
+        if len(plan_dict) == 0:
+            raise Exception(
+                f"Plan {plan_id} not found in the database for agent {agent.agent_id}"
+            )
+
         return cls(**plan_dict, agent=agent)
 
     # endregion
