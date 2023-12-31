@@ -27,6 +27,24 @@ if TYPE_CHECKING:
 
 
 class PlannerAgent(BaseAgent):
+
+    #FIXME: Move to BaseAgent
+    @property
+    def tool_registry(self) -> BaseToolsRegistry:
+        if self._tool_registry is None:
+            self._tool_registry = SimpleToolRegistry(
+                settings=self._settings,
+                memory=self.memory,
+                workspace=self.workspace,
+                model_providers=self.default_llm_provider,
+                modules=TOOL_CATEGORIES,
+            )
+        return self._tool_registry
+
+    @tool_registry.setter
+    def tool_registry(self, value : BaseToolsRegistry):
+        self._tool_registry = value
+
     class SystemSettings(BaseAgent.SystemSettings):
         tool_registry: SimpleToolRegistry.SystemSettings = (
             SimpleToolRegistry.SystemSettings()
@@ -102,7 +120,7 @@ class PlannerAgent(BaseAgent):
         ### Step 5a : Create the plan
         ###
         # FIXME: Long term : PlannerLoop / Pipeline get all ready tasks & launch them => Parralelle processing of tasks
-        if hasattr(settings, "plan_id") and settings.plan_id is not None:
+        if hasattr(self, "plan_id") and self.plan_id is not None:
             self.plan: Plan = Plan.get_plan_from_db(
                 plan_id=settings.plan_id, agent=self
             )  # Plan(user_id=user_id)
@@ -110,10 +128,11 @@ class PlannerAgent(BaseAgent):
             # self._loop.set_current_task(task = task)
             self._loop.set_current_task(task=self.plan.get_next_task())
         else:
-            self.create_agent()
             self.plan: Plan = Plan.create_in_db(agent=self)
-            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
             self.plan_id = self.plan.plan_id
+
+            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
+            self.create_agent()
 
             # TODO: Save the message user => agent in db !
             from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
