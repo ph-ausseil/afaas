@@ -8,7 +8,7 @@ from pydantic import Field
 from AFAAS.configs import AFAASModel
 from AFAAS.lib.sdk.logger import AFAASLogger
 
-# from AFAAS.core.tools.schema import ToolResult
+# from AFAAS.interfaces.tools.schema import ToolResult
 LOG = AFAASLogger(name=__name__)
 
 if TYPE_CHECKING:

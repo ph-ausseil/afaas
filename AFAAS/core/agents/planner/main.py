@@ -6,10 +6,14 @@ from typing import TYPE_CHECKING, Awaitable, Callable
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from AFAAS.core.tools import TOOL_CATEGORIES, SimpleToolRegistry
+from AFAAS.core.tools import SimpleToolRegistry
+from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
 from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
-from AFAAS.interfaces.agent import BaseAgent, BasePromptManager, ToolExecutor
+from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
+from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
 from AFAAS.interfaces.db import AbstractMemory
+from AFAAS.interfaces.tools.base import BaseToolsRegistry
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan
@@ -23,6 +27,19 @@ if TYPE_CHECKING:
 
 
 class PlannerAgent(BaseAgent):
+
+
+
+    @property
+    def tool_registry(self) -> BaseToolsRegistry:
+        if self._tool_registry is None:
+            self._tool_registry = SimpleToolRegistry()
+        return self._tool_registry
+
+    @tool_registry.setter
+    def tool_registry(self, value : BaseToolsRegistry):
+        self._tool_registry = value
+
     class SystemSettings(BaseAgent.SystemSettings):
         tool_registry: SimpleToolRegistry.SystemSettings = (
             SimpleToolRegistry.SystemSettings()
