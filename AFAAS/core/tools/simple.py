@@ -91,6 +91,7 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         memory: AbstractMemory,
         workspace: AbstractFileWorkspace,
         model_providers: dict[ModelProviderName, AbstractChatModelProvider],
+        modules: list[str],
     ):
         """
         Initialize the SimpleToolRegistry.
@@ -106,6 +107,10 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
             registry = SimpleToolRegistry(settings, logger, memory, workspace, model_providers)
         """
 
+        LOG.debug("Initializing SimpleToolRegistry...")
+        LOG.notice("Memory, Workspace and ModelProviders are not used anymore argument are supported")
+
+
         # self._memory = memory
         # self._workspace = workspace
         # self._model_providers = model_providers
@@ -119,6 +124,32 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         self.tools = {}
         self.tool_aliases = {}
         self.categories = {}
+
+        for module_name in modules:
+            self.import_tool_module(module_name = module_name)
+
+    def add_module(self, module_name: str) -> None:
+        # LOG.trace(
+        #     f"The following tool categories are disabled: {config.disabled_tool_categories}"
+        # )
+        # enabled_tool_modules = [
+        #     x for x in modules if x not in config.disabled_tool_categories
+        # ]
+        #enabled_tool_modules = [x for x in module_name]
+        enabled_tool_modules = [module_name]
+
+        LOG.notice(f"The following tool categories are enabled: {enabled_tool_modules}")
+
+        for tool_module in enabled_tool_modules:
+            self.import_tool_module(tool_module)
+
+        # # Unregister commands that are incompatible with the current config
+        # for tool in [c for c in new_registry.tools.values()]:
+        #     if callable(tool.enabled) and not tool.enabled(config):
+        #         new_registry.unregister(tool)
+        #         LOG.trace(
+        #             f"Unregistering incompatible tool '{tool.name()}': \"{tool.disabled_reason or 'Disabled by current config.'}\""
+        #         )
 
     def __contains__(self, tool_name: str):
         return tool_name in self.tools or tool_name in self.tool_aliases
@@ -394,55 +425,6 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         )
         # return self.tools
         return self.tools.values()
-
-    @staticmethod
-    def with_tool_modules(
-        modules: list[str],
-        agent: BaseAgent,
-        memory: AbstractMemory,
-        workspace: AbstractFileWorkspace,
-        model_providers: dict[ModelProviderName, AbstractChatModelProvider],
-    ) -> "SimpleToolRegistry":
-        """
-        Creates and returns a new SimpleToolRegistry with tools from given modules.
-        """
-        # new_registry = SimpleToolRegistry(
-        #     settings=SimpleToolRegistry.SystemSettings(),
-        #     logger=logging.getLogger(__name__),
-        #     memory=None,
-        #     workspace=None,
-        #     model_providers={},
-        # )
-        new_registry = SimpleToolRegistry(
-            settings=SimpleToolRegistry.SystemSettings(),
-            memory=memory,
-            workspace=workspace,
-            model_providers=model_providers,
-        )
-        SimpleToolRegistry._agent = agent
-
-        # LOG.trace(
-        #     f"The following tool categories are disabled: {config.disabled_tool_categories}"
-        # )
-        # enabled_tool_modules = [
-        #     x for x in modules if x not in config.disabled_tool_categories
-        # ]
-        enabled_tool_modules = [x for x in modules]
-
-        LOG.trace(f"The following tool categories are enabled: {enabled_tool_modules}")
-
-        for tool_module in enabled_tool_modules:
-            new_registry.import_tool_module(tool_module)
-
-        # # Unregister commands that are incompatible with the current config
-        # for tool in [c for c in new_registry.tools.values()]:
-        #     if callable(tool.enabled) and not tool.enabled(config):
-        #         new_registry.unregister(tool)
-        #         LOG.trace(
-        #             f"Unregistering incompatible tool '{tool.name()}': \"{tool.disabled_reason or 'Disabled by current config.'}\""
-        #         )
-
-        return new_registry
 
     def import_tool_module(self, module_name: str) -> None:
         """
