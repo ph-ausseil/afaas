@@ -12,6 +12,7 @@ from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvid
 from AFAAS.interfaces.agent import BasePromptManager
 from AFAAS.interfaces.agent.loop import BaseLoop  # Import only where it's needed
 from AFAAS.interfaces.db import AbstractMemory
+from AFAAS.interfaces.workflow import WorkflowRegistry, BaseWorkflow
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.message_common import AFAASMessageStack
 from AFAAS.lib.sdk.logger import AFAASLogger
@@ -84,6 +85,12 @@ class AbstractAgent(ABC):
     def workspace(self, value: AbstractFileWorkspace):
         self._workspace = value
 
+
+    @property
+    def workflow_registry(self) -> WorkflowRegistry:
+        if self._workflow_registry is None:
+            self._workflow_registry = WorkflowRegistry()
+        return self._workflow_registry
 
     class SystemSettings(SystemSettings):
 
@@ -176,6 +183,7 @@ class AbstractAgent(ABC):
         default_llm_provider: AbstractLanguageModelProvider,
         vectorstore: VectorStore,
         embedding_model : Embeddings,
+        workflow_registry: WorkflowRegistry,
         user_id: uuid.UUID,
         agent_id: uuid.UUID = None,
         **kwargs,
@@ -204,6 +212,8 @@ class AbstractAgent(ABC):
         self._default_llm_provider : AbstractLanguageModelProvider = default_llm_provider
         self._vectorstore : VectorStore = vectorstore
         self._embedding_model : Embeddings = embedding_model
+
+        self._workflow_registry : WorkflowRegistry = workflow_registry
 
         self._loop : BaseLoop = None
 

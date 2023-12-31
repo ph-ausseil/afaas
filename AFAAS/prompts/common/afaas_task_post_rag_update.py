@@ -24,7 +24,6 @@ from AFAAS.lib.utils.json_schema import JSONSchema
 
 LOG = AFAASLogger(name=__name__)
 
-
 class PostRagTaskUpdateStrategyFunctionNames(str, enum.Enum):
     POST_RAG_UPDATE: str = "afaas_task_post_rag_update"
 
@@ -73,7 +72,7 @@ class AfaasPostRagTaskUpdateStrategy(AbstractPromptStrategy):
                         type=JSONSchema.Type.STRING,
                         description=f"The workflow to be used for the task",
                         required=True,
-                        enum=["default", "software_developpment", "fast_tracked"],
+                        enum=[workflow.name for workflow in self._agent.workflow_registry.workflows],
                     ),
                 ),
             },
@@ -102,6 +101,7 @@ class AfaasPostRagTaskUpdateStrategy(AbstractPromptStrategy):
             "task_sibblings": task_sibblings,
             "task_path": task_path,
             "related_tasks": related_tasks,
+            "workflows": self._agent.workflow_registry.workflows,
         }
 
         messages = []
