@@ -28,8 +28,7 @@ if TYPE_CHECKING:
 
 
 class PlannerAgent(BaseAgent):
-
-    #FIXME: Move to BaseAgent
+    # FIXME: Move to BaseAgent
     @property
     def tool_registry(self) -> BaseToolsRegistry:
         if self._tool_registry is None:
@@ -43,11 +42,10 @@ class PlannerAgent(BaseAgent):
         return self._tool_registry
 
     @tool_registry.setter
-    def tool_registry(self, value : BaseToolsRegistry):
+    def tool_registry(self, value: BaseToolsRegistry):
         self._tool_registry = value
 
     class SystemSettings(BaseAgent.SystemSettings):
-
         class Config(BaseAgent.SystemSettings.Config):
             pass
 
@@ -64,7 +62,7 @@ class PlannerAgent(BaseAgent):
         prompt_manager: BasePromptManager = BasePromptManager(),
         loop: PlannerLoop = PlannerLoop(),
         tool_handler: ToolExecutor = ToolExecutor(),
-        tool_registry= None,
+        tool_registry=None,
         memory: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
@@ -129,7 +127,7 @@ class PlannerAgent(BaseAgent):
             from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
             from AFAAS.lib.message_common import AFAASMessageStack
 
-            #FIXME:v.0.0.1 : The first message seem not to be saved in the DB
+            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB
             self.message_agent_user: AFAASMessageStack = AFAASMessageStack()
             self.message_agent_user.add(
                 message=MessageAgentUser(

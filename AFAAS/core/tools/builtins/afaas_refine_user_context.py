@@ -41,7 +41,7 @@ async def afaas_refine_user_context(task: Task, agent: BaseAgent) -> None:
 
         # FIXME: Define wich dependency to inject
         user_context_agent = UserContextAgent(
-            settings = usercontext_settings,
+            settings=usercontext_settings,
             **UserContextAgent.SystemSettings().dict(),
         )
         # NOTE: We don't save the agent
