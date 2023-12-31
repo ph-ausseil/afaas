@@ -11,9 +11,9 @@ from AFAAS.lib.sdk.logger import AFAASLogger
 LOG = AFAASLogger(name=__name__)
 
 if TYPE_CHECKING:
-    from AFAAS.interfaces.agent import BaseAgent
+    from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.configs import Configurable, SystemConfiguration
+from AFAAS.configs.schema import SystemConfiguration, Configurable
 from AFAAS.core.tools.base import BaseTool, BaseToolsRegistry, ToolConfiguration
 
 # from AFAAS.core.tools.builtins import BUILTIN_TOOLS

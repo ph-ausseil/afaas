@@ -8,7 +8,7 @@ from pydantic import Field
 # from AFAAS.core.memory import
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.meta import TaskStatusList
-from AFAAS.interfaces.task.plan import AbstractPlan
+from AFAAS.interfaces.task.plan import AbstractPlan, AbstractBaseTask
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 
@@ -103,13 +103,13 @@ class Plan(AbstractPlan):
         """
         return self._done_task_ids
 
-    def get_task(self, task_id: str) -> Task:
+    def get_task(self, task_id: str) -> AbstractBaseTask:
         """
         Get a task from the plan
         """
         task: Task = None
-        if task_id == self.agent.plan.plan_id:
-            return self.agent.plan
+        if task_id == self.plan_id:
+            return self
         if task_id in self._all_task_ids:
             task = self._loaded_tasks_dict.get(task_id)
             if task is None:
@@ -168,7 +168,7 @@ class Plan(AbstractPlan):
             LOG.notice(
                 f"No Task has been provided, we will try to find the first ready task"
             )
-            tasks = self.find_ready_branch()
+            tasks = self.find_ready_subbranch()
             if len(tasks) > 0:
                 return tasks[0]
             else:
@@ -189,7 +189,7 @@ class Plan(AbstractPlan):
                 LOG.error(f"Task {task.formated_str()} is not a plan and has no parent")
             return None
         elif task.task_parent is not None:
-            t = task.task_parent.find_ready_branch()
+            t = task.task_parent.find_ready_subbranch()
             if len(t) > 0:
                 return t[0]
             else:
@@ -365,7 +365,8 @@ class Plan(AbstractPlan):
 
         plan._create_initial_tasks(status=TaskStatusList.READY)
 
-        plan_table.add(plan, id=plan.plan_id)
+        #plan_table.add(plan, id=plan.plan_id)
+        plan.save()
         return plan
 
     def _create_initial_tasks(self, status: TaskStatusList):
