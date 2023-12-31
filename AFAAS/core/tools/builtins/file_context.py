@@ -21,9 +21,9 @@ from AFAAS.lib.utils.json_schema import JSONSchema
 
 from .decorators import sanitize_path_arg
 
+
 COMMAND_CATEGORY = "file_operations"
 COMMAND_CATEGORY_TITLE = "File Operations"
-
 
 
 def agent_implements_context(agent: BaseAgent) -> bool:
