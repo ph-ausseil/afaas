@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+#FIXME:v0.0.1
 from AFAAS.interfaces.prompts.strategy import AbstractPromptStrategy
-
+from AFAAS.prompts.common import *
 
 def load_all_strategies() -> list[AbstractPromptStrategy]:
     import AFAAS.prompts.planner as planner
