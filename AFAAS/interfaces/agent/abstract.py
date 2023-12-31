@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Optional
 
 from pydantic import Field
 
-from AFAAS.configs import Configurable, SystemSettings
+from AFAAS.configs.schema import Configurable, SystemSettings
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
-from AFAAS.interfaces.agent import BasePromptManager
+from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.loop import BaseLoop  # Import only where it's needed
-from AFAAS.interfaces.db import AbstractMemory
+from AFAAS.interfaces.db.db import AbstractMemory
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.message_common import AFAASMessageStack
@@ -25,7 +25,7 @@ from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
-    from AFAAS.interfaces.task import AbstractPlan
+    from AFAAS.interfaces.task.plan import AbstractPlan
 
 
 class AbstractAgent(ABC):
