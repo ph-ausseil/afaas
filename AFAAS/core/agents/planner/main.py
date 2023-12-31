@@ -46,9 +46,6 @@ class PlannerAgent(BaseAgent):
         self._tool_registry = value
 
     class SystemSettings(BaseAgent.SystemSettings):
-        tool_registry: SimpleToolRegistry.SystemSettings = (
-            SimpleToolRegistry.SystemSettings()
-        )
 
         class Config(BaseAgent.SystemSettings.Config):
             pass
@@ -65,8 +62,8 @@ class PlannerAgent(BaseAgent):
         agent_id: uuid.UUID = SystemSettings.generate_uuid(),
         prompt_manager: BasePromptManager = BasePromptManager(),
         loop: PlannerLoop = PlannerLoop(),
-        tool_registry=SimpleToolRegistry,
         tool_handler: ToolExecutor = ToolExecutor(),
+        tool_registry= None,
         memory: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
@@ -97,14 +94,8 @@ class PlannerAgent(BaseAgent):
         #
         # Step 4 : Set the ToolRegistry
         #
-        self._tool_registry = tool_registry.with_tool_modules(
-            modules=TOOL_CATEGORIES,
-            agent=self,
-            memory=memory,
-            workspace=workspace,
-            model_providers=default_llm_provider,
-        )
-        # self._tool_registry.set_agent(agent=self)
+        self._tool_registry = tool_registry
+        self.tool_registry.set_agent(agent=self)
 
         ###
         ### Step 5 : Create the Loop
