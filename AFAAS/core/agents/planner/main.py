@@ -6,14 +6,15 @@ from typing import TYPE_CHECKING, Awaitable, Callable
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
+from AFAAS.core.tools.builtins import (
+    TOOL_CATEGORIES,  # FIXME: This is a temporary fix but shall not be delt here
+)
 from AFAAS.core.tools.simple import SimpleToolRegistry
-from AFAAS.core.tools.builtins import TOOL_CATEGORIES #FIXME: This is a temporary fix but shall not be delt here
 from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
-from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
+from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.db.db import AbstractMemory
-from AFAAS.interfaces.tools.base import BaseToolsRegistry
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan
@@ -30,7 +31,7 @@ class PlannerAgent(BaseAgent):
 
 
 
-
+    # FIXME: Move to BaseAgent
     @property
     def tool_registry(self) -> BaseToolsRegistry:
         if self._tool_registry is None:
@@ -44,11 +45,11 @@ class PlannerAgent(BaseAgent):
         return self._tool_registry
 
     @tool_registry.setter
-    def tool_registry(self, value : BaseToolsRegistry):
+    def tool_registry(self, value: BaseToolsRegistry):
         self._tool_registry = value
 
-    class SystemSettings(BaseAgent.SystemSettings):
 
+    class SystemSettings(BaseAgent.SystemSettings):
         class Config(BaseAgent.SystemSettings.Config):
             pass
 
@@ -113,7 +114,7 @@ class PlannerAgent(BaseAgent):
         ### Step 5a : Create the plan
         ###
         # FIXME: Long term : PlannerLoop / Pipeline get all ready tasks & launch them => Parralelle processing of tasks
-        if hasattr(settings, "plan_id") and settings.plan_id is not None:
+        if hasattr(self, "plan_id") and self.plan_id is not None:
             self.plan: Plan = Plan.get_plan_from_db(
                 plan_id=settings.plan_id, agent=self
             )  # Plan(user_id=user_id)
@@ -121,15 +122,16 @@ class PlannerAgent(BaseAgent):
             # self._loop.set_current_task(task = task)
             self._loop.set_current_task(task=self.plan.get_next_task())
         else:
-            self.create_agent()
             self.plan: Plan = Plan.create_in_db(agent=self)
-            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
             self.plan_id = self.plan.plan_id
 
-            # TODO: Save the message user => agent in db !
+            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
+            self.create_agent()
+
             from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
             from AFAAS.lib.message_common import AFAASMessageStack
 
+            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB
             self.message_agent_user: AFAASMessageStack = AFAASMessageStack()
             self.message_agent_user.add(
                 message=MessageAgentUser(

@@ -13,6 +13,7 @@ LOG = AFAASLogger(name=__name__)
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
+
 from AFAAS.configs.schema import Configurable, SystemConfiguration
 # from AFAAS.core.tools.builtins import BUILTIN_TOOLS
 from AFAAS.core.tools.tool_decorator import AFAAS_TOOL_IDENTIFIER
@@ -25,6 +26,8 @@ from AFAAS.interfaces.adapters import (
     ModelProviderName,
 )
 from AFAAS.interfaces.db.db import AbstractMemory
+from AFAAS.interfaces.tools.base import BaseTool, BaseToolsRegistry, ToolConfiguration
+from AFAAS.interfaces.tools.schema import ToolResult
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 
 
@@ -108,8 +111,9 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         """
 
         LOG.debug("Initializing SimpleToolRegistry...")
-        LOG.notice("Memory, Workspace and ModelProviders are not used anymore argument are supported")
-
+        LOG.notice(
+            "Memory, Workspace and ModelProviders are not used anymore argument are supported"
+        )
 
         # self._memory = memory
         # self._workspace = workspace
@@ -126,7 +130,7 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         self.categories = {}
 
         for module_name in modules:
-            self.import_tool_module(module_name = module_name)
+            self.add_module(module_name=module_name)
 
     def add_module(self, module_name: str) -> None:
         # LOG.trace(
@@ -135,7 +139,8 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         # enabled_tool_modules = [
         #     x for x in modules if x not in config.disabled_tool_categories
         # ]
-        #enabled_tool_modules = [x for x in module_name]
+        # enabled_tool_modules = [x for x in module_name]
+        
         enabled_tool_modules = [module_name]
 
         LOG.notice(f"The following tool categories are enabled: {enabled_tool_modules}")
@@ -311,7 +316,7 @@ class SimpleToolRegistry(Configurable, BaseToolsRegistry):
         ```
         """
         for cmd_name in self.tools:
-            cmd = self.commands[cmd_name]
+            cmd = self.tools[cmd_name]
             module = self._import_module(cmd.__module__)
             reloaded_module = self._reload_module(module)
             if hasattr(reloaded_module, "register"):
