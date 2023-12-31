@@ -9,7 +9,7 @@ from langchain_core.vectorstores import VectorStore
 from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
 from AFAAS.interfaces.agent import BaseAgent, BaseLoopHook, BasePromptManager
 from AFAAS.interfaces.db import AbstractMemory
-from AFAAS.interfaces.workflow import WorkflowRegistry, BaseWorkflow
+from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.sdk.logger import AFAASLogger
 
@@ -35,7 +35,7 @@ class UserContextAgent(BaseAgent):
         workspace: AbstractFileWorkspace = None,
         vectorstores: VectorStore = None,
         embeddings: Embeddings = None,
-        workflow_registry : WorkflowRegistry = None,
+        workflow_registry: WorkflowRegistry = None,
         **kwargs,
     ):
         super().__init__(
