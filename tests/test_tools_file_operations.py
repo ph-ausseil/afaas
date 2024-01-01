@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
+from .dataset.plan_familly_dinner import task_ready_no_predecessors_or_subtasks , Task
 
 from langchain_core.embeddings import Embeddings
 import AFAAS.core.tools.builtins.file_operations as file_ops
@@ -200,10 +201,10 @@ def test_read_file(
     assert content.replace("\r", "") == file_content
 
 
-def test_read_file_not_found(agent: BaseAgent):
+def test_read_file_not_found(task_ready_no_predecessors_or_subtasks : Task, agent: BaseAgent):
     filename = "does_not_exist.txt"
     with pytest.raises(FileNotFoundError):
-        file_ops.read_file(filename, agent=agent)
+        file_ops.read_file(filename, agent=agent, task=test_read_file_not_found)
 
 
 @pytest.mark.asyncio

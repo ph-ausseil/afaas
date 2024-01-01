@@ -16,97 +16,97 @@ plan_prepare_dinner = Plan(
     task_id="100", task_goal="100. Prepare Dinner for Family", agent=PLANNERAGENT
 )
 PLANNERAGENT.plan = plan_prepare_dinner
-plan_prepare_dinner.state = TaskStatusList.READY
+#plan_prepare_dinner.state = TaskStatusList.READY
 
-task_101_buy_groceries = Task(task_id="101", task_goal="101. Buy Groceries")
+task_101_buy_groceries = Task(agent = PLANNERAGENT, task_id="101", task_goal="101. Buy Groceries")
 task_101_buy_groceries.state = TaskStatusList.READY
 
-task_102_clean_kitchen = Task(task_id="102", task_goal="102. Clean Kitchen")
+task_102_clean_kitchen = Task(agent = PLANNERAGENT, task_id="102", task_goal="102. Clean Kitchen")
 task_102_clean_kitchen.state = TaskStatusList.READY
 
-task_103_choose_music = Task(task_id="103", task_goal="103. Choose Dinner Music")
+task_103_choose_music = Task(agent = PLANNERAGENT, task_id="103", task_goal="103. Choose Dinner Music")
 task_103_choose_music.state = TaskStatusList.READY
 
-task_104_decorate_dining_room = Task(
+task_104_decorate_dining_room = Task(agent = PLANNERAGENT, 
     task_id="104", task_goal="104. Decorate Dining Room"
 )
 task_104_decorate_dining_room.state = TaskStatusList.READY
 
-task_105_set_mood = Task(task_id="105", task_goal="105. Set the Mood for Dinner")
+task_105_set_mood = Task(agent = PLANNERAGENT, task_id="105", task_goal="105. Set the Mood for Dinner")
 task_105_set_mood.add_predecessor(task_103_choose_music)
 task_105_set_mood.add_predecessor(task_104_decorate_dining_room)
 
-task_106_set_table = Task(task_id="106", task_goal="106. Set the Table")
+task_106_set_table = Task(agent = PLANNERAGENT, task_id="106", task_goal="106. Set the Table")
 task_106_set_table.add_predecessor(task_105_set_mood)
 
-task_107_make_salad = Task(task_id="107", task_goal="107. Make Salad")
+task_107_make_salad = Task(agent = PLANNERAGENT, task_id="107", task_goal="107. Make Salad")
 task_107_make_salad.add_predecessor(task_106_set_table)
 
-task_108_serve_salad = Task(task_id="108", task_goal="108. Serve Salad")
+task_108_serve_salad = Task(agent = PLANNERAGENT, task_id="108", task_goal="108. Serve Salad")
 task_108_serve_salad.add_predecessor(task_107_make_salad)
 
-task_200_prepare_main_course = Task(task_id="200", task_goal="200. Prepare Main Course")
+task_200_prepare_main_course = Task(agent = PLANNERAGENT, task_id="200", task_goal="200. Prepare Main Course")
 task_200_prepare_main_course.add_predecessor(task_106_set_table)
 
-task_201_serve_dinner = Task(task_id="201", task_goal="201. Serve Main Course")
+task_201_serve_dinner = Task(agent = PLANNERAGENT, task_id="201", task_goal="201. Serve Main Course")
 task_201_serve_dinner.add_predecessor(task_200_prepare_main_course)
 task_201_serve_dinner.add_predecessor(task_108_serve_salad)
 
-task_300_make_banana_bread = Task(task_id="300", task_goal="300. Make Banana Bread")
+task_300_make_banana_bread = Task(agent = PLANNERAGENT, task_id="300", task_goal="300. Make Banana Bread")
 
-task_300_1_gather_ingredients = Task(
+task_300_1_gather_ingredients = Task(agent = PLANNERAGENT, 
     task_id="300.1", task_goal="300.1. Gather Ingredients"
 )
 task_300_1_gather_ingredients.add_predecessor(task_101_buy_groceries)
 task_300_1_gather_ingredients.add_predecessor(task_102_clean_kitchen)
 
-task_300_2_prepare_baking_pan = Task(
+task_300_2_prepare_baking_pan = Task(agent = PLANNERAGENT, 
     task_id="300.2", task_goal="300.2. Prepare Baking Pan"
 )
 
-task_300_3_mix_ingredients = Task(task_id="300.3", task_goal="300.3. Mix Ingredients")
+task_300_3_mix_ingredients = Task(agent = PLANNERAGENT, task_id="300.3", task_goal="300.3. Mix Ingredients")
 task_300_3_mix_ingredients.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_4_bake_bread = Task(task_id="300.4", task_goal="300.4. Bake the Bread")
+task_300_4_bake_bread = Task(agent = PLANNERAGENT, task_id="300.4", task_goal="300.4. Bake the Bread")
 task_300_4_bake_bread.add_predecessor(task_201_serve_dinner)
 task_300_4_bake_bread.add_predecessor(task_300_3_mix_ingredients)
 
-task_300_5_cool_bread = Task(task_id="300.5", task_goal="300.5. Cool the Bread")
+task_300_5_cool_bread = Task(agent = PLANNERAGENT, task_id="300.5", task_goal="300.5. Cool the Bread")
 task_300_5_cool_bread.add_predecessor(task_300_4_bake_bread)
 
-task_300_6_serve_bread = Task(task_id="300.6", task_goal="300.6. Serve Banana Bread")
+task_300_6_serve_bread = Task(agent = PLANNERAGENT, task_id="300.6", task_goal="300.6. Serve Banana Bread")
 task_300_6_serve_bread.add_predecessor(task_300_5_cool_bread)
 task_300_6_serve_bread.add_predecessor(task_201_serve_dinner)
 
 # Subtasks for 'Mix Ingredients'
-task_300_3_1_measure_flour = Task(task_id="300.3.1", task_goal="300.3.1. Measure Flour")
+task_300_3_1_measure_flour = Task(agent = PLANNERAGENT, task_id="300.3.1", task_goal="300.3.1. Measure Flour")
 task_300_3_1_measure_flour.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_3_2_mash_bananas = Task(task_id="300.3.2", task_goal="300.3.2. Mash Bananas")
+task_300_3_2_mash_bananas = Task(agent = PLANNERAGENT, task_id="300.3.2", task_goal="300.3.2. Mash Bananas")
 task_300_3_2_mash_bananas.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_3_3_combine_wet_ingredients = Task(
+task_300_3_3_combine_wet_ingredients = Task(agent = PLANNERAGENT, 
     task_id="300.3.3", task_goal="300.3.3. Combine Wet Ingredients"
 )
 task_300_3_3_combine_wet_ingredients.add_predecessor(task_300_3_1_measure_flour)
 task_300_3_3_combine_wet_ingredients.add_predecessor(task_300_3_2_mash_bananas)
 
-task_300_2_1_grease_pan = Task(
+task_300_2_1_grease_pan = Task(agent = PLANNERAGENT, 
     task_id="300.2.1", task_goal="300.2.1. Grease Baking Pan"
 )
 task_300_2_1_grease_pan.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_2_2_line_pan = Task(
+task_300_2_2_line_pan = Task(agent = PLANNERAGENT, 
     task_id="300.2.2", task_goal="300.2.2. Line Baking Pan with Parchment Paper"
 )
 task_300_2_2_line_pan.add_predecessor(task_300_2_1_grease_pan)
 
-task_300_1_1_find_ingredients_list = Task(
+task_300_1_1_find_ingredients_list = Task(agent = PLANNERAGENT, 
     task_id="300.1.1", task_goal="300.1.1. Find Ingredients List"
 )
 task_300_1_1_find_ingredients_list.add_predecessor(task_101_buy_groceries)
 
-task_300_1_2_check_pantry = Task(
+task_300_1_2_check_pantry = Task(agent = PLANNERAGENT, 
     task_id="300.1.2", task_goal="300.1.2. Check Pantry for Ingredients"
 )
 task_300_1_2_check_pantry.add_predecessor(task_300_1_1_find_ingredients_list)

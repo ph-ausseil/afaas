@@ -7,7 +7,7 @@ import hashlib
 import os
 import os.path
 from pathlib import Path
-from typing import Generator, Literal
+from typing import Generator, Literal, Iterator
 
 from langchain_community.tools.file_management.file_search import FileSearchTool
 from langchain_core.vectorstores import VectorStore
