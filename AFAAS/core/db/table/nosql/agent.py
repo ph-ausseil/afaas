@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from .base import BaseNoSQLTable
+from .....interfaces.db.table.nosql.base import BaseNoSQLTable
 
 
 class AgentsTable(BaseNoSQLTable):
@@ -13,7 +13,7 @@ class AgentsTable(BaseNoSQLTable):
     third_key = "agent_type"
 
     if TYPE_CHECKING:
-        from AFAAS.interfaces.agent import BaseAgent
+        from AFAAS.interfaces.agent.main import BaseAgent
 
     def add(self, value: dict, id: str = "A" + str(uuid.uuid4())) -> str:
         return super().add(value, id)

@@ -1,25 +1,21 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Awaitable, Callable, Optional
+from typing import TYPE_CHECKING, Awaitable, Callable
 
-from langchain_community.embeddings.openai import OpenAIEmbeddings
-from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from pydantic import Field
 
-from AFAAS.core.adapters.openai import AFAASChatOpenAI, OpenAISettings
-from AFAAS.core.tools import TOOL_CATEGORIES, SimpleToolRegistry
-from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
-from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
-from AFAAS.interfaces.agent import (
-    BaseAgent,
-    BaseLoopHook,
-    BasePromptManager,
-    ToolExecutor,
+from AFAAS.core.tools.builtins import (
+    TOOL_CATEGORIES,  # FIXME: This is a temporary fix but shall not be delt here
 )
-from AFAAS.interfaces.db import AbstractMemory
+from AFAAS.core.tools.simple import SimpleToolRegistry
+from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
+from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
+from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
+from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.interfaces.db.db import AbstractMemory
+from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan
 
@@ -34,13 +30,26 @@ if TYPE_CHECKING:
 class PlannerAgent(BaseAgent):
 
 
+
+    # FIXME: Move to BaseAgent
+    @property
+    def tool_registry(self) -> BaseToolsRegistry:
+        if self._tool_registry is None:
+            self._tool_registry = SimpleToolRegistry(
+                settings=self._settings,
+                memory=self.memory,
+                workspace=self.workspace,
+                model_providers=self.default_llm_provider,
+                modules=TOOL_CATEGORIES,
+            )
+        return self._tool_registry
+
+    @tool_registry.setter
+    def tool_registry(self, value: BaseToolsRegistry):
+        self._tool_registry = value
+
+
     class SystemSettings(BaseAgent.SystemSettings):
-
-        tool_registry: SimpleToolRegistry.SystemSettings = (
-            SimpleToolRegistry.SystemSettings()
-        )
-
-
         class Config(BaseAgent.SystemSettings.Config):
             pass
 
@@ -56,13 +65,14 @@ class PlannerAgent(BaseAgent):
         agent_id: uuid.UUID = SystemSettings.generate_uuid(),
         prompt_manager: BasePromptManager = BasePromptManager(),
         loop: PlannerLoop = PlannerLoop(),
-        tool_registry = SimpleToolRegistry,
         tool_handler: ToolExecutor = ToolExecutor(),
+        tool_registry= None,
         memory: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
         vectorstore: VectorStore = None,  # Optional parameter for custom vectorstore
         embedding_model: Embeddings = None,  # Optional parameter for custom embedding model
+        workflow_registry: WorkflowRegistry = None,
         **kwargs,
     ):
         super().__init__(
@@ -75,6 +85,7 @@ class PlannerAgent(BaseAgent):
             agent_id=agent_id,
             vectorstore=vectorstore,
             embedding_model=embedding_model,
+            workflow_registry=workflow_registry,
             **kwargs,
         )
 
@@ -86,14 +97,8 @@ class PlannerAgent(BaseAgent):
         #
         # Step 4 : Set the ToolRegistry
         #
-        self._tool_registry = tool_registry.with_tool_modules(
-            modules=TOOL_CATEGORIES,
-            agent=self,
-            memory=memory,
-            workspace=workspace,
-            model_providers=default_llm_provider,
-        )
-        # self._tool_registry.set_agent(agent=self)
+        self._tool_registry = tool_registry
+        self.tool_registry.set_agent(agent=self)
 
         ###
         ### Step 5 : Create the Loop
@@ -109,7 +114,7 @@ class PlannerAgent(BaseAgent):
         ### Step 5a : Create the plan
         ###
         # FIXME: Long term : PlannerLoop / Pipeline get all ready tasks & launch them => Parralelle processing of tasks
-        if hasattr(settings, "plan_id") and settings.plan_id is not None:
+        if hasattr(self, "plan_id") and self.plan_id is not None:
             self.plan: Plan = Plan.get_plan_from_db(
                 plan_id=settings.plan_id, agent=self
             )  # Plan(user_id=user_id)
@@ -119,13 +124,15 @@ class PlannerAgent(BaseAgent):
         else:
             id = self.create_agent()
             self.plan: Plan = Plan.create_in_db(agent=self)
-            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
             self.plan_id = self.plan.plan_id
 
-            # TODO: Save the message user => agent in db !
+            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
+            self.create_agent()
+
             from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
             from AFAAS.lib.message_common import AFAASMessageStack
 
+            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB
             self.message_agent_user: AFAASMessageStack = AFAASMessageStack()
             self.message_agent_user.add(
                 message=MessageAgentUser(
@@ -209,5 +216,3 @@ class PlannerAgent(BaseAgent):
             user_message_handler=user_message_handler,
         )
         return return_var
-
-

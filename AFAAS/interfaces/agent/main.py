@@ -1,25 +1,14 @@
 from __future__ import annotations
 
-import datetime
-import importlib
-import os
 import uuid
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional
 
-import yaml
-from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
-from pydantic import Field, root_validator
-
-from AFAAS.configs import Configurable
+from AFAAS.configs.schema import Configurable
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
+
 # from AFAAS.interfaces.agent.loop import (  # Import only where it's needed
 #     BaseLoop,
 #     BaseLoopHook,
 # )
-from AFAAS.interfaces.db import AbstractMemory
-
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.sdk.logger import AFAASLogger
 
@@ -27,7 +16,7 @@ from .abstract import AbstractAgent
 
 LOG = AFAASLogger(name = __name__)
 
-from AFAAS.core.adapters.openai import AFAASChatOpenAI
+from AFAAS.core.adapters.openai.chatmodel import AFAASChatOpenAI
 from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
 
 # if TYPE_CHECKING:
@@ -35,7 +24,7 @@ from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
 #         AbstractChatModelResponse,
 #         AbstractPromptStrategy,
 #     )
-#     from AFAAS.interfaces.task import AbstractPlan
+#     from AFAAS.interfaces.task.plan import AbstractPlan
 
 
 class BaseAgent(AbstractAgent, Configurable):
@@ -123,13 +112,13 @@ class BaseAgent(AbstractAgent, Configurable):
     #     agent_id = agent_table.add(agent_settings, id=agent_settings.agent_id)
     #     return agent_id
 
-    # def save_agent_in_memory(self) -> str:
-    #     LOG.trace(self.memory)
-    #     agent_table = self.memory.get_table("agents")
-    #     agent_id = agent_table.update(
-    #         agent_id=self.agent_id, user_id=self.user_id, value=self
-    #     )
-    #     return agent_id
+    def save_agent_in_memory(self) -> str:
+        LOG.trace(self.memory)
+        agent_table = self.memory.get_table("agents")
+        agent_id = agent_table.update(
+            agent_id=self.agent_id, user_id=self.user_id, value=self
+        )
+        return agent_id
 
     @classmethod
     def list_users_agents_from_memory(
@@ -139,9 +128,9 @@ class BaseAgent(AbstractAgent, Configurable):
         page_size: int = 10,
     )  -> list[dict] : #-> list[BaseAgent.SystemSettings]:   
         LOG.trace(f"Entering : {cls.__name__}.list_users_agents_from_memory()")
-        from AFAAS.core.db.table import AgentsTable
-        from AFAAS.interfaces.db import AbstractMemory
-        from AFAAS.interfaces.db_table import AbstractTable
+        from AFAAS.core.db.table.nosql.agent import AgentsTable
+        from AFAAS.interfaces.db.db import AbstractMemory
+        from AFAAS.interfaces.db.db_table import AbstractTable
 
         memory_settings = AbstractMemory.SystemSettings()
 
@@ -178,8 +167,8 @@ class BaseAgent(AbstractAgent, Configurable):
         agent_id: uuid.UUID,
         user_id: uuid.UUID,
     ) -> BaseAgent:
-        from AFAAS.core.db.table import AgentsTable
-        from AFAAS.interfaces.db import AbstractMemory
+        from AFAAS.core.db.table.nosql.agent import AgentsTable
+        from AFAAS.interfaces.db.db import AbstractMemory
 
         # memory_settings = Memory.SystemSettings(configuration=agent_settings.memory)
         memory_settings = agent_settings.memory

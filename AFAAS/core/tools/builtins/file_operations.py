@@ -17,15 +17,16 @@ TOOL_CATEGORY_TITLE = "File Operations"
 
 from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.core.tools.tools import Tool
-from AFAAS.interfaces.agent import BaseAgent
-from AFAAS.interfaces.db import AbstractMemory
+from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import DuplicateOperationError
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
 
 from .decorators import sanitize_path_arg
-from .file_operations_utils import decode_textual_file
+from .file_operations_utils import decode_textual_file #FIXME: replace with Langchain
+COMMAND_CATEGORY = "file_operations"
+COMMAND_CATEGORY_TITLE = "File Operations"
 
 LOG = AFAASLogger(name=__name__)
 
@@ -103,12 +104,8 @@ def is_duplicate_operation(
     Returns:
         True if the operation has already been performed on the file
     """
-    # Make the filename into a relative path if possible
-    with contextlib.suppress(ValueError):
-        filename = str(Path(filename).relative_to(agent.workspace.root))
-
-    state = file_operations_state(agent.config.file_logger_path)
-    if operation == "delete" and filename not in state:
+    state = file_operations_state(agent._setting.Config.file_logger_path)
+    if operation == "delete" and file_path not in state:
         return True
     if operation == "write" and state.get(filename) == checksum:
         return True
@@ -138,7 +135,10 @@ def log_operation(
         log_entry += f" #{checksum}"
     LOG.trace(f"Logging file operation: {log_entry}")
     append_to_file(
-        agent._setting.Config.file_logger_path, f"{log_entry}\n", agent, should_log=False
+        agent._setting.Config.file_logger_path,
+        f"{log_entry}\n",
+        agent,
+        should_log=False,
     )
 
 
@@ -153,7 +153,7 @@ def log_operation(
         )
     },
 )
-def read_file(filename: Path, task: Task, agent: BaseAgent) -> str:
+def read_file(filename:  str | Path, task: Task, agent: BaseAgent) -> str:
     """Read a file and return the contents
 
     Args:
@@ -165,10 +165,31 @@ def read_file(filename: Path, task: Task, agent: BaseAgent) -> str:
     file = agent.workspace.open_file(filename, binary=True)
     content = decode_textual_file(file, os.path.splitext(filename)[1])
 
-    # # TODO: invalidate/update memory when file is edited
+    # TODO: invalidate/update memory when file is edited
     # file_memory = MemoryItem.from_text_file(content, str(filename), agent.config)
     # if len(file_memory.chunks) > 1:
     #     return file_memory.summary
+
+    #cf : ingest_file
+    agent.vectorstore.adelete(id=str(filename))
+    agent.vectorstore.aadd_texts(texts=[content],
+                                #  ids=[str(filename)],
+                                #  lang="en",
+                                #  title=str(filename),
+                                #  description="",
+                                #  tags=[],
+                                #  metadata={},
+                                #  source="",
+                                #  author="",
+                                #  date="",
+                                #  license="",
+                                #  url="",
+                                #  chunk_size=100,
+                                #  chunk_overlap=0,
+                                #  chunking_strategy="fixed",
+                                #  chunking_strategy_args={},
+                                #  chunking_strategy_kwargs={},
+    )
 
     return content
 
@@ -189,7 +210,7 @@ def ingest_file(
         LOG.info(f"Ingesting file {filename}")
         content = read_file(filename)
 
-        # TODO: Move to langchain 
+        # TODO: Move to langchain
         raise ("Not implemented error")
 
         file_memory = MemoryItemFactory.from_text_file(content, filename)

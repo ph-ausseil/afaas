@@ -26,7 +26,6 @@ To initialize and use the `RefineUserContextStrategy`:
 """
 import enum
 import uuid
-from typing import Optional
 
 from AFAAS.interfaces.adapters import (
     AbstractLanguageModelProvider,
@@ -40,7 +39,11 @@ from AFAAS.interfaces.prompts.strategy import (
     AbstractPromptStrategy,
     PromptStrategiesConfiguration,
 )
-from AFAAS.interfaces.prompts.utils import json_loads, to_numbered_list, to_string_list
+from AFAAS.interfaces.prompts.utils.utils import (
+    json_loads,
+    to_numbered_list,
+    to_string_list,
+)
 from AFAAS.lib.message_agent_user import Questions
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.utils.json_schema import JSONSchema

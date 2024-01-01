@@ -3,13 +3,13 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Optional, Union, get_args
 
-from pydantic import BaseModel, Field, validator
+from pydantic import Field
 
-from AFAAS.configs import AFAASModel
-from AFAAS.interfaces.agent import BaseAgent
+from AFAAS.configs.schema import AFAASModel
+from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.logger import AFAASLogger
 
-# from AFAAS.core.tools.schema import ToolResult
+# from AFAAS.interfaces.tools.schema import ToolResult
 LOG = AFAASLogger(name=__name__)
 
 if TYPE_CHECKING:
@@ -44,8 +44,6 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
     ###
     ### GENERAL properties
     ###
-    if TYPE_CHECKING:
-        from AFAAS.interfaces.agent import BaseAgent
 
     agent: BaseAgent = Field(exclude=True)
 
@@ -103,7 +101,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
             return cls._default_command
 
         try:
-            import AFAAS.core.agents.routing
+            pass
 
             cls._default_command = "afaas_routing"
         except:
@@ -336,10 +334,10 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         return None
 
-    def find_ready_branch(self) -> list[AbstractBaseTask]:
+    def find_ready_subbranch(self) -> list[AbstractBaseTask]:
         ready_tasks = []
 
-        def check_task(task: AbstractBaseTask, found_ready: bool) -> bool:
+        def check_task(task: AbstractTask, found_ready: bool) -> bool:
             nonlocal ready_tasks
             if task.is_ready():
                 ready_tasks.append(task)
@@ -350,15 +348,15 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
                 return False
 
             # Check subtasks
-            for subtask in task.subtasks:
-                if check_task(self.agent.plan.get_task(subtask), found_ready):
+            for subtask_id in task.subtasks:
+                if check_task(self.agent.plan.get_task(subtask_id), found_ready):
                     found_ready = True
 
             return found_ready
 
         # Start checking from the root tasks in the plan
-        for task in self.subtasks:
-            if check_task(self.agent.plan.get_task(task), False):
+        for task_id in self.subtasks:
+            if check_task(self.agent.plan.get_task(task_id), False):
                 break  # Break after finding the first ready task and its siblings
 
         return ready_tasks

@@ -7,14 +7,12 @@ from typing import Any, ClassVar
 import inflection
 from pydantic import Field
 
-from AFAAS.configs import SystemConfiguration
+from AFAAS.configs.schema import SystemConfiguration
 from AFAAS.interfaces.adapters import CompletionModelFunction
 from AFAAS.interfaces.adapters.language_model import AbstractPromptConfiguration
 from AFAAS.interfaces.agent.features.agentmixin import AgentMixin
+from AFAAS.interfaces.tools.schema import ToolResult
 from AFAAS.lib.utils.json_schema import JSONSchema
-
-from ..tools.schema import ToolResult
-from .schema import ToolResult
 
 
 class ToolConfiguration(SystemConfiguration):

@@ -3,8 +3,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Optional
 
-from AFAAS.interfaces.agent import BaseAgent
+from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.base import AbstractBaseTask
+from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.task.task import AbstractTask
 
 
@@ -86,4 +87,18 @@ class AbstractPlan(AbstractBaseTask):
 
     @abstractmethod
     def generate_pitch(self, task: Optional[AbstractTask] = None) -> str:
+        ...
+
+    @abstractmethod
+    def _registry_update_task_status_in_list(
+        self, task_id: AbstractTask, status: TaskStatusList
+    ):
+        ...
+
+    @abstractmethod
+    def _register_task_as_modified(self, task_id: str) -> None:
+        ...
+
+    @abstractmethod
+    def _register_new_task(self, task: AbstractTask) -> None:
         ...

@@ -1,24 +1,20 @@
 from __future__ import annotations
 
 import datetime
-import os
 import uuid
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, ClassVar, Optional
 
-import yaml
-from pydantic import Field, root_validator
+from pydantic import Field
 
-from AFAAS.configs import SystemSettings, Configurable
+from AFAAS.configs.schema import Configurable, SystemSettings
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
-from AFAAS.interfaces.agent import BasePromptManager
+from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.loop import BaseLoop  # Import only where it's needed
-from AFAAS.interfaces.db import AbstractMemory
+from AFAAS.interfaces.db.db import AbstractMemory
+from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
-from AFAAS.lib.message_agent_agent import MessageAgentAgent
-from AFAAS.lib.message_agent_llm import MessageAgentLLM
-from AFAAS.lib.message_agent_user import MessageAgentUser
-from AFAAS.lib.message_common import AFAASMessage, AFAASMessageStack
+from AFAAS.lib.message_common import AFAASMessageStack
 from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)
@@ -28,11 +24,8 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
-    from AFAAS.interfaces.task import AbstractPlan
-    from AFAAS.interfaces.prompts.strategy import (
-        AbstractChatModelResponse,
-        AbstractPromptStrategy,
-    )
+    from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
+    from AFAAS.interfaces.task.plan import AbstractPlan
 
 
 class AbstractAgent(ABC):
@@ -92,6 +85,12 @@ class AbstractAgent(ABC):
     def workspace(self, value: AbstractFileWorkspace):
         self._workspace = value
 
+
+    @property
+    def workflow_registry(self) -> WorkflowRegistry:
+        if self._workflow_registry is None:
+            self._workflow_registry = WorkflowRegistry()
+        return self._workflow_registry
 
     class SystemSettings(SystemSettings):
 
@@ -184,6 +183,7 @@ class AbstractAgent(ABC):
         default_llm_provider: AbstractLanguageModelProvider,
         vectorstore: VectorStore,
         embedding_model : Embeddings,
+        workflow_registry: WorkflowRegistry,
         user_id: uuid.UUID,
         agent_id: uuid.UUID = None,
         **kwargs,
@@ -212,6 +212,8 @@ class AbstractAgent(ABC):
         self._default_llm_provider : AbstractLanguageModelProvider = default_llm_provider
         self._vectorstore : VectorStore = vectorstore
         self._embedding_model : Embeddings = embedding_model
+
+        self._workflow_registry : WorkflowRegistry = workflow_registry
 
         self._loop : BaseLoop = None
 

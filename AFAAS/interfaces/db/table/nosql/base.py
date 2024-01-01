@@ -8,8 +8,8 @@ from typing import Any, Literal, Optional, TypedDict
 
 from pydantic import BaseModel
 
-from AFAAS.configs import AFAASModel, SystemSettings
-from AFAAS.interfaces.db_table import AbstractTable
+from AFAAS.configs.schema import AFAASModel
+from AFAAS.interfaces.db.db_table import AbstractTable
 from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)
@@ -52,7 +52,7 @@ class BaseNoSQLTable(AbstractTable):
     @classmethod
     def serialize_value(self, value) -> dict:
         stack = [(value, {}, None)]
-        root_dict = stack[0][1]
+        stack[0][1]
         count = 0
         while stack:
             count += 1
