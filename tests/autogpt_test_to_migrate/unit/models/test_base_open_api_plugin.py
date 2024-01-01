@@ -51,8 +51,8 @@ def test_dummy_plugin_default_methods(dummy_plugin):
     assert not dummy_plugin.can_handle_pre_instruction()
     assert not dummy_plugin.can_handle_on_instruction()
     assert not dummy_plugin.can_handle_post_instruction()
-    assert not dummy_plugin.can_handle_pre_command()
-    assert not dummy_plugin.can_handle_post_command()
+    assert not dummy_plugin.can_handle_pre_tool()
+    assert not dummy_plugin.can_handle_post_tool()
     assert not dummy_plugin.can_handle_chat_completion(None, None, None, None)
     assert not dummy_plugin.can_handle_text_embedding(None)
 
@@ -69,12 +69,12 @@ def test_dummy_plugin_default_methods(dummy_plugin):
     assert pre_instruction[0]["content"] == "Beep, bop, boop"
     assert dummy_plugin.on_instruction(None) is None
     assert dummy_plugin.post_instruction("I'm a robot") == "I'm a robot"
-    pre_command = dummy_plugin.pre_command("evolve", {"continuously": True})
+    pre_command = dummy_plugin.pre_tool("evolve", {"continuously": True})
     assert isinstance(pre_command, tuple)
     assert len(pre_command) == 2
     assert pre_command[0] == "evolve"
     assert pre_command[1]["continuously"] is True
-    post_command = dummy_plugin.post_command("evolve", "upgraded successfully!")
+    post_command = dummy_plugin.post_tool("evolve", "upgraded successfully!")
     assert isinstance(post_command, str)
     assert post_command == "upgraded successfully!"
     assert dummy_plugin.handle_chat_completion(None, None, None, None) is None

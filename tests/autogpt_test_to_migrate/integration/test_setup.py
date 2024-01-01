@@ -6,7 +6,7 @@ from autogpt.app.setup import (
     apply_overrides_to_ai_settings,
     interactively_revise_ai_settings,
 )
-from autogpt.config import AIDirectives, Config
+from AFAAS.configs.config import AIDirectives, Config
 from autogpt.config.ai_profile import AIProfile
 
 

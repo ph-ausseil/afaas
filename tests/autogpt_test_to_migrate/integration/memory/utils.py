@@ -7,7 +7,7 @@ import autogpt.memory.vector.providers.base as memory_provider_base
 from autogpt.config.config import Config
 from autogpt.core.resource.model_providers import OPEN_AI_EMBEDDING_MODELS
 from autogpt.memory.vector import get_memory
-from autogpt.memory.vector.utils import Embedding
+from langchain import Embeddings
 
 
 @pytest.fixture
@@ -16,12 +16,12 @@ def embedding_dimension(config: Config):
 
 
 @pytest.fixture
-def mock_embedding(embedding_dimension: int) -> Embedding:
+def mock_embedding(embedding_dimension: int) -> Embeddings:
     return numpy.full((1, embedding_dimension), 0.0255, numpy.float32)[0]
 
 
 @pytest.fixture
-def mock_get_embedding(mocker: MockerFixture, mock_embedding: Embedding):
+def mock_get_embedding(mocker: MockerFixture, mock_embedding: Embeddings):
     mocker.patch.object(
         vector_memory_item,
         "get_embedding",

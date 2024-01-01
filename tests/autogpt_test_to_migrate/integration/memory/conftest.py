@@ -1,11 +1,11 @@
 import pytest
 
-from autogpt.memory.vector.memory_item import MemoryItem
-from autogpt.memory.vector.utils import Embedding
+#from autogpt.memory.vector.memory_item import MemoryItem
+from langchain import Embeddings
 
 
 @pytest.fixture
-def memory_item(mock_embedding: Embedding):
+def memory_item(mock_embedding: Embeddings):
     return MemoryItem(
         raw_content="test content",
         summary="test content summary",

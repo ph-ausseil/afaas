@@ -7,13 +7,13 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 
-import autogpt.commands.file_operations as file_ops
-from autogpt.agents.agent import Agent
-from autogpt.agents.utils.exceptions import DuplicateOperationError
-from autogpt.config import Config
-from autogpt.file_workspace import FileWorkspace
-from autogpt.memory.vector.memory_item import MemoryItem
-from autogpt.memory.vector.utils import Embedding
+from langchain_core.embeddings import Embeddings
+import AFAAS.core.tools.builtins.file_operations as file_ops
+from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.lib.sdk.errors import DuplicateOperationError
+from AFAAS.configs.config import Config
+from AFAAS.core.workspace import AbstractFileWorkspace
+#from autogpt.memory.vector.memory_item import MemoryItem
 
 
 @pytest.fixture()
@@ -23,7 +23,7 @@ def file_content():
 
 @pytest.fixture()
 def mock_MemoryItem_from_text(
-    mocker: MockerFixture, mock_embedding: Embedding, config: Config
+    mocker: MockerFixture, mock_embedding: Embeddings, config: Config
 ):
     mocker.patch.object(
         file_ops.MemoryItemFactory,
@@ -46,7 +46,7 @@ def test_file_name():
 
 
 @pytest.fixture
-def test_file_path(test_file_name: Path, workspace: FileWorkspace):
+def test_file_path(test_file_name: Path, workspace:AbstractFileWorkspace):
     return workspace.get_path(test_file_name)
 
 
@@ -59,7 +59,7 @@ def test_file(test_file_path: Path):
 
 
 @pytest.fixture()
-def test_file_with_content_path(test_file: TextIOWrapper, file_content, agent: Agent):
+def test_file_with_content_path(test_file: TextIOWrapper, file_content, agent: BaseAgent):
     test_file.write(file_content)
     test_file.close()
     file_ops.log_operation(
@@ -69,12 +69,12 @@ def test_file_with_content_path(test_file: TextIOWrapper, file_content, agent: A
 
 
 @pytest.fixture()
-def test_directory(workspace: FileWorkspace):
+def test_directory(workspace:AbstractFileWorkspace):
     return workspace.get_path("test_directory")
 
 
 @pytest.fixture()
-def test_nested_file(workspace: FileWorkspace):
+def test_nested_file(workspace:AbstractFileWorkspace):
     return workspace.get_path("nested/test_file.txt")
 
 
@@ -121,7 +121,7 @@ def test_file_operations_state(test_file: TextIOWrapper):
     assert file_ops.file_operations_state(test_file.name) == expected_state
 
 
-def test_is_duplicate_operation(agent: Agent, mocker: MockerFixture):
+def test_is_duplicate_operation(agent: BaseAgent, mocker: MockerFixture):
     # Prepare a fake state dictionary for the function to use
     state = {
         "path/to/file1.txt": "checksum1",
@@ -167,7 +167,7 @@ def test_is_duplicate_operation(agent: Agent, mocker: MockerFixture):
 
 
 # Test logging a file operation
-def test_log_operation(agent: Agent):
+def test_log_operation(agent: BaseAgent):
     file_ops.log_operation("log_test", Path("path/to/test"), agent=agent)
     with open(agent.file_manager.file_ops_log_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -181,7 +181,7 @@ def test_text_checksum(file_content: str):
     assert checksum != different_checksum
 
 
-def test_log_operation_with_checksum(agent: Agent):
+def test_log_operation_with_checksum(agent: BaseAgent):
     file_ops.log_operation(
         "log_test", Path("path/to/test"), agent=agent, checksum="ABCDEF"
     )
@@ -194,20 +194,20 @@ def test_read_file(
     mock_MemoryItem_from_text,
     test_file_with_content_path: Path,
     file_content,
-    agent: Agent,
+    agent: BaseAgent,
 ):
     content = file_ops.read_file(test_file_with_content_path, agent=agent)
     assert content.replace("\r", "") == file_content
 
 
-def test_read_file_not_found(agent: Agent):
+def test_read_file_not_found(agent: BaseAgent):
     filename = "does_not_exist.txt"
     with pytest.raises(FileNotFoundError):
         file_ops.read_file(filename, agent=agent)
 
 
 @pytest.mark.asyncio
-async def test_write_to_file_relative_path(test_file_name: Path, agent: Agent):
+async def test_write_to_file_relative_path(test_file_name: Path, agent: BaseAgent):
     new_content = "This is new content.\n"
     await file_ops.write_to_file(test_file_name, new_content, agent=agent)
     with open(agent.workspace.get_path(test_file_name), "r", encoding="utf-8") as f:
@@ -216,7 +216,7 @@ async def test_write_to_file_relative_path(test_file_name: Path, agent: Agent):
 
 
 @pytest.mark.asyncio
-async def test_write_to_file_absolute_path(test_file_path: Path, agent: Agent):
+async def test_write_to_file_absolute_path(test_file_path: Path, agent: BaseAgent):
     new_content = "This is new content.\n"
     await file_ops.write_to_file(test_file_path, new_content, agent=agent)
     with open(test_file_path, "r", encoding="utf-8") as f:
@@ -225,7 +225,7 @@ async def test_write_to_file_absolute_path(test_file_path: Path, agent: Agent):
 
 
 @pytest.mark.asyncio
-async def test_write_file_logs_checksum(test_file_name: Path, agent: Agent):
+async def test_write_file_logs_checksum(test_file_name: Path, agent: BaseAgent):
     new_content = "This is new content.\n"
     new_checksum = file_ops.text_checksum(new_content)
     await file_ops.write_to_file(test_file_name, new_content, agent=agent)
@@ -235,7 +235,7 @@ async def test_write_file_logs_checksum(test_file_name: Path, agent: Agent):
 
 
 @pytest.mark.asyncio
-async def test_write_file_fails_if_content_exists(test_file_name: Path, agent: Agent):
+async def test_write_file_fails_if_content_exists(test_file_name: Path, agent: BaseAgent):
     new_content = "This is new content.\n"
     file_ops.log_operation(
         "write",
@@ -249,14 +249,14 @@ async def test_write_file_fails_if_content_exists(test_file_name: Path, agent: A
 
 @pytest.mark.asyncio
 async def test_write_file_succeeds_if_content_different(
-    test_file_with_content_path: Path, agent: Agent
+    test_file_with_content_path: Path, agent: BaseAgent
 ):
     new_content = "This is different content.\n"
     await file_ops.write_to_file(test_file_with_content_path, new_content, agent=agent)
 
 
 @pytest.mark.asyncio
-async def test_append_to_file(test_nested_file: Path, agent: Agent):
+async def test_append_to_file(test_nested_file: Path, agent: BaseAgent):
     append_text = "This is appended text.\n"
     await file_ops.write_to_file(test_nested_file, append_text, agent=agent)
 
@@ -269,7 +269,7 @@ async def test_append_to_file(test_nested_file: Path, agent: Agent):
 
 
 def test_append_to_file_uses_checksum_from_appended_file(
-    test_file_name: Path, agent: Agent
+    test_file_name: Path, agent: BaseAgent
 ):
     append_text = "This is appended text.\n"
     file_ops.append_to_file(
@@ -296,7 +296,7 @@ def test_append_to_file_uses_checksum_from_appended_file(
     )
 
 
-def test_list_files(workspace: FileWorkspace, test_directory: Path, agent: Agent):
+def test_list_files(workspace:AbstractFileWorkspace, test_directory: Path, agent: BaseAgent):
     # Case 1: Create files A and B, search for A, and ensure we don't return A and B
     file_a = workspace.get_path("file_a.txt")
     file_b = workspace.get_path("file_b.txt")

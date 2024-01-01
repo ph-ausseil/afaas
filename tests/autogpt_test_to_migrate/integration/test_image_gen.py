@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 from PIL import Image
 
-from autogpt.agents.agent import Agent
-from autogpt.commands.image_gen import generate_image, generate_image_with_sd_webui
+from autogpt.agents.agent import PlannerAgent
+from AFAAS.core.tools.image_gen import generate_image, generate_image_with_sd_webui
 
 
 @pytest.fixture(params=[256, 512, 1024])
@@ -18,7 +18,7 @@ def image_size(request):
 
 @pytest.mark.requires_openai_api_key
 @pytest.mark.vcr
-def test_dalle(agent: Agent, workspace, image_size, patched_api_requestor):
+def test_dalle(agent: PlannerAgent, workspace, image_size, patched_api_requestor):
     """Test DALL-E image generation."""
     generate_and_validate(
         agent,
@@ -37,7 +37,7 @@ def test_dalle(agent: Agent, workspace, image_size, patched_api_requestor):
     "image_model",
     ["CompVis/stable-diffusion-v1-4", "stabilityai/stable-diffusion-2-1"],
 )
-def test_huggingface(agent: Agent, workspace, image_size, image_model):
+def test_huggingface(agent: PlannerAgent, workspace, image_size, image_model):
     """Test HuggingFace image generation."""
     generate_and_validate(
         agent,
@@ -49,7 +49,7 @@ def test_huggingface(agent: Agent, workspace, image_size, image_model):
 
 
 @pytest.mark.xfail(reason="SD WebUI call does not work.")
-def test_sd_webui(agent: Agent, workspace, image_size):
+def test_sd_webui(agent: PlannerAgent, workspace, image_size):
     """Test SD WebUI image generation."""
     generate_and_validate(
         agent,
@@ -60,7 +60,7 @@ def test_sd_webui(agent: Agent, workspace, image_size):
 
 
 @pytest.mark.xfail(reason="SD WebUI call does not work.")
-def test_sd_webui_negative_prompt(agent: Agent, workspace, image_size):
+def test_sd_webui_negative_prompt(agent: PlannerAgent, workspace, image_size):
     gen_image = functools.partial(
         generate_image_with_sd_webui,
         prompt="astronaut riding a horse",
@@ -90,7 +90,7 @@ def lst(txt):
 
 
 def generate_and_validate(
-    agent: Agent,
+    agent: PlannerAgent,
     workspace,
     image_size,
     image_provider,
@@ -125,7 +125,7 @@ def generate_and_validate(
 )
 @pytest.mark.parametrize("delay", [10, 0])
 def test_huggingface_fail_request_with_delay(
-    agent: Agent, workspace, image_size, image_model, return_text, delay
+    agent: PlannerAgent, workspace, image_size, image_model, return_text, delay
 ):
     return_text = return_text.replace("[model]", image_model).replace(
         "[delay]", str(delay)
@@ -160,7 +160,7 @@ def test_huggingface_fail_request_with_delay(
                 mock_sleep.assert_not_called()
 
 
-def test_huggingface_fail_request_no_delay(mocker, agent: Agent):
+def test_huggingface_fail_request_no_delay(mocker, agent: PlannerAgent):
     agent.legacy_config.huggingface_api_token = "1"
 
     # Mock requests.post
@@ -185,7 +185,7 @@ def test_huggingface_fail_request_no_delay(mocker, agent: Agent):
     mock_sleep.assert_not_called()
 
 
-def test_huggingface_fail_request_bad_json(mocker, agent: Agent):
+def test_huggingface_fail_request_bad_json(mocker, agent: PlannerAgent):
     agent.legacy_config.huggingface_api_token = "1"
 
     # Mock requests.post
@@ -208,7 +208,7 @@ def test_huggingface_fail_request_bad_json(mocker, agent: Agent):
     mock_sleep.assert_not_called()
 
 
-def test_huggingface_fail_request_bad_image(mocker, agent: Agent):
+def test_huggingface_fail_request_bad_image(mocker, agent: PlannerAgent):
     agent.legacy_config.huggingface_api_token = "1"
 
     # Mock requests.post
@@ -223,7 +223,7 @@ def test_huggingface_fail_request_bad_image(mocker, agent: Agent):
     assert result == "Error creating image."
 
 
-def test_huggingface_fail_missing_api_token(mocker, agent: Agent):
+def test_huggingface_fail_missing_api_token(mocker, agent: PlannerAgent):
     agent.legacy_config.image_provider = "huggingface"
     agent.legacy_config.huggingface_image_model = "CompVis/stable-diffusion-v1-4"
 

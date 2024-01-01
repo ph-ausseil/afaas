@@ -11,7 +11,7 @@ import pytest
 from pydantic import SecretStr
 
 from autogpt.app.configurator import GPT_3_MODEL, GPT_4_MODEL, apply_overrides_to_config
-from autogpt.config import Config, ConfigBuilder
+from AFAAS.configs.config import Config, ConfigBuilder
 
 
 def test_initial_values(config: Config) -> None:

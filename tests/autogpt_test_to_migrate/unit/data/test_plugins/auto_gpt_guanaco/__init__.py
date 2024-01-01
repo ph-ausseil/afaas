@@ -141,7 +141,7 @@ class AutoGPTGuanaco(AutoGPTPluginTemplate):
             str: The resulting response.
         """
 
-    def can_handle_pre_command(self) -> bool:
+    def can_handle_pre_tool(self) -> bool:
         """This method is called to check that the plugin can
         handle the pre_command method.
 
@@ -149,7 +149,7 @@ class AutoGPTGuanaco(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the pre_command method."""
         return False
 
-    def pre_command(
+    def pre_tool(
         self, command_name: str, arguments: Dict[str, Any]
     ) -> Tuple[str, Dict[str, Any]]:
         """This method is called before the command is executed.
@@ -162,7 +162,7 @@ class AutoGPTGuanaco(AutoGPTPluginTemplate):
             Tuple[str, Dict[str, Any]]: The command name and the arguments.
         """
 
-    def can_handle_post_command(self) -> bool:
+    def can_handle_post_tool(self) -> bool:
         """This method is called to check that the plugin can
         handle the post_command method.
 
@@ -170,7 +170,7 @@ class AutoGPTGuanaco(AutoGPTPluginTemplate):
             bool: True if the plugin can handle the post_command method."""
         return False
 
-    def post_command(self, command_name: str, response: str) -> str:
+    def post_tool(self, command_name: str, response: str) -> str:
         """This method is called after the command is executed.
 
         Args:

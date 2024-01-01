@@ -1,6 +1,6 @@
 import pytest
 
-from autogpt.logs.utils import remove_color_codes
+from AFAAS.lib.sdk.logger import remove_color_codes
 
 
 @pytest.mark.parametrize(

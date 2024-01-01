@@ -3,9 +3,9 @@ import json
 import pytest
 from googleapiclient.errors import HttpError
 
-from autogpt.agents.agent import Agent
-from autogpt.agents.utils.exceptions import ConfigurationError
-from autogpt.commands.web_search import google, safe_google_results, web_search
+from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.lib.sdk.errors import ConfigurationError
+from AFAAS.core.tools.web_search import google, safe_google_results, web_search
 
 
 @pytest.mark.parametrize(
@@ -37,12 +37,12 @@ def test_safe_google_results_invalid_input():
     ],
 )
 def test_google_search(
-    query, num_results, expected_output_parts, return_value, mocker, agent: Agent
+    query, num_results, expected_output_parts, return_value, mocker, agent: BaseAgent
 ):
     mock_ddg = mocker.Mock()
     mock_ddg.return_value = return_value
 
-    mocker.patch("autogpt.commands.web_search.DDGS.text", mock_ddg)
+    mocker.patch("AFAAS.core.tools.web_search.DDGS.text", mock_ddg)
     actual_output = web_search(query, agent=agent, num_results=num_results)
     for o in expected_output_parts:
         assert o in actual_output
@@ -82,7 +82,7 @@ def test_google_official_search(
     expected_output,
     search_results,
     mock_googleapiclient,
-    agent: Agent,
+    agent: BaseAgent,
 ):
     mock_googleapiclient.return_value = search_results
     actual_output = google(query, agent=agent, num_results=num_results)
@@ -115,7 +115,7 @@ def test_google_official_search_errors(
     mock_googleapiclient,
     http_code,
     error_msg,
-    agent: Agent,
+    agent: BaseAgent,
 ):
     class resp:
         def __init__(self, _status, _reason):

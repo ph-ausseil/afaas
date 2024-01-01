@@ -2,9 +2,9 @@ import pytest
 from git.exc import GitCommandError
 from git.repo.base import Repo
 
-from autogpt.agents.agent import Agent
-from autogpt.agents.utils.exceptions import CommandExecutionError
-from autogpt.commands.git_operations import clone_repository
+from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.lib.sdk.errors import CommandExecutionError
+from AFAAS.core.tools.git_operations import clone_repository
 
 
 @pytest.fixture
@@ -12,7 +12,7 @@ def mock_clone_from(mocker):
     return mocker.patch.object(Repo, "clone_from")
 
 
-def test_clone_auto_gpt_repository(workspace, mock_clone_from, agent: Agent):
+def test_clone_auto_gpt_repository(workspace, mock_clone_from, agent: BaseAgent):
     mock_clone_from.return_value = None
 
     repo = "github.com/Significant-Gravitas/Auto-GPT.git"
@@ -31,7 +31,7 @@ def test_clone_auto_gpt_repository(workspace, mock_clone_from, agent: Agent):
     )
 
 
-def test_clone_repository_error(workspace, mock_clone_from, agent: Agent):
+def test_clone_repository_error(workspace, mock_clone_from, agent: BaseAgent):
     url = "https://github.com/this-repository/does-not-exist.git"
     clone_path = workspace.get_path("does-not-exist")
 

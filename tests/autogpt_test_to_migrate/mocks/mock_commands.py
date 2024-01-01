@@ -1,10 +1,10 @@
-from autogpt.command_decorator import command
-from autogpt.core.utils.json_schema import JSONSchema
+from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.lib.utils.json_schema import JSONSchema
 
 COMMAND_CATEGORY = "mock"
 
 
-@command(
+@tool(
     "function_based_cmd",
     "Function-based test command",
     {
