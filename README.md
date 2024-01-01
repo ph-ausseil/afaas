@@ -47,11 +47,11 @@ The project will come with a Framework anyone can extend, an agent anyone can ex
 
 ### Currently working on
 
-[v0.0.0](https://github.com/ph-ausseil/afaas/milestone/v0.0.0) : Milestone to test the build process & provide basic building blocs.
+[v0.0.0](https://github.com/ph-ausseil/afaas/milestone/1) : Milestone to test the build process & provide basic building blocs.
 
 ## Roadmap
 
-- [v0.0.0](https://github.com/ph-ausseil/afaas/milestone/v0.0.0) : Milestone to test the build process & provide basic building blocs (Planned on 31/12/2023)
+- [v0.0.0](https://github.com/ph-ausseil/afaas/milestone/1) : Milestone to test the build process & provide basic building blocs (Planned on 31/12/2023)
   - First Agents
   - First Prompts System Based on Jinja
   - First Tools
@@ -59,22 +59,47 @@ The project will come with a Framework anyone can extend, an agent anyone can ex
   - First DB Adapters
   - First Vector Store adapters
   - First Agent-User logging system
-- [v0.0.1](https://github.com/ph-ausseil/afaas/milestone/v0.0.1) - Provide a basic agent with no coding capacity (Planned on 07/01/2024)
+- [v0.0.1](https://github.com/ph-ausseil/afaas/milestone/2) - Provide a basic agent with no coding capacity (Planned on 07/01/2024)
   - Provide an agent that can operate with a basic set of API (Arxiv, Wikipedia, Google Places,...)
-- [v0.0.2](https://github.com/ph-ausseil/afaas/milestone/v0.0.2)  - Reduce Technical debt (Planned on 14/01/2024)
+- [v0.0.2](https://github.com/ph-ausseil/afaas/milestone/3)  - Reduce Technical debt (Planned on 14/01/2024)
   - Improving & automating tests coverage
   - Extend the set of tool
   - Capacity to create own tools
   - Improve general thinking & planning performances
-- [v0.0.3](https://github.com/ph-ausseil/afaas/milestone/v0.0.3)  - Provide basic coding capacities (Planned on 21/01/2024)
+- [v0.0.3](https://github.com/ph-ausseil/afaas/milestone/4)  - Provide basic coding capacities (Planned on 21/01/2024)
   - (Namely implement a first Pipeline/Workflow for code)
-- [v0.0.4](https://github.com/ph-ausseil/afaas/milestone/v0.0.4)  - Serve the agent via an API (Planned on 28/01/2024)
+- [v0.0.4](https://github.com/ph-ausseil/afaas/milestone/5)  - Serve the agent via an API (Planned on 28/01/2024)
   - TBD
-- [v0.1.0](https://github.com/ph-ausseil/afaas/milestone/v0.1.0)  - User & Technical documentation, CI/CD Pipeline, GUI (TBD)
+- [v0.1.0](https://github.com/ph-ausseil/afaas/milestone/6)  - User & Technical documentation, CI/CD Pipeline, GUI (TBD)
   - 80% Test Coverage for API
   - 50% Test Coverage for Core
   - A Web Interface (If we receive help)
 
+## Contributing
+
+We warmly welcome contributions to our project! Pytest expert, React Expert, NodeJS/GitHub Action professional welcomed :smile !
+
+Check out our [issues board](https://github.com/users/ph-ausseil/projects/1/views/2) to find tasks that need your help. We have a variety of issues suitable for different skill levels and areas of interest.
+
+### How to Contribute
+
+1. **Pick an Issue**: Choose an issue that interests you. Feel free to open your own issue or work on an existing one.
+
+2. **Comment on the Issue**: Let us know you're interested in working on the issue by leaving a comment. This helps prevent multiple people from working on the same issue simultaneously.
+
+3. **Fork and Clone the Repository**: Fork the repository to your GitHub account and clone it to your local machine. This will be your private workspace for the project.
+
+4. **Create a New Branch**: Create a branch in your forked repository for the issue you are working on. Naming it relevantly to the issue can be helpful.
+
+5. **Make Your Changes**: Work on the issue in your branch. Be sure to stick to the project's coding standards and guidelines.
+
+6. **Test Your Changes**: Ensure that your changes do not break any existing functionality. Add any necessary tests if applicable.
+
+7. **Submit a Pull Request**: Once you're satisfied with your work, commit your changes, push them to your fork, and submit a pull request to the main repository. Please provide a clear description of your changes and reference the issue number.
+
+8. **Code Review**: Wait for a project maintainer to review your pull request. Be open to feedback and make any necessary adjustments.
+
+9. **Get Merged!**: Once your pull request is approved, it will be merged into the project. Congratulations, you've contributed to the project!
 
 <!--
 and provide additional functionalities, namely : 
