@@ -11,11 +11,10 @@ from typing import TYPE_CHECKING, List, Optional
 
 from pydantic import Field
 
-from AFAAS.configs import AFAASModel
+from AFAAS.configs.schema import AFAASModel
 
 if TYPE_CHECKING:
     from AFAAS.core.agents import PlannerAgent
-    from app.web_app_v2.routes.artifact import list_agent_artifacts, list_artifacts
 
 
 class ArtifactUpload(AFAASModel):
@@ -101,14 +100,14 @@ class AgentRequestBody(AFAASModel):
     # prompt_manager: PromptManager.SystemSettings = PromptManager.SystemSettings()
 
     # additional_input: = Any ?
-    # additional_input: Optional[AbstractAgent.SystemSettings]
+    # additional_input: Optional[BaseAgent.SystemSettings]
 
     def json(self, *args, **kwargs):
         return super().json(*args, **kwargs)
 
 
 class Agent(AgentRequestBody):
-    # additional_input: Optional[AbstractAgent.SystemSettings]
+    # additional_input: Optional[BaseAgent.SystemSettings]
     created_at: datetime = Field(
         ...,
         description="The creation datetime of the task.",
