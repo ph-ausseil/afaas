@@ -6,9 +6,9 @@ TOOL_CATEGORY_TITLE = "Framework"
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from AFAAS.interfaces.agent import BaseAgent
+    from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.command_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema

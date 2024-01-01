@@ -124,7 +124,7 @@ class AFAASModel(BaseModel):
     modified_at: datetime.datetime = datetime.datetime.now()
 
     def dict_memory(self, **dumps_kwargs) -> dict:
-        LOG.trace(f"FIXME: Temporary implementation before a to pydantic 2.0.0")
+        LOG.trace(f"FIXME: Temporary implementation before pydantic 2.0.0")
         dict = self.dict(**dumps_kwargs)
         return self._apply_custom_encoders(data=dict)
 
@@ -211,6 +211,7 @@ class AFAASModel(BaseModel):
 
 class SystemSettings(AFAASModel):
     class Config(AFAASModel.Config):
+        # FIXME: Workaround to not serialize elements that contains unserializable class , proper way is to implement serialization for each class
         default_exclude = {
             "agent",
             "workspace",
@@ -227,6 +228,7 @@ class SystemSettings(AFAASModel):
             "description",
             "parent_agent",
             "current_task",
+            "plan",
         }
 
 

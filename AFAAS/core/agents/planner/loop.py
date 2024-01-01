@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Awaitable, Callable, Dict, Optional
 
-from pydantic import Field
-
 from AFAAS.interfaces.agent.exceptions import (
     AgentException,
     ToolExecutionError,
@@ -14,12 +12,12 @@ from AFAAS.interfaces.tools.tool_output import ToolOutput
 from AFAAS.lib.task.task import Task
 
 if TYPE_CHECKING:
-    from AFAAS.core.agents.planner import PlannerAgent
+    from AFAAS.core.agents.planner.main import PlannerAgent
     from AFAAS.interfaces.adapters import (
         AbstractChatModelResponse,
     )
 
-from AFAAS.interfaces.agent import BaseLoop, BaseLoopHook
+from AFAAS.interfaces.agent.loop import BaseLoop, BaseLoopHook
 from AFAAS.lib.sdk.logger import NOTICE, TRACE, AFAASLogger
 
 LOG = AFAASLogger(name=__name__)
@@ -151,14 +149,13 @@ class PlannerLoop(BaseLoop):
                 ##############################################################
                 ### Step 7 : execute_tool() #
                 ##############################################################
-                result = await self.execute_tool(
+                await self.execute_tool(
                     command_name=command_name,
                     command_args=command_args,
                     current_task=current_task
                     # user_input = assistant_reply_dict
                 )
 
-            print("result", result)
             if current_task.is_ready():
                 """If the task still still match readiness criterias at this point, it means that we can close it"""
                 current_task.state = TaskStatusList.DONE

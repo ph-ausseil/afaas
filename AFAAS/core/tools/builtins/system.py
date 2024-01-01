@@ -8,9 +8,9 @@ TOOL_CATEGORY_TITLE = "System"
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from AFAAS.interfaces.agent import BaseAgent
+    from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.command_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.interfaces.agent.features.context import get_agent_context
 
 # from AFAAS.lib.sdk.errors import AgentTerminated, InvalidArgumentError

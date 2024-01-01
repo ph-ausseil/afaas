@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING
 from AFAAS.lib.task.task import Task
 
 if TYPE_CHECKING:
-    from AFAAS.interfaces.agent import BaseAgent
+    from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.command_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.interfaces.tools.context_items import FileContextItem, FolderContextItem
 from AFAAS.lib.sdk.errors import ToolExecutionError
 from AFAAS.lib.utils.json_schema import JSONSchema
@@ -22,7 +22,7 @@ from AFAAS.lib.utils.json_schema import JSONSchema
 from .decorators import sanitize_path_arg
 
 if TYPE_CHECKING:
-    from autogpt.agents import Agent, BaseAgent
+    from autogpt.agents import BaseAgent
 
 
 def agent_implements_context(task: Task, agent: BaseAgent) -> bool:
