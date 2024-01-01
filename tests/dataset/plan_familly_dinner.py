@@ -12,139 +12,145 @@ from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.lib.task.plan import Plan
 from AFAAS.lib.task.task import Task
 
-plan_prepare_dinner = Plan(
-    task_id="100", task_goal="100. Prepare Dinner for Family", agent=PLANNERAGENT
-)
-PLANNERAGENT.plan = plan_prepare_dinner
-#plan_prepare_dinner.state = TaskStatusList.READY
+@pytest.fixture(scope='function')
+def plan_familly_dinner():
 
-task_101_buy_groceries = Task(agent = PLANNERAGENT, task_id="101", task_goal="101. Buy Groceries")
-task_101_buy_groceries.state = TaskStatusList.READY
+    plan_prepare_dinner = Plan(
+        task_id="100", task_goal="100. Prepare Dinner for Family", agent=PLANNERAGENT
+    )
+    PLANNERAGENT.plan = plan_prepare_dinner
+    #plan_prepare_dinner.state = TaskStatusList.READY
 
-task_102_clean_kitchen = Task(agent = PLANNERAGENT, task_id="102", task_goal="102. Clean Kitchen")
-task_102_clean_kitchen.state = TaskStatusList.READY
+    task_101_buy_groceries = Task(agent = PLANNERAGENT, task_id="101", task_goal="101. Buy Groceries")
+    task_101_buy_groceries.state = TaskStatusList.READY
 
-task_103_choose_music = Task(agent = PLANNERAGENT, task_id="103", task_goal="103. Choose Dinner Music")
-task_103_choose_music.state = TaskStatusList.READY
+    task_102_clean_kitchen = Task(agent = PLANNERAGENT, task_id="102", task_goal="102. Clean Kitchen")
+    task_102_clean_kitchen.state = TaskStatusList.READY
 
-task_104_decorate_dining_room = Task(agent = PLANNERAGENT, 
-    task_id="104", task_goal="104. Decorate Dining Room"
-)
-task_104_decorate_dining_room.state = TaskStatusList.READY
+    task_103_choose_music = Task(agent = PLANNERAGENT, task_id="103", task_goal="103. Choose Dinner Music")
+    task_103_choose_music.state = TaskStatusList.READY
 
-task_105_set_mood = Task(agent = PLANNERAGENT, task_id="105", task_goal="105. Set the Mood for Dinner")
-task_105_set_mood.add_predecessor(task_103_choose_music)
-task_105_set_mood.add_predecessor(task_104_decorate_dining_room)
+    task_104_decorate_dining_room = Task(agent = PLANNERAGENT, 
+        task_id="104", task_goal="104. Decorate Dining Room"
+    )
+    task_104_decorate_dining_room.state = TaskStatusList.READY
 
-task_106_set_table = Task(agent = PLANNERAGENT, task_id="106", task_goal="106. Set the Table")
-task_106_set_table.add_predecessor(task_105_set_mood)
+    task_105_set_mood = Task(agent = PLANNERAGENT, task_id="105", task_goal="105. Set the Mood for Dinner")
+    task_105_set_mood.add_predecessor(task_103_choose_music)
+    task_105_set_mood.add_predecessor(task_104_decorate_dining_room)
 
-task_107_make_salad = Task(agent = PLANNERAGENT, task_id="107", task_goal="107. Make Salad")
-task_107_make_salad.add_predecessor(task_106_set_table)
+    task_106_set_table = Task(agent = PLANNERAGENT, task_id="106", task_goal="106. Set the Table")
+    task_106_set_table.add_predecessor(task_105_set_mood)
 
-task_108_serve_salad = Task(agent = PLANNERAGENT, task_id="108", task_goal="108. Serve Salad")
-task_108_serve_salad.add_predecessor(task_107_make_salad)
+    task_107_make_salad = Task(agent = PLANNERAGENT, task_id="107", task_goal="107. Make Salad")
+    task_107_make_salad.add_predecessor(task_106_set_table)
 
-task_200_prepare_main_course = Task(agent = PLANNERAGENT, task_id="200", task_goal="200. Prepare Main Course")
-task_200_prepare_main_course.add_predecessor(task_106_set_table)
+    task_108_serve_salad = Task(agent = PLANNERAGENT, task_id="108", task_goal="108. Serve Salad")
+    task_108_serve_salad.add_predecessor(task_107_make_salad)
 
-task_201_serve_dinner = Task(agent = PLANNERAGENT, task_id="201", task_goal="201. Serve Main Course")
-task_201_serve_dinner.add_predecessor(task_200_prepare_main_course)
-task_201_serve_dinner.add_predecessor(task_108_serve_salad)
+    task_200_prepare_main_course = Task(agent = PLANNERAGENT, task_id="200", task_goal="200. Prepare Main Course")
+    task_200_prepare_main_course.add_predecessor(task_106_set_table)
 
-task_300_make_banana_bread = Task(agent = PLANNERAGENT, task_id="300", task_goal="300. Make Banana Bread")
+    task_201_serve_dinner = Task(agent = PLANNERAGENT, task_id="201", task_goal="201. Serve Main Course")
+    task_201_serve_dinner.add_predecessor(task_200_prepare_main_course)
+    task_201_serve_dinner.add_predecessor(task_108_serve_salad)
 
-task_300_1_gather_ingredients = Task(agent = PLANNERAGENT, 
-    task_id="300.1", task_goal="300.1. Gather Ingredients"
-)
-task_300_1_gather_ingredients.add_predecessor(task_101_buy_groceries)
-task_300_1_gather_ingredients.add_predecessor(task_102_clean_kitchen)
+    task_300_make_banana_bread = Task(agent = PLANNERAGENT, task_id="300", task_goal="300. Make Banana Bread")
 
-task_300_2_prepare_baking_pan = Task(agent = PLANNERAGENT, 
-    task_id="300.2", task_goal="300.2. Prepare Baking Pan"
-)
+    task_300_1_gather_ingredients = Task(agent = PLANNERAGENT, 
+        task_id="300.1", task_goal="300.1. Gather Ingredients"
+    )
+    task_300_1_gather_ingredients.add_predecessor(task_101_buy_groceries)
+    task_300_1_gather_ingredients.add_predecessor(task_102_clean_kitchen)
 
-task_300_3_mix_ingredients = Task(agent = PLANNERAGENT, task_id="300.3", task_goal="300.3. Mix Ingredients")
-task_300_3_mix_ingredients.add_predecessor(task_300_1_gather_ingredients)
+    task_300_2_prepare_baking_pan = Task(agent = PLANNERAGENT, 
+        task_id="300.2", task_goal="300.2. Prepare Baking Pan"
+    )
 
-task_300_4_bake_bread = Task(agent = PLANNERAGENT, task_id="300.4", task_goal="300.4. Bake the Bread")
-task_300_4_bake_bread.add_predecessor(task_201_serve_dinner)
-task_300_4_bake_bread.add_predecessor(task_300_3_mix_ingredients)
+    task_300_3_mix_ingredients = Task(agent = PLANNERAGENT, task_id="300.3", task_goal="300.3. Mix Ingredients")
+    task_300_3_mix_ingredients.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_5_cool_bread = Task(agent = PLANNERAGENT, task_id="300.5", task_goal="300.5. Cool the Bread")
-task_300_5_cool_bread.add_predecessor(task_300_4_bake_bread)
+    task_300_4_bake_bread = Task(agent = PLANNERAGENT, task_id="300.4", task_goal="300.4. Bake the Bread")
+    task_300_4_bake_bread.add_predecessor(task_201_serve_dinner)
+    task_300_4_bake_bread.add_predecessor(task_300_3_mix_ingredients)
 
-task_300_6_serve_bread = Task(agent = PLANNERAGENT, task_id="300.6", task_goal="300.6. Serve Banana Bread")
-task_300_6_serve_bread.add_predecessor(task_300_5_cool_bread)
-task_300_6_serve_bread.add_predecessor(task_201_serve_dinner)
+    task_300_5_cool_bread = Task(agent = PLANNERAGENT, task_id="300.5", task_goal="300.5. Cool the Bread")
+    task_300_5_cool_bread.add_predecessor(task_300_4_bake_bread)
 
-# Subtasks for 'Mix Ingredients'
-task_300_3_1_measure_flour = Task(agent = PLANNERAGENT, task_id="300.3.1", task_goal="300.3.1. Measure Flour")
-task_300_3_1_measure_flour.add_predecessor(task_300_1_gather_ingredients)
+    task_300_6_serve_bread = Task(agent = PLANNERAGENT, task_id="300.6", task_goal="300.6. Serve Banana Bread")
+    task_300_6_serve_bread.add_predecessor(task_300_5_cool_bread)
+    task_300_6_serve_bread.add_predecessor(task_201_serve_dinner)
 
-task_300_3_2_mash_bananas = Task(agent = PLANNERAGENT, task_id="300.3.2", task_goal="300.3.2. Mash Bananas")
-task_300_3_2_mash_bananas.add_predecessor(task_300_1_gather_ingredients)
+    # Subtasks for 'Mix Ingredients'
+    task_300_3_1_measure_flour = Task(agent = PLANNERAGENT, task_id="300.3.1", task_goal="300.3.1. Measure Flour")
+    task_300_3_1_measure_flour.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_3_3_combine_wet_ingredients = Task(agent = PLANNERAGENT, 
-    task_id="300.3.3", task_goal="300.3.3. Combine Wet Ingredients"
-)
-task_300_3_3_combine_wet_ingredients.add_predecessor(task_300_3_1_measure_flour)
-task_300_3_3_combine_wet_ingredients.add_predecessor(task_300_3_2_mash_bananas)
+    task_300_3_2_mash_bananas = Task(agent = PLANNERAGENT, task_id="300.3.2", task_goal="300.3.2. Mash Bananas")
+    task_300_3_2_mash_bananas.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_2_1_grease_pan = Task(agent = PLANNERAGENT, 
-    task_id="300.2.1", task_goal="300.2.1. Grease Baking Pan"
-)
-task_300_2_1_grease_pan.add_predecessor(task_300_1_gather_ingredients)
+    task_300_3_3_combine_wet_ingredients = Task(agent = PLANNERAGENT, 
+        task_id="300.3.3", task_goal="300.3.3. Combine Wet Ingredients"
+    )
+    task_300_3_3_combine_wet_ingredients.add_predecessor(task_300_3_1_measure_flour)
+    task_300_3_3_combine_wet_ingredients.add_predecessor(task_300_3_2_mash_bananas)
 
-task_300_2_2_line_pan = Task(agent = PLANNERAGENT, 
-    task_id="300.2.2", task_goal="300.2.2. Line Baking Pan with Parchment Paper"
-)
-task_300_2_2_line_pan.add_predecessor(task_300_2_1_grease_pan)
+    task_300_2_1_grease_pan = Task(agent = PLANNERAGENT, 
+        task_id="300.2.1", task_goal="300.2.1. Grease Baking Pan"
+    )
+    task_300_2_1_grease_pan.add_predecessor(task_300_1_gather_ingredients)
 
-task_300_1_1_find_ingredients_list = Task(agent = PLANNERAGENT, 
-    task_id="300.1.1", task_goal="300.1.1. Find Ingredients List"
-)
-task_300_1_1_find_ingredients_list.add_predecessor(task_101_buy_groceries)
+    task_300_2_2_line_pan = Task(agent = PLANNERAGENT, 
+        task_id="300.2.2", task_goal="300.2.2. Line Baking Pan with Parchment Paper"
+    )
+    task_300_2_2_line_pan.add_predecessor(task_300_2_1_grease_pan)
 
-task_300_1_2_check_pantry = Task(agent = PLANNERAGENT, 
-    task_id="300.1.2", task_goal="300.1.2. Check Pantry for Ingredients"
-)
-task_300_1_2_check_pantry.add_predecessor(task_300_1_1_find_ingredients_list)
+    task_300_1_1_find_ingredients_list = Task(agent = PLANNERAGENT, 
+        task_id="300.1.1", task_goal="300.1.1. Find Ingredients List"
+    )
+    task_300_1_1_find_ingredients_list.add_predecessor(task_101_buy_groceries)
 
-# Adding tasks to plans
-plan_prepare_dinner.add_task(task_101_buy_groceries)
-plan_prepare_dinner.add_task(task_102_clean_kitchen)
-plan_prepare_dinner.add_task(task_103_choose_music)
-plan_prepare_dinner.add_task(task_104_decorate_dining_room)
-plan_prepare_dinner.add_task(task_105_set_mood)
-plan_prepare_dinner.add_task(task_106_set_table)
-plan_prepare_dinner.add_task(task_107_make_salad)
-plan_prepare_dinner.add_task(task_108_serve_salad)
-plan_prepare_dinner.add_task(task_200_prepare_main_course)
-plan_prepare_dinner.add_task(task_201_serve_dinner)
-plan_prepare_dinner.add_task(task_300_make_banana_bread)
-task_200_prepare_main_course.add_task(task_300_1_gather_ingredients)
-task_300_1_gather_ingredients.add_task(task_300_1_1_find_ingredients_list)
-task_300_1_gather_ingredients.add_task(task_300_1_2_check_pantry)
-task_200_prepare_main_course.add_task(task_300_2_prepare_baking_pan)
-task_300_2_prepare_baking_pan.add_task(task_300_2_1_grease_pan)
-task_300_2_prepare_baking_pan.add_task(task_300_2_2_line_pan)
-task_200_prepare_main_course.add_task(task_300_3_mix_ingredients)
-task_300_3_mix_ingredients.add_task(task_300_3_1_measure_flour)
-task_300_3_mix_ingredients.add_task(task_300_3_2_mash_bananas)
-task_300_3_mix_ingredients.add_task(task_300_3_3_combine_wet_ingredients)
-task_200_prepare_main_course.add_task(task_300_4_bake_bread)
-task_200_prepare_main_course.add_task(task_300_5_cool_bread)
-task_200_prepare_main_course.add_task(task_300_6_serve_bread)
+    task_300_1_2_check_pantry = Task(agent = PLANNERAGENT, 
+        task_id="300.1.2", task_goal="300.1.2. Check Pantry for Ingredients"
+    )
+    task_300_1_2_check_pantry.add_predecessor(task_300_1_1_find_ingredients_list)
 
+    plan_prepare_dinner.add_task(task_101_buy_groceries)
 
-@pytest.fixture
-def plan_step_0():
-    # Initial setup with multiple subtasks
+    plan_prepare_dinner.add_task(task_102_clean_kitchen)
+    plan_prepare_dinner.add_task(task_103_choose_music)
+    plan_prepare_dinner.add_task(task_104_decorate_dining_room)
+    plan_prepare_dinner.add_task(task_105_set_mood)
+    plan_prepare_dinner.add_task(task_106_set_table)
+    plan_prepare_dinner.add_task(task_107_make_salad)
+    plan_prepare_dinner.add_task(task_108_serve_salad)
+    plan_prepare_dinner.add_task(task_200_prepare_main_course)
+    plan_prepare_dinner.add_task(task_201_serve_dinner)
+    plan_prepare_dinner.add_task(task_300_make_banana_bread)
+    task_200_prepare_main_course.add_task(task_300_1_gather_ingredients)
+    task_300_1_gather_ingredients.add_task(task_300_1_1_find_ingredients_list)
+    task_300_1_gather_ingredients.add_task(task_300_1_2_check_pantry)
+    task_200_prepare_main_course.add_task(task_300_2_prepare_baking_pan)
+    task_300_2_prepare_baking_pan.add_task(task_300_2_1_grease_pan)
+    task_300_2_prepare_baking_pan.add_task(task_300_2_2_line_pan)
+    task_200_prepare_main_course.add_task(task_300_3_mix_ingredients)
+    task_300_3_mix_ingredients.add_task(task_300_3_1_measure_flour)
+    task_300_3_mix_ingredients.add_task(task_300_3_2_mash_bananas)
+    task_300_3_mix_ingredients.add_task(task_300_3_3_combine_wet_ingredients)
+    task_200_prepare_main_course.add_task(task_300_4_bake_bread)
+    task_200_prepare_main_course.add_task(task_300_5_cool_bread)
+    task_200_prepare_main_course.add_task(task_300_6_serve_bread)
+
     return copy.deepcopy(plan_prepare_dinner)
 
 
+
 @pytest.fixture
+def plan_step_0(plan_familly_dinner):
+    # Initial setup with multiple subtasks
+    return copy.deepcopy(plan_familly_dinner)
+
+
+@pytest.fixture(scope='function')
 def plan_step_1()-> Plan:
     t = plan_step_0()
     # Marking initial tasks as done
@@ -164,11 +170,11 @@ def plan_step_1()-> Plan:
     for task_id in t._all_task_ids:
         task = t.get_task(task_id=task_id)
         print(f"Task {task.task_goal} is {task.state}")
-    return t
+    return copy.deepcopy(t)
 
 
 
-# @pytest.fixture
+# @pytest.fixture(scope='function')
 # def plan_step_2():
 #     t: Plan = plan_step_1()
 #     # Marking initial tasks as done
@@ -187,10 +193,10 @@ def plan_step_1()-> Plan:
 #     for task_id in t._all_task_ids:
 #         task = t.get_task(task_id=task_id)
 #         print(f"Task {task.task_goal} is {task.state}")
-#     return t
+#     return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_2a()-> Plan:
     t = plan_step_1()
 
@@ -206,11 +212,11 @@ def plan_step_2a()-> Plan:
     t.get_task(task_id="106").state = TaskStatusList.DONE
     t.get_task(task_id="106").task_text_output = "Set the table for dinner, including plates, cutlery, and glasses for all guests."
 
-    return t
+    return copy.deepcopy(t)
 
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_2b()-> Plan:
     t = plan_step_2a()
     t.get_task(task_id="300.1.2").state = TaskStatusList.READY
@@ -218,9 +224,9 @@ def plan_step_2b()-> Plan:
     t.get_task(task_id="200").state = TaskStatusList.READY
     t.get_task(task_id="200.1").state = TaskStatusList.READY
     t.get_task(task_id="200.3").state = TaskStatusList.READY
-    return t
+    return copy.deepcopy(t)
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_2c()-> Plan:
     t = plan_step_2b()
     t.get_task(task_id="300.1.2").state = TaskStatusList.DONE
@@ -236,10 +242,10 @@ def plan_step_2c()-> Plan:
     t.get_task(task_id="300.3").state = TaskStatusList.READY
     t.get_task(task_id="300.3.1").state = TaskStatusList.READY
     t.get_task(task_id="300.3.2").state = TaskStatusList.READY
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_2d()-> Plan:
     t = plan_step_2c()
     t.get_task(task_id="107").state = TaskStatusList.DONE
@@ -261,10 +267,10 @@ def plan_step_2d()-> Plan:
     t.get_task(task_id="300.3.2").task_text_output = "Mashed bananas to the right consistency for the banana bread mixture."
 
     t.get_task(task_id="300.3.3").state = TaskStatusList.READY
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_3()-> Plan:
     t = plan_step_2b()
 
@@ -283,10 +289,10 @@ def plan_step_3()-> Plan:
     t.get_task(task_id="300.2").state = TaskStatusList.DONE
     t.get_task(task_id="300.2").task_text_output = "All preparatory steps for baking the banana bread are complete. The pan is well-prepared and the oven preheated, setting the stage for a delicious and aromatic baking experience."
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_4()-> Plan:
     t = plan_step_3()
 
@@ -301,10 +307,10 @@ def plan_step_4()-> Plan:
     # Preparing to bake the bread
     t.get_task(task_id="300.4").state = TaskStatusList.READY
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_5()-> Plan:
     t = plan_step_4()
 
@@ -312,19 +318,19 @@ def plan_step_5()-> Plan:
     t.get_task(task_id="300.3").state = TaskStatusList.DONE
     t.get_task(task_id="300.3").task_text_output = "The final mix of the banana bread ingredients is ready, with each component blended harmoniously. The aroma of the batter hints at the delicious baked good to come, setting high expectations for the finished product."
 
-    return t
+    return copy.deepcopy(t)
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_6()-> Plan:
     t = plan_step_5()
 
     # Making salad serving task ready
     t.get_task(task_id="108").state = TaskStatusList.READY
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_7()-> Plan:
     t = plan_step_6()
 
@@ -335,10 +341,10 @@ def plan_step_7()-> Plan:
     # Setting the main course serving task as ready
     t.get_task(task_id="201").state = TaskStatusList.READY
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_8()-> Plan:
     t = plan_step_7()
 
@@ -346,10 +352,10 @@ def plan_step_8()-> Plan:
     t.get_task(task_id="201").state = TaskStatusList.DONE
     t.get_task(task_id="201").task_text_output = "The main course, a masterpiece of culinary expertise, was served with precision and grace. Each plate was a canvas showcasing the chef's skill, with the main dish taking center stage, surrounded by a medley of side dishes that enhanced its flavors. The aroma wafting from the plates promised a savory experience, and the first bite did not disappoint, offering a burst of flavors that danced on the palate. The combination of textures, colors, and tastes made for a memorable dining experience, leaving the guests eagerly anticipating the next course."
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_9()-> Plan:
     t = plan_step_8()
 
@@ -360,10 +366,10 @@ def plan_step_9()-> Plan:
     # Setting the task of cooling the banana bread as ready
     t.get_task(task_id="300.5").state = TaskStatusList.READY
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_10()-> Plan:
     t = plan_step_9()
 
@@ -374,10 +380,10 @@ def plan_step_10()-> Plan:
     # Setting the task of serving the banana bread as ready
     t.get_task(task_id="300.6").state = TaskStatusList.READY
 
-    return t
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def plan_step_11()-> Plan:
     t = plan_step_10()
 
@@ -385,44 +391,53 @@ def plan_step_11()-> Plan:
     t.get_task(task_id="300.6").state = TaskStatusList.DONE
     t.get_task(task_id="300.6").task_text_output = "The moment of serving the banana bread was a culmination of anticipation and delight. Each slice was carefully cut, revealing the moist, tender texture interspersed with the subtle sweetness of bananas and a hint of cinnamon. As the bread was served, the guests expressed their admiration for its perfect texture and exquisite flavor. The banana bread was not just a dessert; it was a celebration of homemade baking, bringing a sweet and satisfying conclusion to the family dinner."
 
-    return t
+    return copy.deepcopy(t)
 
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def task_ready_no_predecessors_or_subtasks(plan_step_0: Plan) -> Task:
     # Task 'task_101_buy_groceries' has no predecessors or subtasks and is ready
-    return plan_step_0.get_task(task_id="101")
+    t = plan_step_0.get_task(task_id="101")
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+
+@pytest.fixture(scope='function')
 def task_ready_all_predecessors_done(plan_step_2b: Plan) -> Task:
     # Task 'task_300_2_2_line_pan' with all predecessors done
-    return plan_step_2b.get_task(task_id="300.2.2")
+    t = plan_step_2b.get_task(task_id="300.2.2")
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def task_ready_all_subtasks_done(plan_step_8: Plan) -> Task:
     # Task 'task_300_1_gather_ingredients' with all subtasks done
-    return plan_step_8.get_task(task_id="300.1")
+    t = plan_step_8.get_task(task_id="300.1")
+    return copy.deepcopy(t)
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def task_with_mixed_predecessors(plan_step_7: Plan) -> Task:
     # Task 'task_300_6_serve_bread' with some predecessors done and some not
-    return plan_step_7.get_task(task_id="300.6")
+    t = plan_step_7.get_task(task_id="300.6")
+    return copy.deepcopy(t)
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def task_with_unmet_predecessors(plan_step_0: Plan) -> Task:
     # Task '300.3.3' has unmet predecessors at plan_step_0
-    return plan_step_0.get_task(task_id="300.3.3")
+    t = plan_step_0.get_task(task_id="300.3.3")
+    return copy.deepcopy(t)
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def task_with_ongoing_subtasks(plan_step_0: Plan) -> Task:
     # Task '200' has ongoing subtasks at plan_step_0
-    return plan_step_0.get_task(task_id="200")
+    t = plan_step_0.get_task(task_id="200")
+    return copy.deepcopy(t)
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def task_awaiting_preparation(plan_step_0: Plan) -> Task:
     # Task '300.4' is not ready yet at plan_step_0
-    return plan_step_0.get_task(task_id="300.4")
+    t = plan_step_0.get_task(task_id="300.4")
+    return copy.deepcopy(t)
+

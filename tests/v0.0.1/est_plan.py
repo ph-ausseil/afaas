@@ -10,7 +10,7 @@ from AFAAS.lib.task.plan import Plan
 from AFAAS.lib.task.task import Task
 
 
-from .dataset.plan_familly_dinner import (plan_step_0, plan_step_1, 
+from ..dataset.plan_familly_dinner import (plan_step_0, plan_step_1, 
                                           plan_step_2a, plan_step_2b, plan_step_3,
                                           plan_step_4, plan_step_5, plan_step_6,
                                           plan_step_7, plan_step_8, plan_step_9, plan_step_10, plan_step_11,

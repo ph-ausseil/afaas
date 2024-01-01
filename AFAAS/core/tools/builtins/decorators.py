@@ -7,6 +7,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 from AFAAS.lib.sdk.logger import AFAASLogger
+from AFAAS.interfaces.agent.main import BaseAgent
 
 LOG = AFAASLogger(name=__name__)
 
@@ -43,7 +44,7 @@ def sanitize_path_arg(
             agent = kwargs.get(
                 "agent", len(args) > agent_arg_index and args[agent_arg_index]
             )
-            if not isinstance(agent, Agent):
+            if not isinstance(agent, BaseAgent):
                 raise RuntimeError("Could not get Agent from decorated command's args")
 
             # Sanitize the specified path argument, if one is given
