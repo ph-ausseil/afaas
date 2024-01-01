@@ -12,7 +12,7 @@ from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.lib.task.plan import Plan
 from AFAAS.lib.task.task import Task
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def plan_familly_dinner():
 
     plan_prepare_dinner = Plan(
@@ -395,7 +395,7 @@ def plan_step_11()-> Plan:
 
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def task_ready_no_predecessors_or_subtasks(plan_step_0: Plan) -> Task:
     # Task 'task_101_buy_groceries' has no predecessors or subtasks and is ready
     t = plan_step_0.get_task(task_id="101")

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
-from .dataset.plan_familly_dinner import task_ready_no_predecessors_or_subtasks , Task
+from .dataset.plan_familly_dinner import task_ready_no_predecessors_or_subtasks , Task  , plan_step_0 , plan_familly_dinner
 
 from langchain_core.embeddings import Embeddings
 import AFAAS.core.tools.builtins.file_operations as file_ops
@@ -64,7 +64,7 @@ def test_file_with_content_path(task_ready_no_predecessors_or_subtasks : Task,  
     test_file.write(file_content)
     test_file.close()
     file_ops.log_operation( 
-       operation= "write", file_path=Path(test_file.name), agent= agent, checksum= file_ops.text_checksum(text= file_content , task=task_ready_no_predecessors_or_subtasks) , task=task_ready_no_predecessors_or_subtasks
+       operation= "write", file_path=Path(test_file.name), agent= agent, checksum= file_ops.text_checksum(text= file_content ) 
     )
     return Path(test_file.name)
 
@@ -98,7 +98,7 @@ def test_file_operations_log(task_ready_no_predecessors_or_subtasks : Task, test
         ("append", "path/to/file2.txt", "checksum4"),
         ("delete", "path/to/file3.txt", None),
     ]
-    assert list(file_ops.operations_from_log(log_path=test_file.name), task=task_ready_no_predecessors_or_subtasks) == expected
+    assert list(file_ops.operations_from_log(log_path=test_file.name)) == expected
 
 
 def test_file_operations_state(task_ready_no_predecessors_or_subtasks : Task, test_file: TextIOWrapper):
@@ -119,7 +119,7 @@ def test_file_operations_state(task_ready_no_predecessors_or_subtasks : Task, te
         "path/to/file1.txt": "checksum1",
         "path/to/file2.txt": "checksum4",
     }
-    assert file_ops.file_operations_state(log_path=test_file.name, task=task_ready_no_predecessors_or_subtasks) == expected_state
+    assert file_ops.file_operations_state(log_path=test_file.name) == expected_state
 
 
 # def test_is_duplicate_operation(task_ready_no_predecessors_or_subtasks : Task , agent: BaseAgent, mocker: MockerFixture):
@@ -133,51 +133,51 @@ def test_file_operations_state(task_ready_no_predecessors_or_subtasks : Task, te
 #     # Test cases with write operations
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "write", Path("path/to/file1.txt"),  "checksum1", agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#             "write", Path("path/to/file1.txt"),  "checksum1", agent=agent)
 #         )
 #         is True
 #     )
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "write", Path("path/to/file1.txt"), "checksum2", agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#             "write", Path("path/to/file1.txt"), "checksum2", agent=agent)
 #         )
 #         is False
 #     )
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "write", Path("path/to/file3.txt"), "checksum3", agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#             "write", Path("path/to/file3.txt"), "checksum3", agent=agent)
 #         )
 #         is False
 #     )
 #     # Test cases with append operations
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "append", Path("path/to/file1.txt"),  "checksum1", agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#             "append", Path("path/to/file1.txt"),  "checksum1", agent=agent)
 #         )
 #         is False
 #     )
 #     # Test cases with delete operations
 #     assert (
-#         file_ops.is_duplicate_operation("delete", Path("path/to/file1.txt"), agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#         file_ops.is_duplicate_operation("delete", Path("path/to/file1.txt"), agent=agent)
 #         is False
 #     )
 #     assert (
-#         file_ops.is_duplicate_operation("delete", Path("path/to/file3.txt"), agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#         file_ops.is_duplicate_operation("delete", Path("path/to/file3.txt"), agent=agent)
 #         is True
 #     )
 
 
 # # Test logging a file operation
 # def test_log_operation(task_ready_no_predecessors_or_subtasks : Task,agent: BaseAgent):
-#     file_ops.log_operation("log_test", Path("path/to/test"), agent=agent, task=task_ready_no_predecessors_or_subtasks)
+#     file_ops.log_operation("log_test", Path("path/to/test"), agent=agent)
 #     with open(agent.file_manager.file_ops_log_path, "r", encoding="utf-8") as f:
 #         content = f.read()
 #     assert "log_test: path/to/test\n" in content
 
 
 def test_text_checksum( task_ready_no_predecessors_or_subtasks : Task, file_content: str):
-    checksum = file_ops.text_checksum(text= file_content, task=task_ready_no_predecessors_or_subtasks)
-    different_checksum = file_ops.text_checksum(text="other content", task=task_ready_no_predecessors_or_subtasks)
+    checksum = file_ops.text_checksum(text= file_content)
+    different_checksum = file_ops.text_checksum(text="other content")
     assert re.match(r"^[a-fA-F0-9]+$", checksum) is not None
     assert checksum != different_checksum
 
@@ -244,7 +244,7 @@ async def test_write_file_fails_if_content_exists(
         "write",
         test_file_name,
         agent=agent,
-        checksum= file_ops.text_checksum(new_content), task=task_ready_no_predecessors_or_subtasks
+        checksum= file_ops.text_checksum(new_content)
     )
     with pytest.raises(DuplicateOperationError):
         await file_ops.write_to_file(filename=test_file_name, content = new_content, agent=agent, task=task_ready_no_predecessors_or_subtasks)
@@ -263,7 +263,7 @@ async def test_append_to_file(task_ready_no_predecessors_or_subtasks : Task, tes
     append_text = "This is appended text.\n"
     await file_ops.write_to_file(filename=test_nested_file, contents=append_text, agent=agent, task=task_ready_no_predecessors_or_subtasks)
 
-    file_ops.append_to_file(filename=test_nested_file, text= append_text, agent=agent, task=task_ready_no_predecessors_or_subtasks)
+    file_ops.append_to_file(filename=test_nested_file, text= append_text, agent=agent)
 
     with open(test_nested_file, "r") as f:
         content_after = f.read()
@@ -279,13 +279,11 @@ async def test_append_to_file(task_ready_no_predecessors_or_subtasks : Task, tes
 #     file_ops.append_to_file(
 #         agent.workspace.get_path(test_file_name),
 #         append_text,
-#         agent=agent,
-#      task=task_ready_no_predecessors_or_subtasks)
+#         agent=agent)
 #     file_ops.append_to_file(
 #         agent.workspace.get_path(test_file_name),
 #         append_text,
-#         agent=agent,
-#      task=task_ready_no_predecessors_or_subtasks)
+#         agent=agent,)
 #     with open(agent.file_manager.file_ops_log_path, "r", encoding="utf-8") as f:
 #         log_contents = f.read()
 
