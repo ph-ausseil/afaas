@@ -1,13 +1,15 @@
+from __future__ import annotations
 import hashlib
 import os
 from AFAAS.core.tools.builtins.decorators import sanitize_path_arg
-
-from AFAAS.core.tools.builtins.file_operations import LOG, Operation
+from AFAAS.lib.sdk.logger import AFAASLogger
 from pathlib import Path
 from typing import Iterator, Literal
 
 from AFAAS.interfaces.agent.main import BaseAgent
+LOG = AFAASLogger(name=__name__)
 
+Operation = Literal["write", "append", "delete"]
 
 def text_checksum(text: str) -> str:
     """Get the hex checksum for the given text."""

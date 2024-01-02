@@ -6,15 +6,12 @@ import contextlib
 import os
 import os.path
 from pathlib import Path
-from typing import Generator, Literal
+from typing import Generator
 
 from langchain_community.tools.file_management.file_search import FileSearchTool
 from langchain_core.vectorstores import VectorStore
 from AFAAS.core.tools.builtins.file_operations_helpers import is_duplicate_operation, log_operation, text_checksum
-
-TOOL_CATEGORY = "file_operations"
-TOOL_CATEGORY_TITLE = "File Operations"
-
+from AFAAS.core.tools.builtins.file_operations_utils import decode_textual_file #FIXME: replace with Langchain
 from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.core.tools.tools import Tool
 from AFAAS.interfaces.agent.main import BaseAgent
@@ -23,14 +20,11 @@ from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
 
-from .file_operations_utils import decode_textual_file #FIXME: replace with Langchain
-COMMAND_CATEGORY = "file_operations"
-COMMAND_CATEGORY_TITLE = "File Operations"
+TOOL_CATEGORY = "file_operations"
+TOOL_CATEGORY_TITLE = "File Operations"
+
 
 LOG = AFAASLogger(name=__name__)
-
-Operation = Literal["write", "append", "delete"]
-
 
 @tool(
     "read_file",

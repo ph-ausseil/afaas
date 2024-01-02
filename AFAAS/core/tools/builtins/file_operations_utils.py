@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import BinaryIO
+from typing import BinaryIO, Literal
 
 import charset_normalizer
 import docx
