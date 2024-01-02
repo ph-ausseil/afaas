@@ -12,11 +12,26 @@ from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.lib.task.plan import Plan
 from AFAAS.lib.task.task import Task
 
-@pytest.fixture
 def plan_familly_dinner():
+    plan_dict = {
+    "created_at": "2023-12-31T15:38:45.666346",
+    "modified_at": "2023-12-31T15:38:45.666355",
+    "task_context": None,
+    "long_description": None,
+    "task_history": None,
+    "acceptance_criteria": [],
+    "tasks": [],
+    "agent_id": PLANNERAGENT.agent_id,
+    "_task_predecessors": [],
+    "_task_successors": [],
+    "_subtasks": [
+    ],
+    "_modified_tasks_ids": [],
+    "_new_tasks_ids": []
+    }
 
     plan_prepare_dinner = Plan(
-        task_id="100", task_goal="100. Prepare Dinner for Family", agent=PLANNERAGENT
+        task_id="100", task_goal="100. Prepare Dinner for Family", agent=PLANNERAGENT, **plan_dict
     )
     PLANNERAGENT.plan = plan_prepare_dinner
     #plan_prepare_dinner.state = TaskStatusList.READY
@@ -140,14 +155,14 @@ def plan_familly_dinner():
     task_200_prepare_main_course.add_task(task_300_5_cool_bread)
     task_200_prepare_main_course.add_task(task_300_6_serve_bread)
 
-    return copy.deepcopy(plan_prepare_dinner)
+    return plan_prepare_dinner
 
 
 
 @pytest.fixture
-def plan_step_0(plan_familly_dinner):
+def plan_step_0():
     # Initial setup with multiple subtasks
-    return copy.deepcopy(plan_familly_dinner)
+    return plan_familly_dinner()
 
 
 @pytest.fixture(scope='function')
@@ -399,7 +414,7 @@ def plan_step_11()-> Plan:
 def task_ready_no_predecessors_or_subtasks(plan_step_0: Plan) -> Task:
     # Task 'task_101_buy_groceries' has no predecessors or subtasks and is ready
     t = plan_step_0.get_task(task_id="101")
-    return copy.deepcopy(t)
+    return t
 
 
 

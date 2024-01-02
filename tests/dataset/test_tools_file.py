@@ -1,0 +1,61 @@
+from AFAAS.core.workspace import AbstractFileWorkspace
+
+
+import pytest
+
+
+from pathlib import Path
+from io import TextIOWrapper
+from pathlib import Path
+
+import pytest
+from pytest_mock import MockerFixture
+
+from .plan_familly_dinner import task_ready_no_predecessors_or_subtasks , Task  , plan_step_0 , plan_familly_dinner
+
+from langchain_core.embeddings import Embeddings
+import AFAAS.core.tools.builtins.file_operations as file_ops
+from AFAAS.interfaces.agent.main import BaseAgent
+
+
+@pytest.fixture()
+def test_file_name():
+    return Path("test_file.txt")
+
+@pytest.fixture()
+def file_content():
+    return "This is a test file.\n"
+
+@pytest.fixture
+def test_file_path(test_file_name: Path, local_workspace : AbstractFileWorkspace):
+    return local_workspace.get_path(test_file_name)
+
+
+@pytest.fixture()
+def test_file(test_file_path: Path):
+    file = open(test_file_path, "w")
+    yield file
+    if not file.closed:
+        file.close()
+
+
+@pytest.fixture()
+def test_nested_file( local_workspace : AbstractFileWorkspace):
+    return local_workspace.get_path("nested/test_file.txt")
+
+@pytest.fixture()
+def test_file_with_content_path(task_ready_no_predecessors_or_subtasks : Task,  test_file: TextIOWrapper, file_content, agent: BaseAgent):
+    test_file.write(file_content)
+
+    test_file.close()
+    # file_ops.log_operation( 
+    #    operation= "write", file_path=Path(test_file.name), agent= agent, checksum= file_ops.text_checksum(text= file_content ) 
+    # )
+    return Path(test_file.name)
+
+
+@pytest.fixture()
+def test_directory( local_workspace : AbstractFileWorkspace):
+    return local_workspace.get_path("test_directory")
+
+
