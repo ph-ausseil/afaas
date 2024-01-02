@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Awaitable, Callable, Dict, Optional
 
-from AFAAS.interfaces.agent.exceptions import (
+from AFAAS.lib.sdk.errors import (
     AgentException,
     ToolExecutionError,
     UnknownToolError,
@@ -46,6 +46,75 @@ class PlannerLoop(BaseLoop):
         user_input_handler: Optional[Callable[[str], Awaitable[str]]] = None,
         user_message_handler: Optional[Callable[[str], Awaitable[str]]] = None,
     ) -> None:
+
+        # current_task = self._current_task
+
+        # # # NOTE : Test tools individually
+        # # command_name = "web_search"
+        # # command_args= {"query": "instructions for building a Pizza oven"}
+        # # return_value = await execute_command(
+        # #     command_name=command_name,
+        # #     arguments=command_args,
+        # #     task=current_task,
+        # #     agent=self._agent,
+        # # )
+        # # print(return_value)
+
+        # # Test the list_folder tool
+        # command_name = "list_folder"
+        # command_args = {"folder": "."}
+
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
+
+        # # Test the write_to_file tool
+        # command_name = "write_to_file"
+        # command_args = {
+        #     "filename": "./new_file.txt",
+        #     "contents": "Sample content to write in the file"
+        # }
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
+
+        # # Test the read_file tool
+        # command_name = "read_file"
+        # command_args = {"filename": "./file.txt"}
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
+
+        # # Test the file_search tool
+        # command_name = "file_search"
+        # command_args = {
+        #     "dir_path": "/path/to/search",
+        #     "query": "search term",
+        #     "recursive": True,
+        #     "return_metadata": False
+        # }
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
+
+
+
         if isinstance(user_input_handler, Callable) and user_input_handler is not None:
             self._user_input_handler = user_input_handler
         elif self._user_input_handler is None:

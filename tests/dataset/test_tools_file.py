@@ -1,21 +1,14 @@
-from AFAAS.core.workspace import AbstractFileWorkspace
 
 
-import pytest
-
-
-from pathlib import Path
 from io import TextIOWrapper
+from langchain_core.embeddings import Embeddings
 from pathlib import Path
-
 import pytest
 from pytest_mock import MockerFixture
 
-from .plan_familly_dinner import task_ready_no_predecessors_or_subtasks , Task  , plan_step_0 , plan_familly_dinner
-
-from langchain_core.embeddings import Embeddings
-import AFAAS.core.tools.builtins.file_operations as file_ops
+from AFAAS.core.workspace import AbstractFileWorkspace
 from AFAAS.interfaces.agent.main import BaseAgent
+from tests.dataset.plan_familly_dinner import task_ready_no_predecessors_or_subtasks , Task  , plan_step_0 , plan_familly_dinner
 
 
 @pytest.fixture()

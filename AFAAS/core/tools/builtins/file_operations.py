@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import contextlib
 import os
 import os.path
 from pathlib import Path
-from typing import Generator
 
 from langchain_community.tools.file_management.file_search import FileSearchTool
 from langchain_core.vectorstores import VectorStore
@@ -27,9 +25,9 @@ TOOL_CATEGORY_TITLE = "File Operations"
 LOG = AFAASLogger(name=__name__)
 
 @tool(
-    "read_file",
-    "Read an existing file",
-    {
+    name="read_file",
+    description="Read an existing file",
+    parameters={
         "filename": JSONSchema(
             type=JSONSchema.Type.STRING,
             description="The path of the file to read",
@@ -52,9 +50,9 @@ def read_file(filename:  str | Path, task: Task, agent: BaseAgent) -> str:
 
 
 @tool(
-    "write_file",
-    "Write a file, creating it if necessary. If the file exists, it is overwritten.",
-    {
+    name="write_file",
+    description="Write a file, creating it if necessary. If the file exists, it is overwritten.",
+    parameters={
         "filename": JSONSchema(
             type=JSONSchema.Type.STRING,
             description="The name of the file to write to",
@@ -119,39 +117,10 @@ async def write_to_file(
 
     return content
 
-
-def ingest_file(
-    filename: str,
-    vectorstore: VectorStore,
-) -> None:
-    """
-    Ingest a file by reading its content, splitting it into chunks with a specified
-    maximum length and overlap, and adding the chunks to the memory storage.
-
-    Args:
-        filename: The name of the file to ingest
-        memory: An object with an add() method to store the chunks in memory
-    """
-    try:
-        LOG.info(f"Ingesting file {filename}")
-        content = read_file(filename)
-
-        # TODO: Move to langchain
-        raise ("Not implemented error")
-
-        file_memory = MemoryItemFactory.from_text_file(content, filename)
-        LOG.trace(f"Created memory: {file_memory.dump(True)}")
-        vectorstore.add(file_memory)
-
-        LOG.info(f"Ingested {len(file_memory.e_chunks)} chunks from {filename}")
-    except Exception as err:
-        LOG.warn(f"Error while ingesting file '{filename}': {err}")
-
-
 @tool(
-    "list_folder",
-    "List the items in a folder",
-    {
+    name="list_folder",
+    description="List the items in a folder",
+    parameters={
         "folder": JSONSchema(
             type=JSONSchema.Type.STRING,
             description="The folder to list files in",
@@ -175,8 +144,8 @@ def list_folder(folder: Path, task: Task, agent: BaseAgent) -> list[str]:
 def file_search_args(input_args: dict[str, any], agent: BaseAgent):
     # Force only searching in the workspace root
     input_args["dir_path"] = str(agent.workspace.get_path(input_args["dir_path"]))
-    return input_args
 
+    return input_args
 
 file_search = Tool.generate_from_langchain_tool(
     tool=FileSearchTool(), arg_converter=file_search_args
