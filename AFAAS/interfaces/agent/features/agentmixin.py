@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 from AFAAS.lib.sdk.logger import AFAASLogger
 
-LOG = AFAASLogger(name=__name__)
+LOG = AFAASLogger(name="autogpt")
 
 class AgentMixin:
     _agent: BaseAgent
@@ -38,7 +38,7 @@ class AgentMixin:
         return self._agent.save_agent_in_memory()
 
     async def save_plan(self):
-        return await self._agent.plan.save()
+        return self._agent.plan.save()
 
     ###
     ## Messaging
