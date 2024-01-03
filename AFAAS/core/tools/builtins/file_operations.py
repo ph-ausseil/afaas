@@ -88,28 +88,54 @@ async def write_to_file(
         agent.workspace.get_path(directory).mkdir(exist_ok=True)
     await agent.workspace.write_file(filename, contents)
     log_operation("write", filename, agent, checksum)
-    return f"File {filename} has been written successfully."
+
+    from AFAAS.lib.sdk.artifacts import Artifact
+    artifact = Artifact(
+        agent_id=agent.agent_id,
+        user_id=agent.user_id,
+        source="AGENT",
+        relative_path=str(filename.parent),
+        file_name=str(filename.name),
+        mime_type="text/plain",
+        license=None,
+        checksum=checksum,
+    )
 
     #cf : ingest_file
-    agent.vectorstore.adelete(id=str(filename))
-    agent.vectorstore.aadd_texts(texts=[content],
-                                #  ids=[str(filename)],
-                                #  lang="en",
-                                #  title=str(filename),
-                                #  description="",
-                                #  tags=[],
-                                #  metadata={},
-                                #  source="",
-                                #  author="",
-                                #  date="",
-                                #  license="",
-                                #  url="",
-                                #  chunk_size=100,
-                                #  chunk_overlap=0,
-                                #  chunking_strategy="fixed",
-                                #  chunking_strategy_args={},
-                                #  chunking_strategy_kwargs={},
-    )
+    # FIXME:v0.1.0 if file exists, delete it first    
+    #await agent.vectorstore.adelete(id=str(filename))
+
+    await agent.vectorstore.aadd_texts(texts=[contents],
+                                 metadatas=[{"id": str(artifact.artifact_id),
+                                            "agent_id": str(artifact.agent_id),
+                                            "user_id": str(artifact.user_id),
+                                            "relative_path": str(artifact.relative_path),
+                                            "file_name": str(artifact.file_name),
+                                            "mime_type": str(artifact.mime_type)}
+                                            ],
+    )                         
+    #  ids=[str(filename)],
+    #  lang="en",
+    #  title=str(filename),
+    #  description="",
+    #  tags=[],
+    #  metadata={},
+    #  source="",
+    #  author="",
+    #  date="",
+    #  license="",
+    #  url="",
+    #  chunk_size=100,
+    #  chunk_overlap=0,
+    #  chunking_strategy="fixed",
+    #  chunking_strategy_args={},
+    #  chunking_strategy_kwargs={},
+
+    # Save the artifact metadata in the database
+    if await artifact.create_in_db(agent = agent) :
+        return f"File {filename} has been written successfully."
+    else :
+        return f"Ooops ! Something went wrong when writing file {filename}."
 
 
 @tool(

@@ -244,9 +244,14 @@ class AbstractMemory(Configurable, abc.ABC):
             return MessagesUserAgentTable(memory=self)
 
         elif table_name == "users_informations":
-            from AFAAS.core.db.table import UsersInformationsTable
+            from AFAAS.core.db.table.nosql.user import UsersInformationsTable
 
             return UsersInformationsTable(memory=self)
+
+        elif table_name == "artifacts":
+            from AFAAS.core.db.table.nosql.artifacts import ArtifactsTable
+
+            return ArtifactsTable(memory=self)
 
         else:
             raise ValueError(f"Unknown table: {table_name}")
