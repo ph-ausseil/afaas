@@ -17,7 +17,7 @@ LOG = AFAASLogger(name=__name__)
 class AbstractFileWorkspaceConfiguration(SystemConfiguration):
     restrict_to_agent_workspace: bool = True
     app_workspace: Path = UserConfigurable(
-        default=Path("~/auto-gpt/agents").expanduser().resolve()
+        default=Path("~/AFAAS/agents").expanduser().resolve()
     )
     agent_workspace: Path = Path("/")
     user_id: str = None

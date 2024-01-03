@@ -87,7 +87,7 @@ def is_duplicate_operation(
         True if the operation has already been performed on the file
     """
     #FIXMEv0.0.2 : Set as AgentSetting
-    LOG_FILE_OPERATION = Path(__file__).parent.parent.parent.parent.parent / 'logs' / (f"{agent.agent_id}_file_operations.log")
+    LOG_FILE_OPERATION = Path(__file__).parent.parent.parent.parent.parent / 'logs' / (f"{agent.agent_id}_file_operation")
     print(LOG_FILE_OPERATION)
     state = file_operations_state(LOG_FILE_OPERATION)
     if operation == "delete" and file_path not in state:

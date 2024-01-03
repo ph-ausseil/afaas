@@ -1,24 +1,9 @@
-import uuid
-from pathlib import Path
 
 import pytest
 from AFAAS.core.agents.planner.main import PlannerAgent
 from AFAAS.core.workspace import AbstractFileWorkspace
 from AFAAS.interfaces.tools.base import BaseToolsRegistry
-
-
-def agent_dataset(
-) -> PlannerAgent:
-    PlannerAgentSettings = PlannerAgent.SystemSettings(
-        user_id= 'pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a' ,
-        agent_id= 'A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c' ,
-        agent_goal_sentence = 'Prepare a family dinner',
-    )
-    agent = PlannerAgent(
-        settings= PlannerAgentSettings,
-        **PlannerAgentSettings.dict()
-    )
-    return agent
+from tests.dataset.agent_planner import agent_dataset
 
 @pytest.fixture
 def agent() -> PlannerAgent:
