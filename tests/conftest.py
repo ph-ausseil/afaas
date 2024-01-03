@@ -9,9 +9,11 @@ from AFAAS.interfaces.tools.base import BaseToolsRegistry
 
 def agent_dataset(
 ) -> PlannerAgent:
-    PlannerAgentSettings = PlannerAgent.SystemSettings(user_id= 'pytest_U' + str(uuid.uuid4()) ,
-                                                       agent_goal_sentence = 'Make a plan to build a poultry house',
-                                                    )
+    PlannerAgentSettings = PlannerAgent.SystemSettings(
+        user_id= 'pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a' ,
+        agent_id= 'A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c' ,
+        agent_goal_sentence = 'Prepare a family dinner',
+    )
     agent = PlannerAgent(
         settings= PlannerAgentSettings,
         **PlannerAgentSettings.dict()

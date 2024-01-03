@@ -39,6 +39,7 @@ def test_read_file_not_found(task_ready_no_predecessors_or_subtasks : Task, agen
         file_ops.read_file(filename= filename, agent=agent, task=task_ready_no_predecessors_or_subtasks)
 
 
+#FIXME:NOT NotImplementedError
 @pytest.mark.asyncio
 async def test_write_to_file_relative_path(task_ready_no_predecessors_or_subtasks : Task, test_file_name: Path, agent: BaseAgent):
     new_content = "This is new content.\n"
@@ -47,7 +48,7 @@ async def test_write_to_file_relative_path(task_ready_no_predecessors_or_subtask
         content = f.read()
     assert content == new_content
 
-
+# FIXME:NOT NotImplementedError
 @pytest.mark.asyncio
 async def test_write_to_file_absolute_path(test_file_path: Path, agent: BaseAgent, task_ready_no_predecessors_or_subtasks : Task):
     new_content = "This is new content.\n"
@@ -56,6 +57,7 @@ async def test_write_to_file_absolute_path(test_file_path: Path, agent: BaseAgen
         content = f.read()
     assert content == new_content
 
+# FIXME:NOT NotImplementedError
 @pytest.mark.asyncio
 async def test_write_file_succeeds_if_content_different(
     task_ready_no_predecessors_or_subtasks : Task, test_file_with_content_path: Path, agent: BaseAgent

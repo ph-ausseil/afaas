@@ -117,21 +117,6 @@ class AbstractFileWorkspace(Configurable, ABC):
     def read_file(self, path: str | Path, binary: bool = False) -> str | bytes:
         """Read a file in the workspace."""
 
-    # async def write_file(self, path: str | Path, content: str | bytes) -> None:
-    #     self._write_file(path, content)
-
-    #     if self.on_write_file:
-    #         path = Path(path)
-    #         if path.is_absolute():
-    #             path = path.relative_to(self.root)
-    #         res = self.on_write_file(path)
-    #         if inspect.isawaitable(res):
-    #             await res
-
-    # @abstractmethod
-    # async def _write_file(self, path: str | Path, content: str | bytes) -> None:
-    #     """Write to a file in the workspace."""
-
     @abstractmethod
     async def write_file(self, path: str | Path, content: str | bytes) -> None:
         """Write to a file in the workspace."""
@@ -153,8 +138,6 @@ class AbstractFileWorkspace(Configurable, ABC):
         Returns:
             Path: The resolved path relative to the workspace.
         """
-        # (relative_path, self.root)
-        # exit()
         return self._sanitize_path(relative_path, self.root)
 
     @abstractmethod

@@ -47,6 +47,8 @@ def read_file(filename:  str | Path, task: Task, agent: BaseAgent) -> str:
     file = agent.workspace.open_file(filename, binary=True)
     content = decode_textual_file(file, os.path.splitext(filename)[1])
 
+    return content
+
 
 
 @tool(
@@ -79,7 +81,7 @@ async def write_to_file(
         str: A message indicating success or failure
     """
     checksum = text_checksum(contents)
-    if is_duplicate_operation("write", Path(filename), agent, checksum):
+    if is_duplicate_operation(operation="write", file_path=Path(filename), agent=agent, checksum=checksum):
         raise DuplicateOperationError(f"File {filename} has already been updated.")
 
     if directory := os.path.dirname(filename):
@@ -87,12 +89,6 @@ async def write_to_file(
     await agent.workspace.write_file(filename, contents)
     log_operation("write", filename, agent, checksum)
     return f"File {filename} has been written successfully."
-
-
-    # TODO: invalidate/update memory when file is edited
-    # file_memory = MemoryItem.from_text_file(content, str(filename), agent.config)
-    # if len(file_memory.chunks) > 1:
-    #     return file_memory.summary
 
     #cf : ingest_file
     agent.vectorstore.adelete(id=str(filename))
@@ -115,7 +111,6 @@ async def write_to_file(
                                 #  chunking_strategy_kwargs={},
     )
 
-    return content
 
 @tool(
     name="list_folder",
@@ -146,6 +141,7 @@ def file_search_args(input_args: dict[str, any], agent: BaseAgent):
     input_args["dir_path"] = str(agent.workspace.get_path(input_args["dir_path"]))
 
     return input_args
+
 
 file_search = Tool.generate_from_langchain_tool(
     tool=FileSearchTool(), arg_converter=file_search_args
