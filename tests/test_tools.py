@@ -188,7 +188,7 @@ async def test_call_tool(agent: BaseAgent, empty_tool_registry: SimpleToolRegist
 #     """Test that attempting to call a nonexistent command raises a KeyError."""
 
 #     with pytest.raises(KeyError):
-#         await empty_tool_registry.call("nonexistent_command", arg1=1, arg2="test", agent=agent)
+#         await empty_tool_registry.call("nonexistent_command", arg1=1, arg2="test", agent=task_ready_no_predecessors_or_subtasks.agent)
 
 #FIXME:
 # def test_import_mock_commands_module( empty_tool_registry: SimpleToolRegistry):

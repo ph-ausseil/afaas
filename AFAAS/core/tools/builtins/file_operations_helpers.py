@@ -1,7 +1,7 @@
 from __future__ import annotations
 import hashlib
 import os
-from AFAAS.core.tools.builtins.decorators import sanitize_path_arg
+from AFAAS.core.tools.builtins.file_operations_utils import sanitize_path_arg
 from AFAAS.lib.sdk.logger import AFAASLogger
 from pathlib import Path
 from typing import Iterator, Literal
@@ -10,6 +10,8 @@ from AFAAS.interfaces.agent.main import BaseAgent
 LOG = AFAASLogger(name=__name__)
 
 Operation = Literal["write", "append", "delete"]
+
+
 
 def text_checksum(text: str) -> str:
     """Get the hex checksum for the given text."""
@@ -84,7 +86,10 @@ def is_duplicate_operation(
     Returns:
         True if the operation has already been performed on the file
     """
-    state = file_operations_state(agent._setting.Config.file_logger_path)
+    #FIXMEv0.0.2 : Set as AgentSetting
+    LOG_FILE_OPERATION = Path(__file__).parent.parent.parent.parent.parent / 'logs' / (f"{agent.agent_id}_file_operation")
+    print(LOG_FILE_OPERATION)
+    state = file_operations_state(LOG_FILE_OPERATION)
     if operation == "delete" and file_path not in state:
         return True
     if operation == "write" and state.get(str(file_path)) == checksum:
@@ -99,7 +104,6 @@ def log_operation(
     agent: BaseAgent,
     checksum: str | None = None,
 ) -> None:
-    raise NotImplementedError("Not implemented error")
     """Log the file operation to the file_LOG.log
 
     Args:
@@ -107,12 +111,15 @@ def log_operation(
         file_path: The name of the file the operation was performed on
         checksum: The checksum of the contents to be written
     """
+    #FIXMEv0.0.2 : Set as AgentSetting
+    LOG_FILE_OPERATION = Path(__file__).parent.parent.parent.parent.parent / 'logs' / (f"{agent.agent_id}_file_operation")
+
     log_entry = f"{operation}: {file_path}"
     if checksum is not None:
         log_entry += f" #{checksum}"
     LOG.trace(f"Logging file operation: {log_entry}")
     append_to_file(
-        agent._setting.Config.file_logger_path,
+        LOG_FILE_OPERATION,
         f"{log_entry}\n",
         agent,
         should_log=False,

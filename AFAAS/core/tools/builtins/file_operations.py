@@ -47,6 +47,8 @@ def read_file(filename:  str | Path, task: Task, agent: BaseAgent) -> str:
     file = agent.workspace.open_file(filename, binary=True)
     content = decode_textual_file(file, os.path.splitext(filename)[1])
 
+    return content
+
 
 
 @tool(
@@ -79,43 +81,61 @@ async def write_to_file(
         str: A message indicating success or failure
     """
     checksum = text_checksum(contents)
-    if is_duplicate_operation("write", Path(filename), agent, checksum):
+    if is_duplicate_operation(operation="write", file_path=Path(filename), agent=agent, checksum=checksum):
         raise DuplicateOperationError(f"File {filename} has already been updated.")
 
     if directory := os.path.dirname(filename):
         agent.workspace.get_path(directory).mkdir(exist_ok=True)
     await agent.workspace.write_file(filename, contents)
     log_operation("write", filename, agent, checksum)
-    return f"File {filename} has been written successfully."
 
-
-    # TODO: invalidate/update memory when file is edited
-    # file_memory = MemoryItem.from_text_file(content, str(filename), agent.config)
-    # if len(file_memory.chunks) > 1:
-    #     return file_memory.summary
-
-    #cf : ingest_file
-    agent.vectorstore.adelete(id=str(filename))
-    agent.vectorstore.aadd_texts(texts=[content],
-                                #  ids=[str(filename)],
-                                #  lang="en",
-                                #  title=str(filename),
-                                #  description="",
-                                #  tags=[],
-                                #  metadata={},
-                                #  source="",
-                                #  author="",
-                                #  date="",
-                                #  license="",
-                                #  url="",
-                                #  chunk_size=100,
-                                #  chunk_overlap=0,
-                                #  chunking_strategy="fixed",
-                                #  chunking_strategy_args={},
-                                #  chunking_strategy_kwargs={},
+    from AFAAS.lib.sdk.artifacts import Artifact
+    artifact = Artifact(
+        agent_id=agent.agent_id,
+        user_id=agent.user_id,
+        source="AGENT",
+        relative_path=str(filename.parent),
+        file_name=str(filename.name),
+        mime_type="text/plain",
+        license=None,
+        checksum=checksum,
     )
 
-    return content
+    #cf : ingest_file
+    # FIXME:v0.1.0 if file exists, delete it first    
+    #await agent.vectorstore.adelete(id=str(filename))
+
+    await agent.vectorstore.aadd_texts(texts=[contents],
+                                 metadatas=[{"id": str(artifact.artifact_id),
+                                            "agent_id": str(artifact.agent_id),
+                                            "user_id": str(artifact.user_id),
+                                            "relative_path": str(artifact.relative_path),
+                                            "file_name": str(artifact.file_name),
+                                            "mime_type": str(artifact.mime_type)}
+                                            ],
+    )                         
+    #  ids=[str(filename)],
+    #  lang="en",
+    #  title=str(filename),
+    #  description="",
+    #  tags=[],
+    #  metadata={},
+    #  source="",
+    #  author="",
+    #  date="",
+    #  license="",
+    #  url="",
+    #  chunk_size=100,
+    #  chunk_overlap=0,
+    #  chunking_strategy="fixed",
+    #  chunking_strategy_args={},
+    #  chunking_strategy_kwargs={},
+
+    # Save the artifact metadata in the database
+    if await artifact.create_in_db(agent = agent) :
+        return f"File {filename} has been written successfully."
+    else :
+        return f"Ooops ! Something went wrong when writing file {filename}."
 
 @tool(
     name="list_folder",
@@ -146,6 +166,7 @@ def file_search_args(input_args: dict[str, any], agent: BaseAgent):
     input_args["dir_path"] = str(agent.workspace.get_path(input_args["dir_path"]))
 
     return input_args
+
 
 file_search = Tool.generate_from_langchain_tool(
     tool=FileSearchTool(), arg_converter=file_search_args

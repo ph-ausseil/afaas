@@ -3,8 +3,9 @@
 import pytest
 import re
 from io import TextIOWrapper
-import AFAAS.core.tools.builtins.file_operations as file_ops
 from pathlib import Path
+import pytest_asyncio
+import AFAAS.core.tools.builtins.file_operations as file_ops
 from AFAAS.core.tools.builtins.file_operations_helpers import operations_from_log, text_checksum, file_operations_state , append_to_file, log_operation
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import DuplicateOperationError
@@ -54,20 +55,19 @@ def test_file_operations_state(task_ready_no_predecessors_or_subtasks : Task, te
     }
     assert file_operations_state(log_path=test_file.name) == expected_state
 
-
-@pytest.mark.asyncio
+# FIXME:NOT NotImplementedError
 async def test_append_to_file(task_ready_no_predecessors_or_subtasks : Task, test_nested_file: Path, agent: BaseAgent):
     append_text = "This is appended text.\n"
-    await file_ops.write_to_file(filename=test_nested_file, contents=append_text, agent=agent, task=task_ready_no_predecessors_or_subtasks)
+    await file_ops.write_to_file(filename=test_nested_file, contents=append_text, agent=task_ready_no_predecessors_or_subtasks.agent, task=task_ready_no_predecessors_or_subtasks)
 
-    append_to_file(filename=test_nested_file, text= append_text, agent=agent)
+    append_to_file(filename=test_nested_file, text= append_text, agent=task_ready_no_predecessors_or_subtasks.agent)
 
     with open(test_nested_file, "r") as f:
         content_after = f.read()
 
     assert content_after == append_text + append_text
 
-
+# FIXME:NOT NotImplementedError
 @pytest.mark.asyncio
 async def test_write_file_fails_if_content_exists(
     task_ready_no_predecessors_or_subtasks : Task, test_file_name: Path, agent: BaseAgent):
@@ -75,11 +75,11 @@ async def test_write_file_fails_if_content_exists(
     log_operation(
          "write",
          test_file_name,
-         agent=agent,
+         agent=task_ready_no_predecessors_or_subtasks.agent,
          checksum= text_checksum(new_content)
      )
     with pytest.raises(DuplicateOperationError):
-        await file_ops.write_to_file(filename=test_file_name, contents = new_content, agent=agent, task=task_ready_no_predecessors_or_subtasks)
+        await file_ops.write_to_file(filename=test_file_name, contents = new_content, agent=task_ready_no_predecessors_or_subtasks.agent, task=task_ready_no_predecessors_or_subtasks)
 
 
 #from autogpt.memory.vector.memory_item import MemoryItem
@@ -115,46 +115,50 @@ async def test_write_file_fails_if_content_exists(
 #     # Test cases with write operations
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "write", Path("path/to/file1.txt"),  "checksum1", agent=agent)
+#             "write", Path("path/to/file1.txt"),  "checksum1", agent=task_ready_no_predecessors_or_subtasks.agent)
 #         )
 #         is True
 #     )
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "write", Path("path/to/file1.txt"), "checksum2", agent=agent)
+#             "write", Path("path/to/file1.txt"), "checksum2", agent=task_ready_no_predecessors_or_subtasks.agent)
 #         )
 #         is False
 #     )
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "write", Path("path/to/file3.txt"), "checksum3", agent=agent)
+#             "write", Path("path/to/file3.txt"), "checksum3", agent=task_ready_no_predecessors_or_subtasks.agent)
 #         )
 #         is False
 #     )
 #     # Test cases with append operations
 #     assert (
 #         file_ops.is_duplicate_operation(
-#             "append", Path("path/to/file1.txt"),  "checksum1", agent=agent)
+#             "append", Path("path/to/file1.txt"),  "checksum1", agent=task_ready_no_predecessors_or_subtasks.agent)
 #         )
 #         is False
 #     )
 #     # Test cases with delete operations
 #     assert (
-#         file_ops.is_duplicate_operation("delete", Path("path/to/file1.txt"), agent=agent)
+#         file_ops.is_duplicate_operation("delete", Path("path/to/file1.txt"), agent=task_ready_no_predecessors_or_subtasks.agent)
 #         is False
 #     )
 #     assert (
-#         file_ops.is_duplicate_operation("delete", Path("path/to/file3.txt"), agent=agent)
+#         file_ops.is_duplicate_operation("delete", Path("path/to/file3.txt"), agent=task_ready_no_predecessors_or_subtasks.agent)
 #         is True
 #     )
 
 
-# # Test logging a file operation
-# def test_log_operation(task_ready_no_predecessors_or_subtasks : Task,agent: BaseAgent):
-#     file_ops.log_operation("log_test", Path("path/to/test"), agent=agent)
-#     with open(agent.file_manager.file_ops_log_path, "r", encoding="utf-8") as f:
-#         content = f.read()
-#     assert "log_test: path/to/test\n" in content
+# Test logging a file operation
+def test_log_operation(task_ready_no_predecessors_or_subtasks : Task, agent: BaseAgent):
+
+    #FIXMEv0.0.2 : Set as AgentSetting
+    LOG_FILE_OPERATION = Path(__file__).parent.parent / 'logs' / (f"{agent.agent_id}_file_operation")
+
+    file_ops.log_operation("log_test", Path("path/to/test"), agent=task_ready_no_predecessors_or_subtasks.agent)
+    with open(LOG_FILE_OPERATION, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "log_test: path/to/test\n" in content
 
 
 def test_text_checksum( task_ready_no_predecessors_or_subtasks : Task, file_content: str):
@@ -170,7 +174,7 @@ def test_text_checksum( task_ready_no_predecessors_or_subtasks : Task, file_cont
 # async def test_write_file_logs_checksum(test_file_name: Path, agent: BaseAgent):
 #     new_content = "This is new content.\n"
 #     new_checksum = file_ops.text_checksum(new_content)
-#     await file_ops.write_to_file(test_file_name, new_content, agent=agent)
+#     await file_ops.write_to_file(test_file_name, new_content, agent=task_ready_no_predecessors_or_subtasks.agent)
 #     with open(agent.file_manager.file_ops_log_path, "r", encoding="utf-8") as f:
 #         log_entry = f.read()
 #     assert log_entry == f"write: {test_file_name} #{new_checksum}\n"
@@ -184,11 +188,11 @@ def test_text_checksum( task_ready_no_predecessors_or_subtasks : Task, file_cont
 #     file_ops.append_to_file(
 #         agent.workspace.get_path(test_file_name),
 #         append_text,
-#         agent=agent)
+#         agent=task_ready_no_predecessors_or_subtasks.agent)
 #     file_ops.append_to_file(
 #         agent.workspace.get_path(test_file_name),
 #         append_text,
-#         agent=agent,)
+#         agent=task_ready_no_predecessors_or_subtasks.agent,)
 #     with open(agent.file_manager.file_ops_log_path, "r", encoding="utf-8") as f:
 #         log_contents = f.read()
 
