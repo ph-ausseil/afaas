@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import inspect
-from langchain_core.tools import BaseTool
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, ParamSpec, TypeVar
 
 from langchain_core.tools import BaseTool

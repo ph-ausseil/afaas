@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Awaitable, Callable, Dict, Optional
 
-from AFAAS.interfaces.agent.exceptions import (
-    AgentException,
-    ToolExecutionError,
-    UnknownToolError,
-)
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.tools.tool_output import ToolOutput
+from AFAAS.lib.sdk.errors import AgentException, ToolExecutionError, UnknownToolError
 from AFAAS.lib.task.task import Task
 
 if TYPE_CHECKING:
@@ -46,6 +42,42 @@ class PlannerLoop(BaseLoop):
         user_input_handler: Optional[Callable[[str], Awaitable[str]]] = None,
         user_message_handler: Optional[Callable[[str], Awaitable[str]]] = None,
     ) -> None:
+        from pathlib import Path
+
+        import AFAAS.core.tools.builtins.file_operations as file_ops
+
+        # current_task = self._current_task
+        # # NOTE : Test tools individually
+        # command_name = "web_search"
+        # command_args= {"query": "instructions for building a Pizza oven"}
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
+
+
+
+
+
+        import AFAAS.core.tools.builtins.file_operations as file_ops
+        from pathlib import Path
+        #current_task = self._current_task
+        # # NOTE : Test tools individually
+        # command_name = "web_search"
+        # command_args= {"query": "instructions for building a Pizza oven"}
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
+
+
+
         if isinstance(user_input_handler, Callable) and user_input_handler is not None:
             self._user_input_handler = user_input_handler
         elif self._user_input_handler is None:

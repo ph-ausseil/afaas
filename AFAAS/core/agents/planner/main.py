@@ -15,6 +15,7 @@ from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.db.db import AbstractMemory
+from AFAAS.interfaces.tools.base import BaseToolsRegistry
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan
@@ -28,7 +29,22 @@ if TYPE_CHECKING:
 
 
 class PlannerAgent(BaseAgent):
+    # FIXME: Move to BaseAgent
+    @property
+    def tool_registry(self) -> BaseToolsRegistry:
+        if self._tool_registry is None:
+            self._tool_registry = SimpleToolRegistry(
+                settings=self._settings,
+                memory=self.memory,
+                workspace=self.workspace,
+                model_providers=self.default_llm_provider,
+                modules=TOOL_CATEGORIES,
+            )
+        return self._tool_registry
 
+    @tool_registry.setter
+    def tool_registry(self, value: BaseToolsRegistry):
+        self._tool_registry = value
 
 
     # FIXME: Move to BaseAgent
@@ -122,7 +138,6 @@ class PlannerAgent(BaseAgent):
             # self._loop.set_current_task(task = task)
             self._loop.set_current_task(task=self.plan.get_next_task())
         else:
-            id = self.create_agent()
             self.plan: Plan = Plan.create_in_db(agent=self)
             self.plan_id = self.plan.plan_id
 
