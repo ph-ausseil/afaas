@@ -1,9 +1,10 @@
 import json
 
+from AFAAS.lib.task.task import Task
 import pytest
 from googleapiclient.errors import HttpError
 
-from AFAAS.core.tools.web_search import google, safe_google_results, web_search
+from AFAAS.core.tools.untested.web_search  import google, safe_google_results, web_search
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import ConfigurationError
 
@@ -36,7 +37,7 @@ def test_safe_google_results_invalid_input():
         ("no results", 1, (), []),
     ],
 )
-def test_google_search(
+def test_google_search(task_ready_no_predecessors_or_subtasks : Task,
     query, num_results, expected_output_parts, return_value, mocker, agent: BaseAgent
 ):
     mock_ddg = mocker.Mock()
@@ -80,7 +81,7 @@ def mock_googleapiclient(mocker):
         ("", 3, [], []),
     ],
 )
-def test_google_official_search(
+def test_google_official_search(task_ready_no_predecessors_or_subtasks : Task,
     query,
     num_results,
     expected_output,
@@ -116,7 +117,7 @@ def test_google_official_search(
         ),
     ],
 )
-def test_google_official_search_errors(
+def test_google_official_search_errors(task_ready_no_predecessors_or_subtasks : Task,
     query,
     num_results,
     expected_error_type,

@@ -1,10 +1,11 @@
+from AFAAS.lib.task.task import Task
 import pytest
 from git.exc import GitCommandError
 from git.repo.base import Repo
 
-from AFAAS.core.tools.git_operations import clone_repository
+from AFAAS.core.tools.untested.git_operations import clone_repository
 from AFAAS.interfaces.agent.main import BaseAgent
-from AFAAS.lib.sdk.errors import CommandExecutionError
+from AFAAS.lib.sdk.errors import ToolExecutionError
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ def test_clone_repository_error(workspace, mock_clone_from, agent: BaseAgent):
         "clone", "fatal: repository not found", ""
     )
 
-    with pytest.raises(CommandExecutionError):
+    with pytest.raises(ToolExecutionError):
         clone_repository(
             url=url,
             clone_path=clone_path,

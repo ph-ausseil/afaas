@@ -1,6 +1,7 @@
 import os
 from unittest.mock import patch
 
+from AFAAS.lib.task.task import Task
 import pytest
 import requests
 from autogpt.app.utils import (

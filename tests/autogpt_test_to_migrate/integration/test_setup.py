@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.app.setup import (
     apply_overrides_to_ai_settings,

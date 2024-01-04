@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 from PIL import Image

@@ -3,6 +3,7 @@ import string
 import tempfile
 from pathlib import Path
 
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 

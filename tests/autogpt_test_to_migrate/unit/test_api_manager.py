@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.core.resource.model_providers import (
     OPEN_AI_CHAT_MODELS,

@@ -1,7 +1,8 @@
 from pathlib import Path
 
+from AFAAS.lib.task.task import Task
 import pytest
-from autogpt.file_workspace.local import FileWorkspaceConfiguration, LocalFileWorkspace
+from AFAAS.core.workspace.local import AGPTLocalFileWorkspace, AGPTLocalFileWorkspaceConfiguration
 
 _WORKSPACE_ROOT = Path("home/users/monty/auto_gpt_workspace")
 
