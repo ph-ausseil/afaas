@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 from PIL import Image
@@ -64,7 +65,7 @@ def test_sd_webui_negative_prompt(agent: PlannerAgent, workspace, image_size):
     gen_image = functools.partial(
         generate_image_with_sd_webui,
         prompt="astronaut riding a horse",
-        agent=task_ready_no_predecessors_or_subtasks.agent,
+        agent=default_task.agent,
         size=image_size,
         extra={"seed": 123},
     )

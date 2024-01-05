@@ -1,3 +1,4 @@
+from AFAAS.lib.task.task import Task
 import pytest
 
 from AFAAS.lib.sdk.logger import remove_color_codes
