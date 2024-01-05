@@ -29,13 +29,15 @@ from AFAAS.lib.message_common import AFAASMessageStack
     },
     enabled=lambda config: not config.noninteractive_mode,
 )
-async def user_interaction(question: str, task: Task, agent: BaseAgent) -> str:
+async def user_interaction(question: str, task: Task, agent: BaseAgent, skip_proxy = False) -> str:
 
-    if False : # TODO : MAke user-proxy here
-        pass
+    if skip_proxy:
+        if False : # TODO: Make user-proxy here
+            pass 
+        if False and True : # If the user proxy found an answer
+                return await agent._user_input_handler(question)
 
-    if False and True : # If the user proxy found an answer
-            return await agent._user_input_handler(question)
+        #TODO: Create  message but as "hidden"
 
 
     agent.message_agent_user.add(
