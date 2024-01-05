@@ -156,5 +156,17 @@ async def test_search_info_invalid_args():
     with pytest.raises(TypeError):
         await search_info(query= 123, task=mock_task, agent=mock_agent)  # Invalid query type
 
+@pytest.mark.asyncio
+async def test_search_info_e2e(activate_integration_tests : bool , default_task : Task ):
+    if not activate_integration_tests:
+        pytest.skip("Skipping integration tests")
 
+    # Define a query that will lead to a known command response
+    test_query = "Mirror mirror on the wall, who is the fairest of them all?"
+    agent = default_task.agent
 
+    # Execute the search_info tool
+    result = await search_info(query=test_query, task=default_task, agent=agent)
+
+    # Assert that the result is a string
+    assert isinstance(result, str)
