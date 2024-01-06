@@ -55,6 +55,7 @@ class BasePromptManager(AgentMixin):
             AutoCorrectionStrategy,
             BaseTaskSummary_Strategy,
             SearchInfo_Strategy,
+            QueryLLMStrategy,
             load_all_strategies,
         )
         common_strategies = [AutoCorrectionStrategy(
@@ -77,6 +78,9 @@ class BasePromptManager(AgentMixin):
         ),
         SearchInfo_Strategy(
                 **SearchInfo_Strategy.default_configuration.dict()
+        ),
+        QueryLLMStrategy(
+                **QueryLLMStrategy.default_configuration.dict()
         )
 
         ]
