@@ -489,8 +489,11 @@ async def _create_chat_completion(
     ]
 
     if "tools" in kwargs:
-        # wargs["tools"] = [function.dict() for function in kwargs["tools"]]
-        kwargs["tools"] = [function for function in kwargs["tools"]]
+
+        #kwargs["tools"] = [function for function in kwargs["tools"]]
+        if (len(kwargs["tools"])  == 0): 
+            del kwargs["tools"]
+            del kwargs["tool_choice"]
         if len(kwargs["tools"]) == 1:
             kwargs["tool_choice"] = {
                 "type": "function",
