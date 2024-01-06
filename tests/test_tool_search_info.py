@@ -1,6 +1,8 @@
 import pytest
 import os
+
 from unittest.mock import AsyncMock, MagicMock, patch
+
 from AFAAS.lib.utils.json_schema import JSONSchema
 
 # Assuming the not_implemented_tool function is defined in a module named `tools`
@@ -14,6 +16,7 @@ from tests.dataset.plan_familly_dinner import (
     task_ready_no_predecessors_or_subtasks,
     default_task
 )
+
 
 
 
@@ -33,8 +36,6 @@ async def test_search_info_query_language_model_command(default_task: Task):
 
     result = await search_info(query="query", reasoning = "reasoning", task=mock_task, agent=mock_agent)
     assert result == expected_result    
-
-
 
 @pytest.mark.asyncio
 async def test_search_info_user_interaction_command(default_task : Task,):
@@ -86,6 +87,7 @@ async def test_search_info_unrecognized_command(default_task : Task,):
     mock_assistant_response = MagicMock()
     mock_search_result = MagicMock(spec=AbstractChatModelResponse)
     action =  'unknown_command'
+
     action_tool = MagicMock()
     mock_parameters = MagicMock()
 
