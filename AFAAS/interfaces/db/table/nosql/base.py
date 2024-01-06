@@ -19,7 +19,7 @@ class BaseSQLTable(AbstractTable):
     def __init__(self) -> None:
         raise NotImplementedError()
 
-    def add(self, value: dict) -> uuid.UUID:
+    async def add(self, value: dict) -> uuid.UUID:
         id = uuid.uuid4()
         value["id"] = id
         self.db.add(key=id, value=value, table_name=self.table_name)
@@ -35,7 +35,7 @@ class BaseNoSQLTable(AbstractTable):
 
     secondary_key: Optional[str]
 
-    def deserialize(dct):
+    async def deserialize(dct):
         if "_type_" in dct:
             parts = dct["_type_"].rsplit(".", 1)
             module = __import__(parts[0])
@@ -50,7 +50,7 @@ class BaseNoSQLTable(AbstractTable):
     # NOTE : Move to marshmallow ?!?
     # https://marshmallow.readthedocs.io/en/stable/quickstart.html#serializing-objects-dumping
     @classmethod
-    def serialize_value(self, value) -> dict:
+    async def serialize_value(self, value) -> dict:
         stack = [(value, {}, None)]
         stack[0][1]
         count = 0
@@ -102,7 +102,7 @@ class BaseNoSQLTable(AbstractTable):
 
         return parent_dict
 
-    def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
+    async def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
         # Serialize non-serializable objects
         if isinstance(value, AFAASModel):
             value = value.dict_db()
@@ -127,7 +127,7 @@ class BaseNoSQLTable(AbstractTable):
         return id
 
     @abc.abstractmethod
-    def update(self, key: BaseNoSQLTable.Key, value: dict):
+    async def update(self, key: BaseNoSQLTable.Key, value: dict):
         # Serialize non-serializable objects
         if isinstance(value, BaseModel):
             value = value.dict()
@@ -149,17 +149,17 @@ class BaseNoSQLTable(AbstractTable):
         self.db.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
-    def get(self, key: BaseNoSQLTable.Key) -> Any:
+    async def get(self, key: BaseNoSQLTable.Key) -> Any:
         return self.db.get(key=key, table_name=self.table_name)
 
     @abc.abstractmethod
-    def delete(self, key: BaseNoSQLTable.Key):
+    async def delete(self, key: BaseNoSQLTable.Key):
         # key = {"primary_key": id}
         # if hasattr(self, "secondary_key") and self.secondary_key:
         #     key["secondary_key"] = self.secondary_key
         self.db.delete(key=key, table_name=self.table_name)
 
-    def list(
+    async def list(
         self,
         filter: AbstractTable.FilterDict = {},
         order_column: Optional[str] = None,
@@ -206,7 +206,7 @@ class BaseNoSQLTable(AbstractTable):
             #          {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}]
 
             # Example 2: Using custom operator for a specific filter
-            def custom_comparison(value, filter_value):
+            async def custom_comparison(value, filter_value):
                 return len(value['city']) > len(filter_value)
 
             filter_dict = {'city': {'value': 'Chicago', 'operator': custom_comparison}}
