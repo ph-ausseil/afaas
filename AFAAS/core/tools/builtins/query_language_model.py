@@ -52,7 +52,13 @@ async def query_language_model(task: Task,
                                ) -> None:
 
     response = await agent.execute_strategy(
-        strategy_name="query_llm", agent=agent, task=task, query=query, format=format, persona=persona, example=example
+        strategy_name="query_llm", 
+        agent=agent, 
+        task=task, 
+        query=query, 
+        format=format, 
+        persona=persona, 
+        example=example
     )
 
     return response
