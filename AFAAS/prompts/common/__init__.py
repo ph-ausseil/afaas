@@ -7,3 +7,4 @@ from AFAAS.prompts.common.afaas_task_rag_step2_history import *
 from AFAAS.prompts.common.afaas_task_rag_step3_related import *
 from AFAAS.prompts.common.autocorrection import *
 from AFAAS.prompts.common.search_info import *
+from AFAAS.prompts.common.query_llm import *

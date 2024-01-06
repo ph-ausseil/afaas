@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 
 from langchain.tools.base import BaseTool
 
+from AFAAS.interfaces.adapters import (
+    CompletionModelFunction,
+)
 from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.lib.sdk.logger import AFAASLogger
 
@@ -171,7 +174,7 @@ class Tool:
         # vector = await agent.vectorstore.aadd_texts(
         #     task_ouput_embedding, metadatas= [{'task_id' : task.task_id , 'plan_id' : task.plan_id}]
         #     )
-        vector = await agent.vectorstore.aadd_texts(
+        vector = await agent.vectorstores["tasks"].aadd_texts(
             texts=[task.task_text_output],
             metadatas=[{"task_id": task.task_id, "plan_id": task.plan_id}],
         )
@@ -181,3 +184,12 @@ class Tool:
         return task.task_text_output
 
         # return summary
+
+    def dump(self) -> CompletionModelFunction:
+        param_dict = {parameter.name: parameter.spec for parameter in self.parameters}
+
+        return CompletionModelFunction(
+            name=self.name,
+            description=self.description,
+            parameters=param_dict,
+        )
