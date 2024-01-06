@@ -22,17 +22,19 @@ from AFAAS.interfaces.prompts.strategy import (
 )
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.utils.json_schema import JSONSchema
+from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.core.tools.tools import Tool
 
 LOG = AFAASLogger(name=__name__)
 
 
 class SearchInfoStrategyFunctionNames(str, enum.Enum):
-    MAKE_SMART_RAG: str = "search_info"
+    QUERY_LANGUAGE_MODEL: str = "query_language_model"
 
 
 class SearchInfoStrategyConfiguration(PromptStrategiesConfiguration):
     default_tool_choice: SearchInfoStrategyFunctionNames = (
-        SearchInfoStrategyFunctionNames.MAKE_SMART_RAG
+        SearchInfoStrategyFunctionNames.QUERY_LANGUAGE_MODEL
     )
     task_context_length: int = 300
     temperature: float = 0.4
@@ -62,21 +64,29 @@ class SearchInfo_Strategy(AbstractPromptStrategy):
     def set_tools(
         self,
         task: AbstractTask,
-        tools: list,
+        tools: list[Tool],
         **kwargs,
     ):
-        self._tools = tools
+        self._tools : list[CompletionModelFunction] = []
 
-    def build_message(self, task: AbstractTask, **kwargs) -> ChatPrompt:
+        for tool in tools:
+            self._tools.append(tool.dump())
+
+    def build_message(  self, 
+                        task: AbstractTask,
+                        agent : BaseAgent, 
+                        query : str, 
+                        reasoning : str , 
+                        tools : list[Tool],
+                        **kwargs) -> ChatPrompt:
         LOG.debug("Building prompt for task : " + task.debug_dump_str())
         self._task: AbstractTask = task
         smart_rag_param = {
             "task_goal": task.task_goal,
             "additional_context_description": str(task.task_context),
-            "task_history": kwargs.get("task_history", None),
-            "task_sibblings": kwargs.get("task_sibblings", None),
-            "task_path": kwargs.get("task_path", None),
-            "related_tasks": kwargs.get("related_tasks", None),
+            "query": query,
+            "reasoning": reasoning,
+            "tools": tools,
         }
 
         messages = []
