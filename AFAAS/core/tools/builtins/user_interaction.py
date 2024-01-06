@@ -23,7 +23,7 @@ from AFAAS.lib.message_common import AFAASMessageStack
     parameters={
         "query": JSONSchema(
             type=JSONSchema.Type.STRING,
-            description="The query or prompt to the user",
+            description="The question or prompt to the user",
             required=True,
         )
     }
