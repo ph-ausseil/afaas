@@ -32,9 +32,9 @@ LOG = AFAASLogger(name=__name__)
             description="Describe the format (plan, length,...) of the expected answer.",
             required=True,
         ),
-        "answer_as": JSONSchema(
+        "persona": JSONSchema(
             type=JSONSchema.Type.STRING,
-            description="Describe the ideal persona persona with his profession, expertise, mindset, personnality, ect... You would like to get an answer from.",
+            description="Assertive description of the ideal persona with his profession, expertise, mindset, factuality, personnality, ect... You would like to get an answer from.",
             required=True,
         ),
         "example": JSONSchema(
@@ -43,10 +43,16 @@ LOG = AFAASLogger(name=__name__)
         ),
     },
 )
-async def query_language_model(task: Task, agent: BaseAgent) -> None:
+async def query_language_model(task: Task, 
+                               agent: BaseAgent, 
+                               query : str,
+                               format: str,
+                               persona : str,
+                               example : str = None,
+                               ) -> None:
 
-    plan = await agent.execute_strategy(
-        strategy_name="query_llm", agent=agent, task=task
+    response = await agent.execute_strategy(
+        strategy_name="query_llm", agent=agent, task=task, query=query, format=format, persona=persona, example=example
     )
 
-    return plan
+    return response
