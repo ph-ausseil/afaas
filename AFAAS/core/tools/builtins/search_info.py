@@ -14,7 +14,7 @@ from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
 from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
 from AFAAS.core.tools.builtins.user_interaction import user_interaction
-from AFAAS.core.tools.untested.query_language_model import query_language_model
+from AFAAS.core.tools.builtins.query_language_model import query_language_model
 LOG = AFAASLogger(name=__name__)
 
 
@@ -28,13 +28,25 @@ LOG = AFAASLogger(name=__name__)
             type=JSONSchema.Type.STRING,
             description="A query for a language model. A query should contain a question and any relevant context.",
             required=True,
-        )
+        ),
+        "reasoning": JSONSchema(
+            type=JSONSchema.Type.STRING,
+            description="Detail the process of though that lead you to write this query ",
+            required=True,
+        ),      
     },
+
 )
-async def search_info(query : str, task: Task, agent: BaseAgent) -> None:
+async def search_info(query : str, reasoning : str, task: Task, agent: BaseAgent) -> str:
 
     search_result: AbstractChatModelResponse = await agent.execute_strategy(
-        strategy_name="search_info", agent=agent, task=task, query=query
+        strategy_name="search_info", 
+        agent=agent, 
+        task=task, 
+        query=query, 
+        reasoning = reasoning , 
+        tools = [agent.tool_registry.get_tool("query_language_model"), 
+                 agent.tool_registry.get_tool("user_interaction")]
     )
 
     command_name = search_result.parsed_result[0]
@@ -48,7 +60,7 @@ async def search_info(query : str, task: Task, agent: BaseAgent) -> None:
     elif command_name == "web_search" :
         try : 
             from AFAAS.core.tools.untested.web_search import web_search
-            web_search(task = task, agent = agent, **command_args)
+            return await web_search(task = task, agent = agent, **command_args)
         except :
             raise NotImplementedError("Command search_web not implemented")
     else :
