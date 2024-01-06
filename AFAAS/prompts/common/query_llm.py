@@ -89,7 +89,6 @@ class QueryLLMStrategy(AbstractPromptStrategy):
                 )
             )
         )
-        messages.append(ChatMessage.system(self.response_format_instruction()))
 
         return self.build_chat_prompt(messages=messages)
 
@@ -97,7 +96,7 @@ class QueryLLMStrategy(AbstractPromptStrategy):
         self,
         response_content: AssistantChatMessageDict,
     ) -> DefaultParsedResponse:
-        return self.default_parse_response_content(response_content=response_content)
+        return response_content["content"]
 
     def response_format_instruction(self) -> str:
         return super().response_format_instruction()

@@ -19,7 +19,7 @@ LOG = AFAASLogger(name=__name__)
 @tool(
     name="query_language_model",
     description=(
-        "Search the web and with the capacity of returning steerable & structured result. Not very good at retriving data published last month."
+        "Answer any question with the capacity of returning steerable & structured result. Limitation : Can not use data published last month. Tips: The more informations you give the better the answer will be."
     ),
     parameters={
         "query": JSONSchema(
@@ -29,7 +29,7 @@ LOG = AFAASLogger(name=__name__)
         ),
         "format": JSONSchema(
             type=JSONSchema.Type.STRING,
-            description="Describe the format (plan, length,...) of the expected answer.",
+            description="Describe the ideal format (plan, length,...) for the expected answer.",
             required=True,
         ),
         "persona": JSONSchema(
@@ -39,7 +39,7 @@ LOG = AFAASLogger(name=__name__)
         ),
         "example": JSONSchema(
             type=JSONSchema.Type.STRING,
-            description="As large language model, this tool will give much  better results if given example of phrasing, format, ext you may expept.",
+            description="Optional : If given, will accurately will return a result reproducing the patern of the example",
         ),
     },
 )
@@ -61,4 +61,4 @@ async def query_language_model(task: Task,
         example=example
     )
 
-    return response
+    return response.parsed_result
