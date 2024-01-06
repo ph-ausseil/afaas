@@ -124,6 +124,10 @@ async def test_search_info_e2e(activate_integration_tests : bool , default_task 
     if not activate_integration_tests and False:
         pytest.skip("Skipping integration tests")
 
+    default_task.task_context = "Some more information about the task"
+    default_task.rag_history_txt = "This is what happened previously"
+    default_task.rag_related_task_txt = "This are related things"
+
     # Define a query that will lead to a known command response
     test_query = "Mirror mirror on the wall, who is the fairest of them all?"
     reasoning = "I am trying to find out who is the fairest of them all"
