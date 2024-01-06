@@ -18,7 +18,6 @@ def plan_familly_dinner():
         "created_at": "2023-12-31T15:38:45.666346",
         "modified_at": "2023-12-31T15:38:45.666355",
         "task_context": None,
-        "long_description": None,
         "task_history": None,
         "acceptance_criteria": [],
         "tasks": [],
@@ -33,95 +32,148 @@ def plan_familly_dinner():
     plan_prepare_dinner = Plan(
         plan_id="pytest_P" + str(uuid.uuid4()),
         task_goal="100. Prepare Dinner for Family",
+        long_description="Coordinate and execute all necessary activities to prepare a dinner for the family, including grocery shopping, kitchen preparation, cooking, and setting the mood.",
         agent=agent,
         **plan_dict,
     )
     agent.plan = plan_prepare_dinner
-    # plan_prepare_dinner.state = TaskStatusList.READY
 
     task_101_buy_groceries = Task(
-        agent=agent, task_id="101", task_goal="101. Buy Groceries"
+        agent=agent, 
+        task_id="101", 
+        task_goal="101. Buy Groceries",
+        long_description="Procure all necessary ingredients and items from a grocery store required for preparing the dinner."
     )
-    task_101_buy_groceries.state = TaskStatusList.READY
-
     task_102_clean_kitchen = Task(
-        agent=agent, task_id="102", task_goal="102. Clean Kitchen"
+        agent=agent, 
+        task_id="102", 
+        task_goal="102. Clean Kitchen",
+        long_description="Thoroughly clean and organize the kitchen area to create a hygienic and efficient cooking environment."
     )
-    task_102_clean_kitchen.state = TaskStatusList.READY
-
     task_103_choose_music = Task(
-        agent=agent, task_id="103", task_goal="103. Choose Dinner Music"
+        agent=agent, 
+        task_id="103", 
+        task_goal="103. Choose Dinner Music",
+        long_description="Select and arrange a playlist of music that will create a pleasant and relaxing atmosphere during the dinner."
     )
-    task_103_choose_music.state = TaskStatusList.READY
-
     task_104_decorate_dining_room = Task(
-        agent=agent, task_id="104", task_goal="104. Decorate Dining Room"
+        agent=agent, 
+        task_id="104", 
+        task_goal="104. Decorate Dining Room",
+        long_description="Enhance the dining room's ambiance by arranging decorations, setting appropriate lighting, and ensuring a visually pleasing and comfortable dining environment."
     )
-    task_104_decorate_dining_room.state = TaskStatusList.READY
 
     task_105_set_mood = Task(
-        agent=agent, task_id="105", task_goal="105. Set the Mood for Dinner"
+        agent=agent, 
+        task_id="105", 
+        task_goal="105. Set the Mood for Dinner",
+        long_description="Create a welcoming and enjoyable dinner atmosphere by adjusting the lighting, music, and room temperature, and ensuring all elements contribute to a pleasant dining experience."
     )
+    task_101_buy_groceries.state = TaskStatusList.READY
+    task_102_clean_kitchen.state = TaskStatusList.READY
+    task_103_choose_music.state = TaskStatusList.READY
+    task_104_decorate_dining_room.state = TaskStatusList.READY
     task_105_set_mood.add_predecessor(task_103_choose_music)
     task_105_set_mood.add_predecessor(task_104_decorate_dining_room)
 
+
     task_106_set_table = Task(
-        agent=agent, task_id="106", task_goal="106. Set the Table"
+        agent=agent, 
+        task_id="106", 
+        task_goal="106. Set the Table",
+        long_description="Arrange the dining table with necessary cutlery, plates, glasses, and napkins, ensuring it's elegantly set and ready for the meal."
     )
     task_106_set_table.add_predecessor(task_105_set_mood)
 
-    task_107_make_salad = Task(agent=agent, task_id="107", task_goal="107. Make Salad")
+    task_107_make_salad = Task(
+        agent=agent, 
+        task_id="107", 
+        task_goal="107. Make Salad",
+        long_description="Prepare a fresh salad by selecting and combining a variety of ingredients, dressing it appropriately, and presenting it in an appealing manner."
+    )
     task_107_make_salad.add_predecessor(task_106_set_table)
 
     task_108_serve_salad = Task(
-        agent=agent, task_id="108", task_goal="108. Serve Salad"
+    agent=agent, 
+    task_id="108", 
+    task_goal="108. Serve Salad",
+    long_description="Present the prepared salad to the diners, ensuring it's served at the right temperature and in an appealing way, as a starter for the dinner."
     )
     task_108_serve_salad.add_predecessor(task_107_make_salad)
 
     task_200_prepare_main_course = Task(
-        agent=agent, task_id="200", task_goal="200. Prepare Main Course"
+    agent=agent, 
+    task_id="200", 
+    task_goal="200. Prepare Main Course",
+    long_description="Cook the main course of the dinner, focusing on flavor, presentation, and ensuring it meets the dietary preferences and needs of the family."
     )
     task_200_prepare_main_course.add_predecessor(task_106_set_table)
 
     task_201_serve_dinner = Task(
-        agent=agent, task_id="201", task_goal="201. Serve Main Course"
+    agent=agent, 
+    task_id="201", 
+    task_goal="201. Serve Main Course",
+    long_description="Gracefully serve the prepared main course to the diners, ensuring each person receives their portion with appropriate accompaniments."
     )
     task_201_serve_dinner.add_predecessor(task_200_prepare_main_course)
     task_201_serve_dinner.add_predecessor(task_108_serve_salad)
 
     task_300_make_banana_bread = Task(
-        agent=agent, task_id="300", task_goal="300. Make Banana Bread"
+        agent=agent, 
+        task_id="300", 
+        task_goal="300. Make Banana Bread",
+        long_description="Bake a banana bread by following a specific recipe, focusing on achieving the right texture and flavor, and ensuring it's enjoyable for all diners."
     )
 
+
     task_300_1_gather_ingredients = Task(
-        agent=agent, task_id="300.1", task_goal="300.1. Gather Ingredients"
+        agent=agent, 
+        task_id="300.1", 
+        task_goal="300.1. Gather Ingredients",
+        long_description="Collect all necessary ingredients for baking banana bread, ensuring they are fresh and of good quality."
     )
     task_300_1_gather_ingredients.add_predecessor(task_101_buy_groceries)
     task_300_1_gather_ingredients.add_predecessor(task_102_clean_kitchen)
 
     task_300_2_prepare_baking_pan = Task(
-        agent=agent, task_id="300.2", task_goal="300.2. Prepare Baking Pan"
+        agent=agent, 
+        task_id="300.2", 
+        task_goal="300.2. Prepare Baking Pan",
+        long_description="Ready the baking pan for the banana bread by properly greasing it or lining it with parchment paper, ensuring the bread will not stick and will bake evenly."
     )
 
+
     task_300_3_mix_ingredients = Task(
-        agent=agent, task_id="300.3", task_goal="300.3. Mix Ingredients"
+        agent=agent, 
+        task_id="300.3", 
+        task_goal="300.3. Mix Ingredients",
+        long_description="Combine the banana bread ingredients in the correct sequence and method, ensuring a consistent and well-mixed batter."
     )
     task_300_3_mix_ingredients.add_predecessor(task_300_1_gather_ingredients)
 
     task_300_4_bake_bread = Task(
-        agent=agent, task_id="300.4", task_goal="300.4. Bake the Bread"
-    )
+    agent=agent, 
+    task_id="300.4", 
+    task_goal="300.4. Bake the Bread",
+    long_description="Bake the banana bread in a preheated oven, monitoring it to achieve the perfect bake, both in terms of texture and color."
+)
     task_300_4_bake_bread.add_predecessor(task_201_serve_dinner)
     task_300_4_bake_bread.add_predecessor(task_300_3_mix_ingredients)
 
     task_300_5_cool_bread = Task(
-        agent=agent, task_id="300.5", task_goal="300.5. Cool the Bread"
-    )
+    agent=agent, 
+    task_id="300.5", 
+    task_goal="300.5. Cool the Bread",
+    long_description="Allow the baked banana bread to cool down to an appropriate temperature before serving, ensuring it retains its texture and flavor."
+)
     task_300_5_cool_bread.add_predecessor(task_300_4_bake_bread)
 
     task_300_6_serve_bread = Task(
-        agent=agent, task_id="300.6", task_goal="300.6. Serve Banana Bread"
-    )
+    agent=agent, 
+    task_id="300.6", 
+    task_goal="300.6. Serve Banana Bread",
+    long_description="Serve the cooled banana bread, slicing it neatly and presenting it in an appetizing manner, potentially with accompaniments like butter or cream."
+)
     task_300_6_serve_bread.add_predecessor(task_300_5_cool_bread)
     task_300_6_serve_bread.add_predecessor(task_201_serve_dinner)
 
