@@ -15,21 +15,20 @@ from AFAAS.lib.message_common import AFAASMessageStack
 
 
 @tool(
-    "user_interaction",
-    (
-        "If you need more details or information regarding the given goals,"
+    name = "user_interaction",
+    description = (
+        "Ask a question to the user If you need more details or information regarding the given goals,"
         " you can ask the user for input"
     ),
-    {
-        "question": JSONSchema(
+    parameters={
+        "query": JSONSchema(
             type=JSONSchema.Type.STRING,
             description="The question or prompt to the user",
             required=True,
         )
-    },
-    enabled=lambda config: not config.noninteractive_mode,
+    }
 )
-async def user_interaction(question: str, task: Task, agent: BaseAgent, skip_proxy = False) -> str:
+async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy = False) -> str:
 
     if skip_proxy:
         if False : # TODO: Make user-proxy here
@@ -39,22 +38,22 @@ async def user_interaction(question: str, task: Task, agent: BaseAgent, skip_pro
 
         #TODO: Create  message but as "hidden"
 
-
     agent.message_agent_user.add(
         message=MessageAgentUser(
             emitter=emiter.AGENT.value,
             user_id=agent.user_id,
-            agent_id=agent.agent_id,
-            message=question,
+            agent_id= agent.agent_id,
+            message=str(query),
         )
     )
-    user_response = await agent._user_input_handler(question)
+    user_response = await agent._user_input_handler(query)
+
     agent.message_agent_user.add(
             message=MessageAgentUser(
                 emitter=emiter.USER.value,
                 user_id=agent.user_id,
                 agent_id=agent.agent_id,
-                message=user_response,
+                message=str(user_response),
             )
        )
     return user_response
