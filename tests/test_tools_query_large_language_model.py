@@ -13,7 +13,13 @@ async def test_query_language_model_returns_string():
     mock_agent.execute_strategy = AsyncMock(return_value="Test Plan String")
 
     # Call the function with the mocked objects
-    result = await query_language_model(mock_task, mock_agent)
+    result = await query_language_model(
+        query="How to plan a familly dinner ?",
+        format="Aswer in 3 paragraphs",
+        persona="A drunk Paraguayan sailor",
+        task = mock_task, 
+        agent = mock_agent
+        )
 
     # Assert that the result is a string
     assert isinstance(result, str)
