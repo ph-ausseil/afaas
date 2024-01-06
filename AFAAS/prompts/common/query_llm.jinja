@@ -1,17 +1,13 @@
 ## Main Instruction
-
 {{ query }}
 
 ## Additional instructions
 
 ### Respond as follow
-
 {{ persona }}
 
 ### Format 
-
 {{ format }}
 
-### Example : 
-
-{{ example }}
+{% if example %}### Example
+{{ to_md_quotation(example) }}{% endif %}
