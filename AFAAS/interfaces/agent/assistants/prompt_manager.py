@@ -54,6 +54,7 @@ class BasePromptManager(AgentMixin):
             AfaasTaskRagStep3Strategy,
             AutoCorrectionStrategy,
             BaseTaskSummary_Strategy,
+            SearchInfo_Strategy,
             load_all_strategies,
         )
         common_strategies = [AutoCorrectionStrategy(
@@ -74,6 +75,9 @@ class BasePromptManager(AgentMixin):
         AfaasPostRagTaskUpdateStrategy(
                 **AfaasPostRagTaskUpdateStrategy.default_configuration.dict()
         ),
+        SearchInfo_Strategy(
+                **SearchInfo_Strategy.default_configuration.dict()
+        )
 
         ]
 
