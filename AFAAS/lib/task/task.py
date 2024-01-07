@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
-
+import asyncio
 from pydantic import Field, validator
 
 from AFAAS.interfaces.adapters import AbstractChatModelResponse
@@ -23,45 +23,75 @@ if TYPE_CHECKING:
 
 
 class Task(AbstractTask):
-    """
-    Model representing a task.
 
-    Attributes:
-    - responsible_agent_id: ID of the responsible agent (default is None).
-    - objective: Objective of the task.
-    - type: Type of the task (corresponds to TaskType, but due to certain issues, it's defined as str).
-    - priority: Priority of the task.
-    - ready_criteria: List of criteria to consider the task as ready.
-    - acceptance_criteria: List of criteria to accept the task.
-    - context: Context of the task (default is a new TaskContext).
+    def __init__(self, **data):
+        LOG.trace(
+            f"Entering {self.__class__.__name__}.__init__() : {data['task_goal']}"
+        )
+        super().__init__(**data)
+        LOG.trace(
+            f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
+        )
+        self._task_parent_loading = False
+        self._task_parent_loaded = asyncio.Event()
 
-    Example:
-        >>> task = Task(objective="Write a report", type="write", priority=2, ready_criteria=["Gather info"], acceptance_criteria=["Approved by manager"])
-        >>> print(task.objective)
-        "Write a report"
-    """
+    def __setattr__(self, key, value):
+        # Set attribute as normal
+        super().__setattr__(key, value)
+        # If the key is a model field, mark the instance as modified
+        if key in self.__fields__:
+            self.agent.plan._register_task_as_modified(task_id=self.task_id)
+
+        if key == "state":
+            self.agent.plan._registry_update_task_status_in_list(
+                task_id=self.task_id, status=value
+            )
+
+    class Config(AbstractBaseTask.Config):
+        default_exclude = set(AbstractBaseTask.Config.default_exclude) | {
+            # If commented create an infinite loop
+            "task_parent",
+            "task_predecessors",
+            "task_successors",
+        }
 
     ###
     ### GENERAL properties
     ###
     task_id: str = Field(default_factory=lambda: Task.generate_uuid())
-    plan_id: str = Field()
 
-    command: Optional[str] = Field(default_factory=lambda: Task.default_command())
-    arguments: Optional[dict] = Field(default={})
+    plan_id: str = Field()
+    @property
+    def plan_id(self) -> str:
+        return self.agent.plan.plan_id
 
     _task_parent_id: str = Field()
-
     @property
-    def task_parent(self) -> AbstractBaseTask:
-        LOG.trace(
-            f"{self.debug_formated_str(True)} {self.__class__.__name__}.task_parent({self._task_parent_id})"
-        )
-        try:
-            # Lazy load the parent task
-            return await self.agent.plan.get_task(self._task_parent_id)
-        except KeyError:
+    def task_parent(self):
+        if self._task_parent is not None:
+            return self._task_parent
+
+        if not self._task_parent_loading:
+            # Start loading the task parent
+            self._task_parent_loading = True
+            asyncio.create_task(self._load_task_parent())
+
+        # Wait for the task parent to be loaded
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._task_parent_loaded.wait())
+
+        if self._task_parent is None:
+            # Handle the case where loading failed or no parent task is found
             raise ValueError(f"No parent task found with ID {self._task_parent_id}")
+
+        return self._task_parent
+
+    async def _load_task_parent(self):
+        try:
+            # Perform the async operation to load the task parent
+            self._task_parent = await self.agent.plan.get_task(self._task_parent_id)
+        finally:
+            self._task_parent_loaded.set()
 
     @task_parent.setter
     def task_parent(self, task: AbstractBaseTask):
@@ -108,43 +138,15 @@ class Task(AbstractTask):
             LOG.error(f"Task {task_id} has state is None")
         return new_state
 
-    def __setattr__(self, key, value):
-        # Set attribute as normal
-        super().__setattr__(key, value)
-        # If the key is a model field, mark the instance as modified
-        if key in self.__fields__:
-            self.agent.plan._register_task_as_modified(task_id=self.task_id)
 
-        if key == "state":
-            self.agent.plan._registry_update_task_status_in_list(
-                task_id=self.task_id, status=value
-            )
+    command: Optional[str] = Field(default_factory=lambda: Task.default_command())
+    arguments: Optional[dict] = Field(default={})
 
     task_text_output: Optional[str]
-    """ Placeholder : The agent summary of his own doing while performing the task"""
+    """ The agent summary of his own doing while performing the task"""
     task_text_output_as_uml: Optional[str]
-    """ Placeholder : The agent summary of his own doing while performing the task as a UML diagram"""
+    """ The agent summary of his own doing while performing the task as a UML diagram"""
 
-    class Config(AbstractBaseTask.Config):
-        default_exclude = set(AbstractBaseTask.Config.default_exclude) | {
-            # If commented create an infinite loop
-            "task_parent",
-            "task_predecessors",
-            "task_successors",
-        }
-
-    def __init__(self, **data):
-        LOG.trace(
-            f"Entering {self.__class__.__name__}.__init__() : {data['task_goal']}"
-        )
-        super().__init__(**data)
-        LOG.trace(
-            f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
-        )
-
-    @property
-    def plan_id(self) -> str:
-        return self.agent.plan.plan_id
 
     async def is_ready(self) -> bool:
         if (
