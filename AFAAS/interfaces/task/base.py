@@ -366,7 +366,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
     #
     @abc.abstractmethod
-    async def create_in_db(self, agent: BaseAgent):
+    async def db_create(self, agent: BaseAgent):
         ...
 
     def __str__(self):
@@ -436,7 +436,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
                 return_str += (
                     "  " * iteration
                     + f"{i+1}."
-                    + subtask.debug_dump_str(depth=depth - 1, iteration=iteration + 1)
+                    + await subtask.debug_dump_str(depth=depth - 1, iteration=iteration + 1)
                     + "\n"
                 )
 

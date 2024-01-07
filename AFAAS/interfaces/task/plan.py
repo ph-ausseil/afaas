@@ -21,6 +21,9 @@ class AbstractPlan(AbstractBaseTask):
     def plan_id(self) -> str:
         ...
 
+    def parent_task(self) -> AbstractBaseTask:
+        return None
+
     # Public Methods
     @staticmethod
     @abstractmethod
@@ -73,7 +76,7 @@ class AbstractPlan(AbstractBaseTask):
 
     @classmethod
     @abstractmethod
-    async def create_in_db(cls, agent: BaseAgent) -> "AbstractPlan":
+    async def db_create(cls, agent: BaseAgent) -> "AbstractPlan":
         ...
 
     @abstractmethod

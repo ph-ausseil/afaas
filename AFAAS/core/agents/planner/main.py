@@ -162,7 +162,7 @@ class PlannerAgent(BaseAgent):
             )
             agent._loop.set_current_task(task=await agent.plan.get_next_task())
         else:
-            agent.plan = await Plan.create_in_db(agent=agent)
+            agent.plan = await Plan.db_create(agent=agent)
             agent.plan_id = agent.plan.plan_id
             agent._loop.set_current_task(task=await agent.plan.get_ready_tasks()[0])
             await agent.db_create()

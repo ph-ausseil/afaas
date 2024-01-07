@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 import asyncio
+import time
 from pydantic import Field, validator
 
 from AFAAS.interfaces.adapters import AbstractChatModelResponse
@@ -33,7 +34,8 @@ class Task(AbstractTask):
             f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
         )
         self._task_parent_loading = False
-        self._task_parent_loaded = asyncio.Event()
+        #self._task_parent_loaded = asyncio.Event()
+        self._task_parent_future = asyncio.Future()
 
     def __setattr__(self, key, value):
         # Set attribute as normal
@@ -66,39 +68,17 @@ class Task(AbstractTask):
         return self.agent.plan.plan_id
 
     _task_parent_id: str = Field()
-    @property
-    def task_parent(self):
-        if self._task_parent is not None:
-            return self._task_parent
+    _task_parent: Optional[Task] = None
 
-        if not self._task_parent_loading:
-            # Start loading the task parent
-            self._task_parent_loading = True
-            asyncio.create_task(self._load_task_parent())
-
-        # Wait for the task parent to be loaded
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._task_parent_loaded.wait())
-
-        if self._task_parent is None:
-            # Handle the case where loading failed or no parent task is found
-            raise ValueError(f"No parent task found with ID {self._task_parent_id}")
-
-        return self._task_parent
-
-    async def _load_task_parent(self):
+    async def task_parent(self) -> AbstractBaseTask:
+        LOG.trace(
+            f"{self.debug_formated_str(status = True)} {self.__class__.__name__}.task_parent()({self._task_parent_id})"
+        )
         try:
-            # Perform the async operation to load the task parent
-            self._task_parent = await self.agent.plan.get_task(self._task_parent_id)
-        finally:
-            self._task_parent_loaded.set()
-
-    @task_parent.setter
-    def task_parent(self, task: AbstractBaseTask):
-        LOG.trace(f"{self.__class__.__name__}.task_parent.setter()")
-        if not isinstance(task, Task):
-            raise ValueError("task_parent must be an instance of Task")
-        self._task_parent_id = task.task_id
+            # Lazy load the parent task
+            return await self.agent.plan.get_task(self._task_parent_id)
+        except KeyError:
+            raise ValueError(f"No parent task found with ID {self._task_parent_id}")
 
     _task_predecessors: Optional[TaskStack]  # = Field(default=None)
     _task_successors: Optional[TaskStack]  # = Field(default=None)
@@ -229,7 +209,7 @@ class Task(AbstractTask):
         return cls(**task, agent=agent)
 
     @classmethod
-    async def create_in_db(cls, task: Task, agent: BaseAgent):
+    async def db_create(cls, task: Task, agent: BaseAgent):
         db = agent.db
         task_table = await db.get_table("tasks")
         await task_table.add(value=task, id=task.task_id)
@@ -247,7 +227,7 @@ class Task(AbstractTask):
 
     # endregion
 
-    def get_task_path(self, task_to_root=False, include_self=False) -> list[Task]:
+    async def get_task_path(self, task_to_root=False, include_self=False) -> list[Task]:
         """
         Finds the path from the root to the task ( not including the task itself by default)
         If task_to_root is True, the path will be from the task to the root.
@@ -261,18 +241,18 @@ class Task(AbstractTask):
 
         while (
             hasattr(current_task, "task_parent")
-            and current_task.task_parent is not None
+            and await current_task.task_parent() is not None
         ):
-            path.append(current_task.task_parent)
-            current_task = current_task.task_parent
+            path.append(await current_task.task_parent())
+            current_task = await current_task.task_parent()
 
         if not task_to_root:
             path.reverse()
 
         return path
 
-    def get_formated_task_path(self) -> str:
-        path_to_task = self.get_task_path()
+    async def get_formated_task_path(self) -> str:
+        path_to_task = await self.get_task_path()
         indented_structure = ""
 
         for i, task in enumerate(path_to_task):
@@ -284,10 +264,11 @@ class Task(AbstractTask):
         """
         Finds the sibblings of this task.
         """
-        if self.task_parent is None:
+        if await self.task_parent() is None:
             return []
 
-        return await self.task_parent.subtasks.get_all_tasks_from_stack()
+        parent_task = await self.task_parent()
+        return await parent_task.subtasks.get_all_tasks_from_stack()
 
     def __hash__(self):
         return hash(self.task_id)
@@ -327,16 +308,17 @@ class Task(AbstractTask):
         # 4. Get the path to the task and remove it from history to avoid redondancy
         task_path: list[Task] = []
         if path:
-            task_path = self.get_task_path()
+            task_path = await self.get_task_path()
 
         # 5. Get the sibblings of the task and remove them from history to avoid redondancy
         task_sibblings: list[Task] = []
         if sibblings:
+            #sibblings_tmp = await self.get_sibblings()
             if avoid_sibbling_predecessors_redundancy:
                 task_sibblings = (
                     set(await self.get_sibblings()) - history_and_predecessors
                 )  # - set([self])
-            else:
+            else :
                 task_sibblings = set(await self.get_sibblings())  # - set([self])
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases

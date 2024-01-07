@@ -28,14 +28,9 @@ class AbstractTask(AbstractBaseTask):
     # def plan_id(self) -> str:
     #     ...
 
-    @property
-    @abstractmethod
-    def task_parent(self) -> AbstractBaseTask:
-        ...
 
-    @task_parent.setter
     @abstractmethod
-    def task_parent(self, task: AbstractBaseTask):
+    async def task_parent(self) -> AbstractBaseTask:
         ...
 
     @property
@@ -87,7 +82,7 @@ class AbstractTask(AbstractBaseTask):
 
     @classmethod
     @abstractmethod
-    async def create_in_db(cls, task: "AbstractTask", agent: BaseAgent):
+    async def db_create(cls, task: "AbstractTask", agent: BaseAgent):
         ...
 
     @abstractmethod
@@ -95,13 +90,13 @@ class AbstractTask(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def get_task_path(
+    async def get_task_path(
         self, task_to_root: bool = False, include_self: bool = False
     ) -> list["AbstractTask"]:
         ...
 
     @abstractmethod
-    def get_formated_task_path(self) -> str:
+    async def get_formated_task_path(self) -> str:
         ...
 
     @abstractmethod

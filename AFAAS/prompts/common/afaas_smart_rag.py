@@ -106,6 +106,7 @@ class AFAAS_SMART_RAG_Strategy(AbstractPromptStrategy):
             "task_sibblings": kwargs.get("task_sibblings", None),
             "task_path": kwargs.get("task_path", None),
             "related_tasks": kwargs.get("related_tasks", None),
+            "task_parent": await task.task_parent(),
         }
 
         messages = []

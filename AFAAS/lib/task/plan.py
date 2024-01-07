@@ -94,7 +94,7 @@ class Plan(AbstractPlan):
         return instance
 
     @classmethod
-    async def create_in_db(cls, agent: BaseAgent):
+    async def db_create(cls, agent: BaseAgent):
         LOG.debug(f"Creating plan for agent {agent.agent_id}")
         await agent.db.get_table("plans")
 
@@ -229,13 +229,14 @@ class Plan(AbstractPlan):
             if not isinstance(task, Plan):
                 LOG.error(f"Task {task.formated_str()} is not a plan and has no parent")
             return None
-        elif task.task_parent is not None:
-            t = await task.task_parent.find_ready_subbranch()
+        elif await task.task_parent() is not None:
+            t = await task.task_parent()
+            await t.find_ready_subbranch()
             if len(t) > 0:
                 return t[0]
             else:
                 return await self._find_outer_next_task(
-                    task=task.task_parent, origin_task=task
+                    task=await task.task_parent(), origin_task=task
                 )
         else:
             LOG.critical(f"Task {task.debug_formated_str(status=True)} has no parent")
@@ -479,7 +480,7 @@ class Plan(AbstractPlan):
             task: Task = self._loaded_tasks_dict.get(task_id)
             if task:
                 LOG.db_log(f"Creating task {task.task_goal}")
-                await task.create_in_db(task=task, agent=self.agent)  # Save the task
+                await task.db_create(task=task, agent=self.agent)  # Save the task
 
         # Reinitalize the lists
         self._modified_tasks_ids = []
@@ -511,9 +512,9 @@ class Plan(AbstractPlan):
     #     siblings: list[Task] = [
     #         sib
     #         for sib in self.subtasks
-    #         if sib.task_parent_id == task.task_parent_id and sib != task
+    #         if sib._task_parent_id == task._task_parent_id and sib != task
     #     ]
-    #     path_to_task = task.get_task_path()
+    #     path_to_task = await task.get_task_path()
 
     #     # Build the pitch
     #     pitch = """
@@ -532,7 +533,7 @@ class Plan(AbstractPlan):
     #             [
     #                 "{}: {}".format(t.task_goal, t.description)
     #                 for t in self.subtasks
-    #                 if not t.task_parent_id
+    #                 if not t._task_parent_id
     #             ]
     #         ),
     #         task_name=task.task_goal,

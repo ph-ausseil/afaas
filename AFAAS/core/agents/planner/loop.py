@@ -231,8 +231,8 @@ class PlannerLoop(BaseLoop):
                 if LOG.isEnabledFor(TRACE):
                     input("Press Enter to continue...")
 
-                LOG.info(f"Task Path : {self._current_task.get_formated_task_path()}")
-                task_path: list[Task] = self._current_task.get_task_path()
+                LOG.info(f"Task Path : {await self._current_task.get_formated_task_path()}")
+                task_path: list[Task] = await self._current_task.get_task_path()
                 for i, task in enumerate(task_path):
                     LOG.trace(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"
