@@ -16,11 +16,12 @@ class AFAASMessage(AFAASModel):
 
 class AFAASMessageStack(AFAASModel):
     _messages: list[AFAASMessage] = []
-    _db: AbstractMemory = AbstractMemory.get_adapter()
+    db: AbstractMemory
 
-    def add(self, message: AFAASMessage):
+    async def add(self, message: AFAASMessage):
         self._messages.append(message)
-        self._db.get_table(message._table_name).add(message)
+        table = await self.db.get_table(message._table_name)
+        await table.add(message)
         return message.message_id
 
     def __init__(self, **data: Any):
@@ -38,7 +39,6 @@ class AFAASMessageStack(AFAASModel):
         return len(self._messages)
 
     def __iter__(self):
-        LOG.error("Iterating over AFAASMessageStack")
         return iter(self._messages)
 
     @classmethod

@@ -33,7 +33,7 @@ LOG = AFAASLogger(name=__name__)
             type=JSONSchema.Type.STRING,
             description="Detail the process of though that lead you to write this query ",
             required=True,
-        ),      
+        ),  
     },
 
 )

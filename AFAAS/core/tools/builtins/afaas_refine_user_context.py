@@ -45,13 +45,14 @@ async def afaas_refine_user_context(task: Task, agent: BaseAgent) -> None:
             **usercontext_settings.dict(),
         )
         # NOTE: We don't save the agent
-        # new_user_context_agent = UserContextAgent.create_agent()
+        # new_user_context_agent = await UserContextAgent.create_agent()
 
         user_context_return: dict = await user_context_agent.run(
             user_input_handler=agent._user_input_handler,
             user_message_handler=agent._user_message_handler,
         )
 
+        # FIXME:0.0.2: Move it outside of the tool
         agent.agent_goal_sentence = user_context_return["agent_goal_sentence"]
         agent.agent_goals = user_context_return["agent_goals"]
     except Exception as e:

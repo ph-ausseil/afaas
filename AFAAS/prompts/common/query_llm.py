@@ -62,7 +62,7 @@ class QueryLLMStrategy(AbstractPromptStrategy):
     ):
         self._tools : list[CompletionModelFunction] = []
 
-    def build_message(  self, 
+    async def build_message(  self, 
                         task: AbstractTask,
                         agent : BaseAgent,
                         query : str, 
@@ -70,7 +70,7 @@ class QueryLLMStrategy(AbstractPromptStrategy):
                         persona : str, 
                         example : str,
                         **kwargs) -> ChatPrompt:
-        LOG.debug("Building prompt for task : " + task.debug_dump_str())
+        LOG.debug("Building prompt for task : " + await task.debug_dump_str())
         self._task: AbstractTask = task
         query_llm_param = {
             "query": query,
@@ -82,7 +82,7 @@ class QueryLLMStrategy(AbstractPromptStrategy):
         messages = []
         messages.append(
             ChatMessage.system(
-                self._build_jinja_message(
+                await self._build_jinja_message(
                     task=task,
                     template_name=f"{self.STRATEGY_NAME}.jinja",
                     template_params=query_llm_param,

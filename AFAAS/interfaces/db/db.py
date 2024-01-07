@@ -115,7 +115,7 @@ class AbstractMemory(Configurable, abc.ABC):
         super().__init__(settings)
 
     @classmethod
-    def add_adapter(cls, adapter: AbstractMemory):
+    async def add_adapter(cls, adapter: AbstractMemory):
         #TODO:v0.1.0 Implement an add adapter method & a more robust multiton with dependency injection
         raise NotImplementedError("add_adapter")
         config_key = base64.b64encode(
@@ -188,7 +188,7 @@ class AbstractMemory(Configurable, abc.ABC):
 
     abc.abstractmethod
 
-    def get_table(self, table_name: str) -> AbstractTable:
+    async def get_table(self, table_name: str) -> AbstractTable:
         """
         Get an instance of the table with the specified table_name.
 
@@ -266,7 +266,7 @@ class AbstractMemory(Configurable, abc.ABC):
             raise ValueError(f"Unknown table: {table_name}")
 
     @abc.abstractmethod
-    def connect(self, *args, **kwargs):
+    async def connect(self, *args, **kwargs):
         """
         Connect to the db storage system.
 
@@ -278,29 +278,29 @@ class AbstractMemory(Configurable, abc.ABC):
 
         Example:
             # Example implementation for JSONFileMemory
-            def connect(self, json_file_path):
+            async def connect(self, json_file_path):
                 # Implementation for connecting to JSON file db storage
                 pass
         """
 
     @abc.abstractmethod
-    def get(self, key: uuid.UUID, table_name: str):
+    async def get(self, key: uuid.UUID, table_name: str):
         pass
 
     @abc.abstractmethod
-    def add(self, key: uuid.UUID, value: dict, table_name: str):
+    async def add(self, key: uuid.UUID, value: dict, table_name: str):
         pass
 
     @abc.abstractmethod
-    def update(self, key: uuid.UUID, value: dict, table_name: str):
+    async def update(self, key: uuid.UUID, value: dict, table_name: str):
         pass
 
     @abc.abstractmethod
-    def delete(self, key: uuid.UUID, table_name: str):
+    async def delete(self, key: uuid.UUID, table_name: str):
         pass
 
     @abc.abstractmethod
-    def list(self, table_name: str) -> dict:
+    async def list(self, table_name: str) -> dict:
         pass
 
 

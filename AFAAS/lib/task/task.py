@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
-
+import asyncio
+import time
 from pydantic import Field, validator
 
 from AFAAS.interfaces.adapters import AbstractChatModelResponse
@@ -23,52 +24,61 @@ if TYPE_CHECKING:
 
 
 class Task(AbstractTask):
-    """
-    Model representing a task.
 
-    Attributes:
-    - responsible_agent_id: ID of the responsible agent (default is None).
-    - objective: Objective of the task.
-    - type: Type of the task (corresponds to TaskType, but due to certain issues, it's defined as str).
-    - priority: Priority of the task.
-    - ready_criteria: List of criteria to consider the task as ready.
-    - acceptance_criteria: List of criteria to accept the task.
-    - context: Context of the task (default is a new TaskContext).
+    def __init__(self, **data):
+        LOG.trace(
+            f"Entering {self.__class__.__name__}.__init__() : {data['task_goal']}"
+        )
+        super().__init__(**data)
+        LOG.trace(
+            f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
+        )
+        self._task_parent_loading = False
+        #self._task_parent_loaded = asyncio.Event()
+        self._task_parent_future = asyncio.Future()
 
-    Example:
-        >>> task = Task(objective="Write a report", type="write", priority=2, ready_criteria=["Gather info"], acceptance_criteria=["Approved by manager"])
-        >>> print(task.objective)
-        "Write a report"
-    """
+    def __setattr__(self, key, value):
+        # Set attribute as normal
+        super().__setattr__(key, value)
+        # If the key is a model field, mark the instance as modified
+        if key in self.__fields__:
+            self.agent.plan._register_task_as_modified(task_id=self.task_id)
+
+        if key == "state":
+            self.agent.plan._registry_update_task_status_in_list(
+                task_id=self.task_id, status=value
+            )
+
+    class Config(AbstractBaseTask.Config):
+        default_exclude = set(AbstractBaseTask.Config.default_exclude) | {
+            # If commented create an infinite loop
+            "task_parent",
+            "task_predecessors",
+            "task_successors",
+        }
 
     ###
     ### GENERAL properties
     ###
     task_id: str = Field(default_factory=lambda: Task.generate_uuid())
-    plan_id: str = Field()
 
-    command: Optional[str] = Field(default_factory=lambda: Task.default_command())
-    arguments: Optional[dict] = Field(default={})
+    plan_id: str = Field()
+    @property
+    def plan_id(self) -> str:
+        return self.agent.plan.plan_id
 
     _task_parent_id: str = Field()
+    _task_parent: Optional[Task] = None
 
-    @property
-    def task_parent(self) -> AbstractBaseTask:
+    async def task_parent(self) -> AbstractBaseTask:
         LOG.trace(
-            f"{self.debug_formated_str(True)} {self.__class__.__name__}.task_parent({self._task_parent_id})"
+            f"{self.debug_formated_str(status = True)} {self.__class__.__name__}.task_parent()({self._task_parent_id})"
         )
         try:
             # Lazy load the parent task
-            return self.agent.plan.get_task(self._task_parent_id)
+            return await self.agent.plan.get_task(self._task_parent_id)
         except KeyError:
             raise ValueError(f"No parent task found with ID {self._task_parent_id}")
-
-    @task_parent.setter
-    def task_parent(self, task: AbstractBaseTask):
-        LOG.trace(f"{self.__class__.__name__}.task_parent.setter()")
-        if not isinstance(task, Task):
-            raise ValueError("task_parent must be an instance of Task")
-        self._task_parent_id = task.task_id
 
     _task_predecessors: Optional[TaskStack]  # = Field(default=None)
     _task_successors: Optional[TaskStack]  # = Field(default=None)
@@ -108,48 +118,20 @@ class Task(AbstractTask):
             LOG.error(f"Task {task_id} has state is None")
         return new_state
 
-    def __setattr__(self, key, value):
-        # Set attribute as normal
-        super().__setattr__(key, value)
-        # If the key is a model field, mark the instance as modified
-        if key in self.__fields__:
-            self.agent.plan._register_task_as_modified(task_id=self.task_id)
 
-        if key == "state":
-            self.agent.plan._registry_update_task_status_in_list(
-                task_id=self.task_id, status=value
-            )
+    command: Optional[str] = Field(default_factory=lambda: Task.default_command())
+    arguments: Optional[dict] = Field(default={})
 
     task_text_output: Optional[str]
-    """ Placeholder : The agent summary of his own doing while performing the task"""
+    """ The agent summary of his own doing while performing the task"""
     task_text_output_as_uml: Optional[str]
-    """ Placeholder : The agent summary of his own doing while performing the task as a UML diagram"""
+    """ The agent summary of his own doing while performing the task as a UML diagram"""
 
-    class Config(AbstractBaseTask.Config):
-        default_exclude = set(AbstractBaseTask.Config.default_exclude) | {
-            # If commented create an infinite loop
-            "task_parent",
-            "task_predecessors",
-            "task_successors",
-        }
 
-    def __init__(self, **data):
-        LOG.trace(
-            f"Entering {self.__class__.__name__}.__init__() : {data['task_goal']}"
-        )
-        super().__init__(**data)
-        LOG.trace(
-            f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
-        )
-
-    @property
-    def plan_id(self) -> str:
-        return self.agent.plan.plan_id
-
-    def is_ready(self) -> bool:
+    async def is_ready(self) -> bool:
         if (
-            len(self.task_predecessors.get_active_tasks_from_stack()) == 0
-            and len(self.subtasks.get_active_tasks_from_stack()) == 0
+            len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
+            and len(await self.subtasks.get_active_tasks_from_stack()) == 0
             and (
                 self.state == TaskStatusList.BACKLOG
                 or self.state == TaskStatusList.READY
@@ -220,24 +202,24 @@ class Task(AbstractTask):
     #############################################################################################
 
     @classmethod
-    def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> Task:
+    async def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> Task:
         db = agent.db
-        task_table = db.get_table("tasks")
-        task = task_table.get(task_id=task_id, plan_id=agent.plan.plan_id)
+        task_table = await db.get_table("tasks")
+        task = await task_table.get(task_id=task_id, plan_id=agent.plan.plan_id)
         return cls(**task, agent=agent)
 
     @classmethod
-    def create_in_db(cls, task: Task, agent: BaseAgent):
+    async def db_create(cls, task: Task, agent: BaseAgent):
         db = agent.db
-        task_table = db.get_table("tasks")
-        task_table.add(value=task, id=task.task_id)
+        task_table = await db.get_table("tasks")
+        await task_table.add(value=task, id=task.task_id)
 
-    def save_in_db(self):
+    async def save_in_db(self):
         from AFAAS.interfaces.db.db_table import AbstractTable
 
         db = self.agent.db
-        task_table: AbstractTable = db.get_table("tasks")
-        task_table.update(
+        task_table: AbstractTable = await db.get_table("tasks")
+        await task_table.update(
             value=self,
             task_id=self.task_id,
             plan_id=self.plan_id,
@@ -245,7 +227,7 @@ class Task(AbstractTask):
 
     # endregion
 
-    def get_task_path(self, task_to_root=False, include_self=False) -> list[Task]:
+    async def get_task_path(self, task_to_root=False, include_self=False) -> list[Task]:
         """
         Finds the path from the root to the task ( not including the task itself by default)
         If task_to_root is True, the path will be from the task to the root.
@@ -259,18 +241,18 @@ class Task(AbstractTask):
 
         while (
             hasattr(current_task, "task_parent")
-            and current_task.task_parent is not None
+            and await current_task.task_parent() is not None
         ):
-            path.append(current_task.task_parent)
-            current_task = current_task.task_parent
+            path.append(await current_task.task_parent())
+            current_task = await current_task.task_parent()
 
         if not task_to_root:
             path.reverse()
 
         return path
 
-    def get_formated_task_path(self) -> str:
-        path_to_task = self.get_task_path()
+    async def get_formated_task_path(self) -> str:
+        path_to_task = await self.get_task_path()
         indented_structure = ""
 
         for i, task in enumerate(path_to_task):
@@ -278,14 +260,15 @@ class Task(AbstractTask):
 
         return indented_structure
 
-    def get_sibblings(self) -> list[Task]:
+    async def get_sibblings(self) -> list[Task]:
         """
         Finds the sibblings of this task.
         """
-        if self.task_parent is None:
+        if await self.task_parent() is None:
             return []
 
-        return self.task_parent.subtasks.get_all_tasks_from_stack()
+        parent_task = await self.task_parent()
+        return await parent_task.subtasks.get_all_tasks_from_stack()
 
     def __hash__(self):
         return hash(self.task_id)
@@ -307,17 +290,17 @@ class Task(AbstractTask):
     ):
         plan_history: list[Task] = []
         if history > 0:
-            plan_history = self.agent.plan.get_last_achieved_tasks(count=history)
+            plan_history = await self.agent.plan.get_last_achieved_tasks(count=history)
 
         # 2a. Get the predecessors of the task
         task_predecessors: list[Task] = []
         if predecessors:
-            task_predecessors = self.task_predecessors.get_all_tasks_from_stack()
+            task_predecessors = await self.task_predecessors.get_all_tasks_from_stack()
 
         # 2b. Get the successors of the task
         task_successors: list[Task] = []
         if successors:
-            task_successors = self.task_successors.get_all_tasks_from_stack()
+            task_successors = await self.task_successors.get_all_tasks_from_stack()
 
         # 3. Remove predecessors from history to avoid redondancy
         history_and_predecessors = set(plan_history) | set(task_predecessors)
@@ -325,17 +308,18 @@ class Task(AbstractTask):
         # 4. Get the path to the task and remove it from history to avoid redondancy
         task_path: list[Task] = []
         if path:
-            task_path = self.get_task_path()
+            task_path = await self.get_task_path()
 
         # 5. Get the sibblings of the task and remove them from history to avoid redondancy
         task_sibblings: list[Task] = []
         if sibblings:
+            #sibblings_tmp = await self.get_sibblings()
             if avoid_sibbling_predecessors_redundancy:
                 task_sibblings = (
-                    set(self.get_sibblings()) - history_and_predecessors
+                    set(await self.get_sibblings()) - history_and_predecessors
                 )  # - set([self])
-            else:
-                task_sibblings = set(self.get_sibblings())  # - set([self])
+            else :
+                task_sibblings = set(await self.get_sibblings())  # - set([self])
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases
         related_tasks: list[Task] = []
@@ -366,7 +350,7 @@ class Task(AbstractTask):
             LOG.debug(related_tasks_documents)
             ## 1. Make Task Object
             for task in related_tasks_documents:
-                related_tasks.append(self.agent.plan.get_task(task.metadata["task_id"]))
+                related_tasks.append(await self.agent.plan.get_task(task.metadata["task_id"]))
 
             ## 2. Make a set of related tasks and remove current tasks, sibblings, history and predecessors
             related_tasks = list(

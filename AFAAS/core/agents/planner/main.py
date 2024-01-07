@@ -58,8 +58,8 @@ class PlannerAgent(BaseAgent):
     def __init__(
         self,
         settings: PlannerAgent.SystemSettings,
-        user_id: uuid.UUID,
-        agent_id: uuid.UUID = SystemSettings.generate_uuid(),
+        user_id: str,
+        agent_id: str = SystemSettings.generate_uuid(),
         prompt_manager: BasePromptManager = BasePromptManager(),
         loop: PlannerLoop = PlannerLoop(),
         tool_handler: ToolExecutor = ToolExecutor(),
@@ -72,6 +72,17 @@ class PlannerAgent(BaseAgent):
         workflow_registry: WorkflowRegistry = None,
         **kwargs,
     ):
+        # FIXME:
+        ## Workarround for attribute where dependancy injection remain to implement
+        if agent_id is None:
+            agent_id: str = self.SystemSettings.generate_uuid()
+        if prompt_manager is None:
+            prompt_manager: BasePromptManager = BasePromptManager()
+        if loop is None:
+            loop: PlannerLoop = PlannerLoop()
+        if tool_handler is None:
+            tool_handler: ToolExecutor = ToolExecutor()
+
         super().__init__(
             settings=settings,
             db=db,
@@ -107,47 +118,80 @@ class PlannerAgent(BaseAgent):
         self._tool_executor: ToolExecutor = tool_handler
         self._tool_executor.set_agent(agent=self)
 
+    @classmethod
+    async def load(
+        cls,
+        settings: PlannerAgent.SystemSettings,
+        user_id: str,
         ###
-        ### Step 5a : Create the plan
+        agent_id: uuid.UUID = None, 
+        prompt_manager: BasePromptManager = None, 
+        loop: PlannerLoop = None, 
+        tool_handler: ToolExecutor = None, 
         ###
-        # FIXME: Long term : PlannerLoop / Pipeline get all ready tasks & launch them => Parralelle processing of tasks
-        if hasattr(self, "plan_id") and self.plan_id is not None:
-            self.plan: Plan = Plan.get_plan_from_db(
-                plan_id=settings.plan_id, agent=self
-            )  # Plan(user_id=user_id)
-            # task = self.plan.find_first_ready_task()
-            # self._loop.set_current_task(task = task)
-            self._loop.set_current_task(task=self.plan.get_next_task())
+        tool_registry=None,
+        db: AbstractMemory = None,
+        default_llm_provider: AbstractLanguageModelProvider = None,
+        workspace: AbstractFileWorkspace = None,
+        vectorstores: dict[str, VectorStore] = {},
+        embedding_model: Embeddings = None,
+        workflow_registry: WorkflowRegistry = None,
+        **kwargs
+    ):
+        agent = cls(
+            settings=settings,
+            user_id=user_id,
+            agent_id=agent_id,
+            prompt_manager=prompt_manager,
+            loop=loop,
+            tool_handler=tool_handler,
+            tool_registry=tool_registry,
+            db=db,
+            default_llm_provider=default_llm_provider,
+            workspace=workspace,
+            vectorstores=vectorstores,
+            embedding_model=embedding_model,
+            workflow_registry=workflow_registry,
+            **kwargs
+        )
+
+        # Creating or getting the plan
+        if hasattr(agent, "plan_id") and agent.plan_id is not None:
+            agent.plan = await Plan.get_plan_from_db(
+                plan_id=agent.plan_id, agent=agent
+            )
+            agent._loop.set_current_task(task=await agent.plan.get_next_task())
         else:
-            self.plan: Plan = Plan.create_in_db(agent=self)
-            self.plan_id = self.plan.plan_id
+            agent.plan = await Plan.db_create(agent=agent)
+            agent.plan_id = agent.plan.plan_id
+            agent._loop.set_current_task(task=await agent.plan.get_ready_tasks()[0])
+            await agent.db_create()
 
-            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
-            self.create_agent()
-
-            from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
-            from AFAAS.lib.message_common import AFAASMessageStack
-
-            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB
-            self.message_agent_user: AFAASMessageStack = AFAASMessageStack()
-            self.message_agent_user.add(
-                message=MessageAgentUser(
-                    emitter=emiter.AGENT.value,
-                    user_id=self.user_id,
-                    agent_id=self.agent_id,
-                    message="What would you like to do ?",
-                )
+        from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
+        from AFAAS.lib.message_common import AFAASMessageStack
+        # Message agent user initialization
+        agent.message_agent_user = AFAASMessageStack(db=agent.db)
+        # FIXME:v.0.0.1 : The first message seem not to be saved in the DB #91 https://github.com/ph-ausseil/afaas/issues/91
+        await agent.message_agent_user.add(
+            message=MessageAgentUser(
+                emitter=emiter.AGENT.value,
+                user_id=agent.user_id,
+                agent_id=agent.agent_id,
+                message="What would you like to do ?",
             )
-            self.message_agent_user.add(
-                message=MessageAgentUser(
-                    emitter=emiter.USER.value,
-                    user_id=self.user_id,
-                    agent_id=self.agent_id,
-                    message=self.agent_goal_sentence,
-                )
+        )
+        await agent.message_agent_user.add(
+            message=MessageAgentUser(
+                emitter=emiter.USER.value,
+                user_id=agent.user_id,
+                agent_id=agent.agent_id,
+                message=agent.agent_goal_sentence,
             )
+        )
 
-        """ #NOTE: This is a remnant of a plugin system on stand-by that have not been implemented yet.
+        return agent
+
+    """ #NOTE: This is a remnant of a plugin system on stand-by that have not been implemented yet.
         ###
         ### Step 6 : add hooks/pluggins to the loop
         ###
@@ -179,9 +223,7 @@ class PlannerAgent(BaseAgent):
         if not self._loop._loophooks:
             self._loop._loophooks = {}
         return self._loop._loophooks
-
-    def add_hook(self, hook: BaseLoopHook, uuid: uuid.UUID):
-        super().add_hook(hook, uuid)"""
+    """
 
     ################################################################################
     ################################ LOOP MANAGEMENT################################
@@ -212,3 +254,4 @@ class PlannerAgent(BaseAgent):
             user_message_handler=user_message_handler,
         )
         return return_var
+
