@@ -17,15 +17,15 @@ agent_settings: PlannerAgent.SystemSettings = PlannerAgent.SystemSettings(
     agent_goal_sentence="Prepare a family dinner",
 )
 
-memory_config = MemoryConfig()
-memory_config.json_file_path += "/pytest"
-memory_settings = AbstractMemory.SystemSettings()
-memory_settings.configuration = memory_config
+db_config = MemoryConfig()
+db_config.json_file_path += "/pytest"
+db_settings = AbstractMemory.SystemSettings()
+db_settings.configuration = db_config
 
 agent = PlannerAgent(
     settings=agent_settings,
     **agent_settings.dict(),
-    memory=AbstractMemory.get_adapter(settings=memory_settings),
+    db=AbstractMemory.get_adapter(settings=db_settings),
 )
 
 PLANNERAGENT = agent
@@ -57,15 +57,15 @@ def agent_dataset() -> PlannerAgent:
     )
 
     agent = PlannerAgent(settings=agent_settings, **agent_settings.dict())
-    memory_config = MemoryConfig()
-    memory_config.json_file_path += "/pytest"
-    memory_settings = AbstractMemory.SystemSettings()
-    memory_settings.configuration = memory_config
+    db_config = MemoryConfig()
+    db_config.json_file_path += "/pytest"
+    db_settings = AbstractMemory.SystemSettings()
+    db_settings.configuration = db_config
 
     agent = PlannerAgent(
         settings=agent_settings,
         **agent_settings.dict(),
-        memory=AbstractMemory.get_adapter(settings=memory_settings),
+        db=AbstractMemory.get_adapter(settings=db_settings),
     )
 
     agent._user_input_handler = UserMessageHandlers.user_input_handler

@@ -17,7 +17,7 @@ from AFAAS.lib.message_common import AFAASMessageStack
 @tool(
     name = "user_interaction",
     description = (
-        "Ask a question to the user If you need more details or information regarding the given goals,"
+        "Ask a question to the user if you need more details or information regarding the given goals,"
         " you can ask the user for input"
     ),
     parameters={
@@ -37,6 +37,7 @@ async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy 
                 return await agent._user_input_handler(query)
 
         #TODO: Create  message but as "hidden"
+
 
     agent.message_agent_user.add(
         message=MessageAgentUser(

@@ -67,7 +67,6 @@ async def test_search_info_web_search_command(default_task : Task,):
     mock_task = default_task
     mock_assistant_response = MagicMock()
     mock_search_result = MagicMock(spec=AbstractChatModelResponse)
-
     action =  'web_search'
     action_tool = mock_agent.tool_registry.get_tool("web_search")
     mock_parameters = {param.name: MagicMock() for param in action_tool.parameters}
@@ -88,10 +87,6 @@ async def test_search_info_unrecognized_command(default_task : Task,):
     action =  'unknown_command'
     action_tool = MagicMock()
     mock_parameters = MagicMock()
-
-    mock_search_result.parsed_result = [action, mock_parameters, mock_assistant_response]
-
-    mock_agent.execute_strategy = AsyncMock(return_value=mock_search_result)
 
     with pytest.raises(NotImplementedError):
         await search_info(query="query", reasoning = "reasoning", task=mock_task, agent=mock_agent)
