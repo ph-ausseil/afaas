@@ -35,17 +35,23 @@ class AbstractAgent(ABC):
     plan : Optional[AbstractPlan] = None
 
     @property
-    def vectorstore(self) -> VectorStore:
-        if self._vectorstore is None:
-            self._vectorstore = Chroma(
-                persist_directory='data/chroma',
+    def vectorstores(self) -> dict[str , VectorStore]:
+        # Ensure 'tasks' and 'documents' VectorStores are initialized
+        self._ensure_vectorstore_initialized("tasks")
+        self._ensure_vectorstore_initialized("documents")
+        return self._vectorstores
+
+    def _ensure_vectorstore_initialized(self, key: str):
+        if key not in self._vectorstores or self._vectorstores[key] is None:
+            self._vectorstores[key] = Chroma(
+                persist_directory=f'data/chroma/{key}',
                 embedding_function=self.embedding_model
             )
-        return self._vectorstore
 
-    @vectorstore.setter
-    def vectorstore(self, value : VectorStore):
-        self._vectorstore = value
+    @vectorstores.setter
+    def vectorstores(self, value: dict[str , VectorStore]):
+        for key, vectorstore in value.items():
+            self._vectorstores[key] = vectorstore
 
     @property
     def embedding_model(self) -> Embeddings:
@@ -58,14 +64,14 @@ class AbstractAgent(ABC):
         self._embedding_model = value
 
     @property
-    def memory(self) -> AbstractMemory:
-        if self._memory is None:
-            self._memory = AbstractMemory.get_adapter()
-        return self._memory
+    def db(self) -> AbstractMemory:
+        if self._db is None:
+            self._db = AbstractMemory.get_adapter()
+        return self._db
 
-    @memory.setter
-    def memory(self, value: AbstractMemory):
-        self._memory = value
+    @db.setter
+    def db(self, value: AbstractMemory):
+        self._db = value
 
     @property
     @abstractmethod
@@ -159,7 +165,7 @@ class AbstractAgent(ABC):
 
         def json(self, *args, **kwargs):
             LOG.warning(
-                "Warning : Recomended use json_api() or json_memory()"
+                "Warning : Recomended use json_api() or json_db()"
             )
             LOG.warning("AbstractAgent.SystemSettings.json()")
             self.prepare_values_before_serialization()  # Call the custom treatment before .json()
@@ -177,11 +183,11 @@ class AbstractAgent(ABC):
     def __init__(
         self,
         settings: AbstractAgent.SystemSettings,
-        memory: AbstractMemory,
+        db: AbstractMemory,
         workspace: AbstractFileWorkspace,
         prompt_manager: BasePromptManager,
         default_llm_provider: AbstractLanguageModelProvider,
-        vectorstore: VectorStore,
+        vectorstores: dict[str , VectorStore],
         embedding_model : Embeddings,
         workflow_registry: WorkflowRegistry,
         user_id: uuid.UUID,
@@ -204,14 +210,16 @@ class AbstractAgent(ABC):
         self._prompt_manager : BasePromptManager = prompt_manager
         self._prompt_manager.set_agent(agent=self)
 
-        self._memory : AbstractMemory = memory
+        self._db : AbstractMemory = db
 
         self._workspace : AbstractFileWorkspace = workspace
         self.workspace.initialize()
 
         self._default_llm_provider : AbstractLanguageModelProvider = default_llm_provider
-        self._vectorstore : VectorStore = vectorstore
         self._embedding_model : Embeddings = embedding_model
+        self._vectorstores : dict[VectorStore] = {}
+        for key, vectorstore in vectorstores.items():
+            self._vectorstores[key] : VectorStore = vectorstore
 
         self._workflow_registry : WorkflowRegistry = workflow_registry
 
@@ -301,7 +309,7 @@ class AbstractAgent(ABC):
     def get_instance_from_settings(
         cls,
         agent_settings: AbstractAgent.SystemSettings,
-        memory: AbstractMemory = None,
+        db: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
         vectorstore: VectorStore = None,  # Optional parameter for custom vectorstore
@@ -337,7 +345,7 @@ class AbstractAgent(ABC):
                             default_llm_provider=default_llm_provider,
                             vectorstore=vectorstore,
                             embedding_model=embedding_model,
-                            memory=memory,
+                            db=db,
                             )
 
         return agent

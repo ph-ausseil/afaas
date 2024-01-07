@@ -9,7 +9,7 @@ from langchain_core.vectorstores import VectorStore
 from AFAAS.core.tools.builtins import (
     TOOL_CATEGORIES,  # FIXME: This is a temporary fix but shall not be delt here
 )
-from AFAAS.core.tools.simple import SimpleToolRegistry
+from AFAAS.core.tools.simple import DefaultToolRegistry
 from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
 from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
@@ -33,9 +33,9 @@ class PlannerAgent(BaseAgent):
     @property
     def tool_registry(self) -> BaseToolsRegistry:
         if self._tool_registry is None:
-            self._tool_registry = SimpleToolRegistry(
+            self._tool_registry = DefaultToolRegistry(
                 settings=self._settings,
-                memory=self.memory,
+                db=self.db,
                 workspace=self.workspace,
                 model_providers=self.default_llm_provider,
                 modules=TOOL_CATEGORIES,
@@ -64,23 +64,23 @@ class PlannerAgent(BaseAgent):
         loop: PlannerLoop = PlannerLoop(),
         tool_handler: ToolExecutor = ToolExecutor(),
         tool_registry=None,
-        memory: AbstractMemory = None,
+        db: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
-        vectorstore: VectorStore = None,  # Optional parameter for custom vectorstore
+        vectorstores: dict[str , VectorStore] = {},  # Optional parameter for custom vectorstore
         embedding_model: Embeddings = None,  # Optional parameter for custom embedding model
         workflow_registry: WorkflowRegistry = None,
         **kwargs,
     ):
         super().__init__(
             settings=settings,
-            memory=memory,
+            db=db,
             workspace=workspace,
             default_llm_provider=default_llm_provider,
             prompt_manager=prompt_manager,
             user_id=user_id,
             agent_id=agent_id,
-            vectorstore=vectorstore,
+            vectorstores=vectorstores,
             embedding_model=embedding_model,
             workflow_registry=workflow_registry,
             **kwargs,
