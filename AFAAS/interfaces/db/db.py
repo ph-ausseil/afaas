@@ -124,7 +124,7 @@ class AbstractMemory(Configurable, abc.ABC):
         cls._instances[config_key] = adapter
 
     @classmethod
-    async def get_adapter(
+    def get_adapter(
         cls,
         db_settings: AbstractMemory.SystemSettings = SystemSettings(),
         *args,

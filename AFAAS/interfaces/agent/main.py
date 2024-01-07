@@ -1,14 +1,7 @@
 from __future__ import annotations
 
-import uuid
-
 from AFAAS.configs.schema import Configurable
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
-
-# from AFAAS.interfaces.agent.loop import (  # Import only where it's needed
-#     BaseLoop,
-#     BaseLoopHook,
-# )
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.sdk.logger import AFAASLogger
 
@@ -18,13 +11,6 @@ LOG = AFAASLogger(name=__name__)
 
 from AFAAS.core.adapters.openai.chatmodel import AFAASChatOpenAI
 from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
-
-# if TYPE_CHECKING:
-#     from AFAAS.interfaces.prompts.strategy import (
-#         AbstractChatModelResponse,
-#         AbstractPromptStrategy,
-#     )
-#     from AFAAS.interfaces.task.plan import AbstractPlan
 
 
 class BaseAgent(AbstractAgent, Configurable):
@@ -44,56 +30,13 @@ class BaseAgent(AbstractAgent, Configurable):
 
     class SystemSettings(AbstractAgent.SystemSettings):
 
-
         class Config(AbstractAgent.SystemSettings.Config):
             pass
-
-
-
-    ################################################################
-    # Factory interface for agent bootstrapping and initialization #
-    ################################################################
-
-    # @classmethod
-    # def create_agent(
-    #     cls,
-    #     agent_settings: BaseAgent.SystemSettings,
-    #     db: AbstractMemory = None,
-    #     default_llm_provider: AbstractLanguageModelProvider = None,
-    #     workspace: AbstractFileWorkspace = None,
-    #     vectorstore: VectorStore = None,  # Optional parameter for custom vectorstore
-    #     embedding_model: Embeddings = None,  # Optional parameter for custom embedding model
-    # ) -> AbstractAgent:
-    #     LOG.info(f"Starting creation of {cls.__name__}")
-    #     LOG.trace(f"Debug : Starting creation of  {cls.__module__}.{cls.__name__}")
-
-    #     if not isinstance(agent_settings, cls.SystemSettings):
-    #         agent_settings = cls.SystemSettings.parse_obj(agent_settings)
-
-    #     agent = cls.get_instance_from_settings(
-    #         agent_settings=agent_settings,
-    #         db = db ,
-    #         default_llm_provider = default_llm_provider,
-    #         workspace = workspace,
-    #         vectorstore = vectorstore,
-    #         embedding_model = embedding_model, 
-    #     )
-
-    #     agent_id = await agent._create_in_db(agent_settings=agent_settings)
-    #     LOG.info(
-    #         f"{cls.__name__} id #{agent_id} created in db. Now, finalizing creation..."
-    #     )
-    #     # Adding agent_id to the settingsagent_id
-    #     agent_settings.agent_id = agent_id
-
-    #     LOG.info(f"Loaded Agent ({agent.__class__.__name__}) with ID {agent_id}")
-
-    #     return agent
 
     ################################################################################
     ################################ DB INTERACTIONS ################################
     ################################################################################
-    async def create_agent(
+    async def db_create(
         self
     ) -> str:
         LOG.info(f"Starting creation of {self.__class__.__name__} agent {self.agent_id}")
@@ -102,7 +45,7 @@ class BaseAgent(AbstractAgent, Configurable):
         agent_id = await agent_table.add(self, id=self.agent_id)
         return agent_id
 
-    async def save_agent_in_db(self) -> str:
+    async def db_save(self) -> str:
         LOG.trace(self.db)
         agent_table = await self.db.get_table("agents")
         agent_id = await agent_table.update(
@@ -111,9 +54,9 @@ class BaseAgent(AbstractAgent, Configurable):
         return agent_id
 
     @classmethod
-    async def list_users_agents_from_db(
+    async def db_list(
         cls,
-        user_id: uuid.UUID,
+        user_id: str,
         page: int = 1,
         page_size: int = 10,
     )  -> list[dict] : #-> list[BaseAgent.SystemSettings]:   
@@ -124,7 +67,7 @@ class BaseAgent(AbstractAgent, Configurable):
 
         db_settings = AbstractMemory.SystemSettings()
 
-        db = await AbstractMemory.get_adapter(
+        db = AbstractMemory.get_adapter(
             db_settings=db_settings
         )
         agent_table: AgentsTable = await db.get_table("agents")
@@ -149,32 +92,3 @@ class BaseAgent(AbstractAgent, Configurable):
         agent_list: list[dict] = await agent_table.list(filter=filter)
         return agent_list
 
-
-    @classmethod
-    async def get_agent_from_db(
-        cls,
-        agent_settings: BaseAgent.SystemSettings,
-        agent_id: uuid.UUID,
-        user_id: uuid.UUID,
-    ) -> BaseAgent:
-        from AFAAS.core.db.table.nosql.agent import AgentsTable
-        from AFAAS.interfaces.db.db import AbstractMemory
-
-        # db_settings = Memory.SystemSettings(configuration=agent_settings.db)
-        db_settings = agent_settings.db
-
-        db = await AbstractMemory.get_adapter(
-            db_settings=db_settings
-        )
-        agent_table: AgentsTable = await db.get_table("agents")
-        agent_dict_from_db = await agent_table.get(
-            agent_id=str(agent_id), user_id=str(user_id)
-        )
-
-        if not agent_dict_from_db:
-            return None
-
-        agent = cls.get_instance_from_settings(
-            agent_settings=agent_settings.copy(update=agent_dict_from_db),
-        )
-        return agent

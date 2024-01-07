@@ -130,6 +130,7 @@ class AbstractAgent(ABC):
             super().__init__(**data)
             for field_name, field_type in self.__annotations__.items():
                 # Check if field_type is a class before calling issubclass
+                #FIXME:0.0.2 Implement same behaviour for TaskStack in AbstractBaseTask
                 if isinstance(field_type, type) and field_name in data and issubclass(field_type, AFAASMessageStack):
                     setattr(self, field_name, AFAASMessageStack(_stack=data[field_name]))
 
@@ -190,8 +191,8 @@ class AbstractAgent(ABC):
         vectorstores: dict[str , VectorStore],
         embedding_model : Embeddings,
         workflow_registry: WorkflowRegistry,
-        user_id: uuid.UUID,
-        agent_id: uuid.UUID = None,
+        user_id: str,
+        agent_id: str,
         **kwargs,
     ) -> Any:
         LOG.trace(f"{self.__class__.__name__}.__init__() : Entering")
@@ -235,6 +236,64 @@ class AbstractAgent(ABC):
 
         LOG.trace(f"{self.__class__.__name__}.__init__() : Leaving")
 
+    # @classmethod
+    # def get_instance_from_settings(
+    #     cls,
+    #     agent_settings: AbstractAgent.SystemSettings,
+    #     db: AbstractMemory = None,
+    #     default_llm_provider: AbstractLanguageModelProvider = None,
+    #     workspace: AbstractFileWorkspace = None,
+    #     vectorstores: dict[VectorStore] = None,  # Optional parameter for custom vectorstore
+    #     embedding_model: Embeddings = None,  
+    # ) -> AbstractAgent:
+    #     if not isinstance(agent_settings, cls.SystemSettings):
+    #         agent_settings = cls.SystemSettings.parse_obj(agent_settings)
+    #         LOG.warning("Warning : agent_settings is not an instance of SystemSettings")
+
+    #     # TODO: Just pass **agent_settings.dict() to the constructor
+    #     system_dict: dict[Configurable] = {}
+    #     system_dict["settings"] = agent_settings
+    #     system_dict["user_id"] = agent_settings.user_id
+    #     system_dict["agent_id"] = agent_settings.agent_id
+
+    #     agent = cls(    **system_dict , 
+    #                     workspace=workspace, 
+    #                     default_llm_provider=default_llm_provider,
+    #                     vectorstores=vectorstores,
+    #                     embedding_model=embedding_model,
+    #                     db=db,
+    #                     )
+
+    #     return agent
+
+
+    # @classmethod
+    # async def db_get(
+    #     cls,
+    #     agent_settings: AbstractAgent.SystemSettings,
+    #     agent_id: str,
+    #     user_id: str,
+    # ) -> AbstractAgent:
+    #     from AFAAS.core.db.table.nosql.agent import AgentsTable
+    #     from AFAAS.interfaces.db.db import AbstractMemory
+
+    #     db_settings = agent_settings.db
+
+    #     db = AbstractMemory.get_adapter(
+    #         db_settings=db_settings
+    #     )
+    #     agent_table: AgentsTable = await db.get_table("agents")
+    #     agent_dict_from_db = await agent_table.get(
+    #         agent_id=str(agent_id), user_id=str(user_id)
+    #     )
+
+    #     if not agent_dict_from_db:
+    #         return None
+
+    #     agent = cls.get_instance_from_settings(
+    #         agent_settings=agent_settings.copy(update=agent_dict_from_db),
+    #     )
+    #     return agent
 
     # def add_hook(self, hook: BaseLoopHook, hook_id: uuid.UUID = uuid.uuid4()):
     #     self._loop._loophooks[hook["name"]][str(hook_id)] = hook
@@ -305,50 +364,6 @@ class AbstractAgent(ABC):
         else:
             raise BaseException("Agent Already Running")
 
-    @classmethod
-    def get_instance_from_settings(
-        cls,
-        agent_settings: AbstractAgent.SystemSettings,
-        db: AbstractMemory = None,
-        default_llm_provider: AbstractLanguageModelProvider = None,
-        workspace: AbstractFileWorkspace = None,
-        vectorstore: VectorStore = None,  # Optional parameter for custom vectorstore
-        embedding_model: Embeddings = None,  
-    ) -> AbstractAgent:
-        """
-        Retrieve an agent instance based on the provided settings and LOG.
-
-        Args:
-            agent_settings (AbstractAgent.SystemSettings): Configuration settings for the agent.
-            logger (logging.Logger): Logger to use for the agent.
-
-        Returns:
-            Agent: An agent instance configured according to the provided settings.
-
-        Example:
-            logger = logging.getLogger()
-            settings = AbstractAgent.SystemSettings(user_id="123", ...other_settings...)
-            agent = YourClass.get_agent_from_settings(settings)
-        """
-        if not isinstance(agent_settings, cls.SystemSettings):
-            agent_settings = cls.SystemSettings.parse_obj(agent_settings)
-            LOG.warning("Warning : agent_settings is not an instance of SystemSettings")
-
-        # TODO: Just pass **agent_settings.dict() to the constructor
-        system_dict: dict[Configurable] = {}
-        system_dict["settings"] = agent_settings
-        system_dict["user_id"] = agent_settings.user_id
-        system_dict["agent_id"] = agent_settings.agent_id
-
-        agent = cls(**system_dict , 
-                            workspace=workspace, 
-                            default_llm_provider=default_llm_provider,
-                            vectorstore=vectorstore,
-                            embedding_model=embedding_model,
-                            db=db,
-                            )
-
-        return agent
 
     async def execute_strategy(self, strategy_name: str, **kwargs) -> AbstractChatModelResponse :
         LOG.trace(f"Entering : {self.__class__}.execute_strategy({strategy_name})")

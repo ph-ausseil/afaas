@@ -35,7 +35,7 @@ class AgentMixin:
     ## Save agent component
     ###
     async def save_agent(self):
-        return await self._agent.save_agent_in_db()
+        return await self._agent.db_save()
 
     async def save_plan(self):
         return await self._agent.plan.save()

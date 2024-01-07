@@ -96,8 +96,7 @@ class Plan(AbstractPlan):
     @classmethod
     async def create_in_db(cls, agent: BaseAgent):
         LOG.debug(f"Creating plan for agent {agent.agent_id}")
-        db = agent.db
-        await db.get_table("plans")
+        await agent.db.get_table("plans")
 
         plan = cls(
             agent_id=agent.agent_id,
@@ -112,12 +111,11 @@ class Plan(AbstractPlan):
         return plan
 
     @classmethod
-    async def get_plan_from_db(cls, plan_id: str, agent: BaseAgent):
+    async def get_plan_from_db(cls, plan_id: str, agent: BaseAgent) -> Plan:
         from AFAAS.core.db.table.nosql.agent import AgentsTable
         from AFAAS.interfaces.db.db import AbstractMemory
 
-        db: AbstractMemory = agent.db
-        plan_table: AgentsTable = await db.get_table("plans")
+        plan_table: AgentsTable = await agent.db.get_table("plans")
         plan_dict = await plan_table.get(plan_id=plan_id, agent_id=agent.agent_id)
 
         if len(plan_dict) == 0:
@@ -125,7 +123,7 @@ class Plan(AbstractPlan):
                 f"Plan {plan_id} not found in the database for agent {agent.agent_id}"
             )
         #TODO:v0.0.x : get_plan_from_db & load
-        return cls._load(**plan_dict, agent=agent)
+        return await cls._load(**plan_dict, agent=agent)
 
     task_id: str = Field(default_factory=lambda: Plan.generate_uuid())
 

@@ -16,7 +16,7 @@ class AFAASMessage(AFAASModel):
 
 class AFAASMessageStack(AFAASModel):
     _messages: list[AFAASMessage] = []
-    db: AbstractMemory = AbstractMemory.get_adapter()
+    db: AbstractMemory
 
     async def add(self, message: AFAASMessage):
         self._messages.append(message)

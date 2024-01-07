@@ -46,7 +46,7 @@ class JSONFileMemory(NoSQLMemory):
 
     async def add(self, key: dict, value: dict, table_name: str):
         data = await self._load_file(key, table_name)
-        await data.update(value)
+        data.update(value)
         await self._save_file(key, table_name, data)
 
     async def update(self, key: dict, value: dict, table_name: str):

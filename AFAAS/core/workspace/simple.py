@@ -105,8 +105,8 @@ class LocalFileWorkspace(AbstractFileWorkspace):
     @classmethod
     def create_workspace(
         cls,
-        user_id: uuid.UUID,
-        agent_id: uuid.UUID,
+        user_id: str,
+        agent_id: str,
         settings: LocalFileWorkspace.SystemSettings,
     ) -> Path:
         workspace_root = cls.SystemSettings().configuration.app_workspace
