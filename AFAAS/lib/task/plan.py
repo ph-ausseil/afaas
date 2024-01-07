@@ -54,43 +54,78 @@ class Plan(AbstractPlan):
             super().__init__(**kwargs)
             Plan._instance[kwargs["agent"].agent_id] = self
             self.agent.plan: Plan = self
+            self.initialized = True
 
-            # Load the tasks from the database
-            from AFAAS.interfaces.db.db import AbstractMemory
-            from AFAAS.interfaces.db.table.nosql.base import AbstractTable
+    @classmethod
+    async def _load(cls, plan_id: str, agent: BaseAgent, **kwargs):
+        instance = cls(plan_id = plan_id, agent = agent, **kwargs)
 
-            agent: BaseAgent = kwargs["agent"]
-            db: AbstractMemory = agent.db
-            task_table: AbstractTable = await db.get_table("tasks")
+        db = agent.db
+        task_table = await db.get_table("tasks")
 
-            filter = AbstractTable.FilterDict(
-                {
-                    "plan_id": [
-                        AbstractTable.FilterItem(
-                            value=str(self.plan_id),
-                            operator=AbstractTable.Operators.EQUAL_TO,
-                        )
-                    ],
-                }
-            )
-            all_tasks_from_db_dict = await task_table.list(filter=filter)
+        from AFAAS.interfaces.db.table.nosql.base import AbstractTable
+        filter = AbstractTable.FilterDict(
+            {
+                "plan_id": [
+                    AbstractTable.FilterItem(
+                        value=str(instance.plan_id),
+                        operator=AbstractTable.Operators.EQUAL_TO,
+                    )
+                ],
+            }
+        )
+        all_tasks_from_db_dict = await task_table.list(filter=filter)
 
-            # Update the static variables
-            for task_as_dict in all_tasks_from_db_dict:
+        # Process tasks
+        for task_as_dict in all_tasks_from_db_dict:
                 task = Task(**task_as_dict, agent=agent)
-                self._register_task(task=task)
+                instance._register_task(task=task)
 
                 # self._all_task_ids.append(task.task_id)
                 if task.state == TaskStatusList.READY:
                     LOG.notice("DEBUG : Task is ready may have subtasks...")
-                    self._registry_update_task_status_in_list(
+                    instance._registry_update_task_status_in_list(
                         task_id=task.task_id, status=TaskStatusList.READY
                     )
                 elif task.state == TaskStatusList.DONE:
-                    self._registry_update_task_status_in_list(
+                    instance._registry_update_task_status_in_list(
                         task_id=task.task_id, status=TaskStatusList.DONE
                     )
-            self.initialized = True
+        return instance
+
+    @classmethod
+    async def create_in_db(cls, agent: BaseAgent):
+        LOG.debug(f"Creating plan for agent {agent.agent_id}")
+        db = agent.db
+        await db.get_table("plans")
+
+        plan = cls(
+            agent_id=agent.agent_id,
+            task_goal=agent.agent_goal_sentence,
+            tasks=[],
+            agent=agent,
+        )
+
+        plan._create_initial_tasks(status=TaskStatusList.READY)
+
+        await plan.save(creation=True)
+        return plan
+
+    @classmethod
+    async def get_plan_from_db(cls, plan_id: str, agent: BaseAgent):
+        from AFAAS.core.db.table.nosql.agent import AgentsTable
+        from AFAAS.interfaces.db.db import AbstractMemory
+
+        db: AbstractMemory = agent.db
+        plan_table: AgentsTable = await db.get_table("plans")
+        plan_dict = await plan_table.get(plan_id=plan_id, agent_id=agent.agent_id)
+
+        if len(plan_dict) == 0:
+            raise Exception(
+                f"Plan {plan_id} not found in the database for agent {agent.agent_id}"
+            )
+        #TODO:v0.0.x : get_plan_from_db & load
+        return cls._load(**plan_dict, agent=agent)
 
     task_id: str = Field(default_factory=lambda: Plan.generate_uuid())
 
@@ -376,34 +411,6 @@ class Plan(AbstractPlan):
     #############################################################################################
     #############################################################################################
 
-    @classmethod
-    async def create_in_db(cls, agent: BaseAgent):
-        """
-        Create a plan in the database for the given agent.
-
-        Args:
-            agent (BaseAgent): The agent for which the plan is created.
-
-        Returns:
-            Plan: The created plan.
-
-        """
-        LOG.debug(f"Creating plan for agent {agent.agent_id}")
-        db = agent.db
-        await db.get_table("plans")
-
-        plan = cls(
-            agent_id=agent.agent_id,
-            task_goal=agent.agent_goal_sentence,
-            tasks=[],
-            agent=agent,
-        )
-
-        plan._create_initial_tasks(status=TaskStatusList.READY)
-
-        # plan_table.add(plan, id=plan.plan_id)
-        await plan.save(creation=True)
-        return plan
 
     def _create_initial_tasks(self, status: TaskStatusList):
         LOG.debug(f"Creating initial task for plan {self.plan_id}")
@@ -495,24 +502,6 @@ class Plan(AbstractPlan):
                     plan_id=self.plan_id, agent_id=self.agent.agent_id, value=self
                 )
 
-    @classmethod
-    async def get_plan_from_db(cls, plan_id: str, agent: BaseAgent):
-        """
-        Get a plan from the database
-        """
-        from AFAAS.core.db.table.nosql.agent import AgentsTable
-        from AFAAS.interfaces.db.db import AbstractMemory
-
-        db: AbstractMemory = agent.db
-        plan_table: AgentsTable = await db.get_table("plans")
-        plan_dict = await plan_table.get(plan_id=plan_id, agent_id=agent.agent_id)
-
-        if len(plan_dict) == 0:
-            raise Exception(
-                f"Plan {plan_id} not found in the database for agent {agent.agent_id}"
-            )
-
-        return cls(**plan_dict, agent=agent)
 
     # endregion
 

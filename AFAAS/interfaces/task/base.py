@@ -176,49 +176,10 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
             self.add_task(task=task)
 
     def __getitem__(self, index: Union[int, str]):
-        """
-        Get a task from the plan by index or slice notation. This method is an alias for `get_task`.
 
-        Args:
-            index (Union[int, str]): The index or slice notation to retrieve a task.
-
-        Returns:
-            Task or List [BaseTask]: The task or list of tasks specified by the index or slice.
-
-        Examples:
-            >>> plan = Plan([Task("Task 1"), Task("Task 2")])
-            >>> plan[0]
-            Task(task_goal='Task 1')
-            >>> plan[1:]
-            [Task(task_goal='Task 2')]
-
-        Raises:
-            IndexError: If the index is out of range.
-            ValueError: If the index type is invalid.
-        """
         return self.get_task_with_index(index)
 
     def get_task_with_index(self, index: Union[int, str]):
-        """
-        Get a task from the plan by index or slice notation.
-
-        Args:
-            index (Union[int, str]): The index or slice notation to retrieve a task.
-
-        Returns:
-            Task or List [BaseTask]: The task or list of tasks specified by the index or slice.
-
-        Examples:
-            >>> plan = Plan([Task("Task 1"), Task("Task 2")])
-            >>> plan.get_task(0)
-            Task(task_goal='Task 1')
-            >>> plan.get_task(':')
-            [Task(task_goal='Task 1'), Task(task_goal='Task 2')]
-
-        Raises:
-            IndexError: If the index is out of range.
-            ValueError: If the index type is invalid.
-        """
         if isinstance(index, int):
             # Handle positive integers and negative integers
             if -len(self.subtasks) <= index < len(self.subtasks):
@@ -462,7 +423,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         return return_dict
 
-    def debug_dump_str(self, depth: int = 0, iteration: int = 0) -> str:
+    async def debug_dump_str(self, depth: int = 0, iteration: int = 0) -> str:
         if depth < 0:
             raise ValueError("Depth must be a non-negative integer.")
 

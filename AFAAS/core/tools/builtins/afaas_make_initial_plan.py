@@ -45,7 +45,7 @@ async def afaas_make_initial_plan(task: Task, agent: BaseAgent) -> None:
     # TODO: Should probably do a step to evaluate the quality of the generated tasks,
     #  and ensure that they have actionable ready and acceptance criteria
 
-    agent.plan = Plan(
+    agent.plan = Plan.create_in_db(
         subtask=[Task.parse_obj(task) for task in plan.parsed_result["task_list"]],
         agent=agent,
     )
@@ -75,7 +75,7 @@ async def afaas_make_initial_plan(task: Task, agent: BaseAgent) -> None:
 #     # TODO: Should probably do a step to evaluate the quality of the generated tasks,
 #     #  and ensure that they have actionable ready and acceptance criteria
 
-#     agent.plan = Plan(
+#     agent.plan = Plan.create_in_db(
 #         tasks=[Task.parse_obj(task) for task in plan.parsed_result["task_list"]]
 #     )
 #     agent.plan.tasks.sort(key=lambda t: t.priority, reverse=True)
