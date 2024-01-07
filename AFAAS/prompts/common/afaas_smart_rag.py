@@ -96,8 +96,8 @@ class AFAAS_SMART_RAG_Strategy(AbstractPromptStrategy):
             self.afaas_smart_rag,
         ]
 
-    def build_message(self, task: AbstractTask, **kwargs) -> ChatPrompt:
-        LOG.debug("Building prompt for task : " + task.debug_dump_str())
+    async def build_message(self, task: AbstractTask, **kwargs) -> ChatPrompt:
+        LOG.debug("Building prompt for task : " + await task.debug_dump_str())
         self._task: AbstractTask = task
         smart_rag_param = {
             "task_goal": task.task_goal,
@@ -111,7 +111,7 @@ class AFAAS_SMART_RAG_Strategy(AbstractPromptStrategy):
         messages = []
         messages.append(
             ChatMessage.system(
-                self._build_jinja_message(
+                await self._build_jinja_message(
                     task=task,
                     template_name=f"{self.STRATEGY_NAME}.jinja",
                     template_params=smart_rag_param,

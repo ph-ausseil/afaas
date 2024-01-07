@@ -200,7 +200,7 @@ class PlannerLoop(BaseLoop):
                 """
                 self.plan()._ready_task_ids.remove(current_task.task_id)
 
-            LOG.debug(self.plan().debug_dump_str(depth=2))
+            LOG.debug(await self.plan().debug_dump_str(depth=2))
             self._current_task = await self.plan().get_next_task(task=current_task)
 
             await self.save_plan()

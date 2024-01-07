@@ -60,7 +60,7 @@ class SelectToolStrategy(AbstractPlanningPromptStrategy):
         self.note_to_agent_length = note_to_agent_length
         self.default_tool_choice = default_tool_choice
 
-    def build_message(self, *_, **kwargs) -> ChatPrompt:
+    async def build_message(self, *_, **kwargs) -> ChatPrompt:
         return self.build_prompt(*_, **kwargs)
 
     def build_prompt(
@@ -102,7 +102,7 @@ class SelectToolStrategy(AbstractPlanningPromptStrategy):
         messages = []
         messages.append(
             ChatMessage.system(
-                self._build_jinja_message(
+                await self._build_jinja_message(
                     task=task,
                     template_name=f"{self.STRATEGY_NAME}.jinja",
                     template_params=context,
