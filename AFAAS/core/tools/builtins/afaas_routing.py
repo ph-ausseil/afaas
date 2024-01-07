@@ -50,7 +50,7 @@ async def afaas_routing(
             **routing_settings.dict(),
         )
         # NOTE: We don't save the agent
-        # new_user_context_agent = UserContextAgent.create_agent()
+        # new_user_context_agent = await UserContextAgent.create_agent()
 
         routing_return: dict = await routing_agent.run(
             user_input_handler=agent._user_input_handler,

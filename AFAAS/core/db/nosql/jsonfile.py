@@ -42,18 +42,18 @@ class JSONFileMemory(NoSQLMemory):
         LOG.trace(f"Saved {table_name} to {file} \n {str(data)}")
 
     async def get(self, key: dict, table_name: str):
-        return self._load_file(key, table_name)
+        return await self._load_file(key, table_name)
 
     async def add(self, key: dict, value: dict, table_name: str):
-        data = self._load_file(key, table_name)
-        data.update(value)
-        self._save_file(key, table_name, data)
+        data = await self._load_file(key, table_name)
+        await data.update(value)
+        await self._save_file(key, table_name, data)
 
     async def update(self, key: dict, value: dict, table_name: str):
         data = self._load_file(key, table_name)
         if data:
             data.update(value)
-            self._save_file(key, table_name, data)
+            await  self._save_file(key, table_name, data)
         else:
             raise KeyError(f"No such key '{key}' in table {table_name}")
 
@@ -78,7 +78,7 @@ class JSONFileMemory(NoSQLMemory):
                 data.append(json.load(f))
         return data
 
-    async def _get_file_path(self, key: dict, table_name: str) -> str:
+    def _get_file_path(self, key: dict, table_name: str) -> str:
         file_path = Path(self._configuration.json_file_path, table_name)
 
         if "secondary_key" in key:

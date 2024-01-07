@@ -69,7 +69,7 @@ class AbstractTask(AbstractBaseTask):
         return "T" + str(uuid.uuid4())
 
     @abstractmethod
-    def is_ready(self) -> bool:
+    async def is_ready(self) -> bool:
         ...
 
     @abstractmethod
@@ -82,16 +82,16 @@ class AbstractTask(AbstractBaseTask):
 
     @classmethod
     @abstractmethod
-    def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> "AbstractTask":
+    async def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> "AbstractTask":
         ...
 
     @classmethod
     @abstractmethod
-    def create_in_db(cls, task: "AbstractTask", agent: BaseAgent):
+    async def create_in_db(cls, task: "AbstractTask", agent: BaseAgent):
         ...
 
     @abstractmethod
-    def save_in_db(self):
+    async def save_in_db(self):
         ...
 
     @abstractmethod
@@ -105,7 +105,7 @@ class AbstractTask(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def get_sibblings(self) -> list["AbstractTask"]:
+    async def get_sibblings(self) -> list["AbstractTask"]:
         ...
 
     @abstractmethod

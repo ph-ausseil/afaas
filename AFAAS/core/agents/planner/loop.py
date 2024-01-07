@@ -188,7 +188,7 @@ class PlannerLoop(BaseLoop):
                     # user_input = assistant_reply_dict
                 )
 
-            if current_task.is_ready():
+            if await current_task.is_ready():
                 """If the task still still match readiness criterias at this point, it means that we can close it"""
                 current_task.state = TaskStatusList.DONE
                 LOG.info(f"Terminating Task : {current_task.debug_formated_str()}")
@@ -201,7 +201,7 @@ class PlannerLoop(BaseLoop):
                 self.plan()._ready_task_ids.remove(current_task.task_id)
 
             LOG.debug(self.plan().debug_dump_str(depth=2))
-            self._current_task = self.plan().get_next_task(task=current_task)
+            self._current_task = await self.plan().get_next_task(task=current_task)
 
             await self.save_plan()
 
@@ -222,7 +222,7 @@ class PlannerLoop(BaseLoop):
                 LOG.trace(f"Next task : {self._current_task.debug_formated_str()}")
 
                 LOG.info("Task history : (Max. 10 tasks)")
-                plan_history: list[Task] = self.plan().get_last_achieved_tasks(count=10)
+                plan_history: list[Task] = await self.plan().get_last_achieved_tasks(count=10)
                 for i, task in enumerate(plan_history):
                     LOG.info(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"
@@ -242,7 +242,7 @@ class PlannerLoop(BaseLoop):
                     input("Press Enter to continue...")
 
                 LOG.trace(f"Task Sibblings :")
-                task_sibblings: list[Task] = self._current_task.get_sibblings()
+                task_sibblings: list[Task] = await self._current_task.get_sibblings()
                 for i, task in enumerate(task_sibblings):
                     LOG.trace(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"
@@ -254,7 +254,7 @@ class PlannerLoop(BaseLoop):
                 LOG.trace(f"Task Predecessor :")
                 task_predecessors: list[
                     Task
-                ] = self._current_task.task_predecessors.get_all_tasks_from_stack()
+                ] = await self._current_task.task_predecessors.get_all_tasks_from_stack()
                 for i, task in enumerate(task_predecessors):
                     LOG.trace(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"

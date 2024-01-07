@@ -112,25 +112,25 @@ class PlannerAgent(BaseAgent):
         ###
         # FIXME: Long term : PlannerLoop / Pipeline get all ready tasks & launch them => Parralelle processing of tasks
         if hasattr(self, "plan_id") and self.plan_id is not None:
-            self.plan: Plan = Plan.get_plan_from_db(
+            self.plan: Plan = await Plan.get_plan_from_db(
                 plan_id=settings.plan_id, agent=self
             )  # Plan(user_id=user_id)
             # task = self.plan.find_first_ready_task()
             # self._loop.set_current_task(task = task)
-            self._loop.set_current_task(task=self.plan.get_next_task())
+            self._loop.set_current_task(task=await self.plan.get_next_task())
         else:
-            self.plan: Plan = Plan.create_in_db(agent=self)
+            self.plan: Plan = await Plan.create_in_db(agent=self)
             self.plan_id = self.plan.plan_id
 
-            self._loop.set_current_task(task=self.plan.get_ready_tasks()[0])
-            self.create_agent()
+            self._loop.set_current_task(task=await self.plan.get_ready_tasks()[0])
+            await self.create_agent()
 
             from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
             from AFAAS.lib.message_common import AFAASMessageStack
 
-            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB
+            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB #91 https://github.com/ph-ausseil/afaas/issues/91
             self.message_agent_user: AFAASMessageStack = AFAASMessageStack()
-            self.message_agent_user.add(
+            await self.message_agent_user.add(
                 message=MessageAgentUser(
                     emitter=emiter.AGENT.value,
                     user_id=self.user_id,
@@ -138,7 +138,7 @@ class PlannerAgent(BaseAgent):
                     message="What would you like to do ?",
                 )
             )
-            self.message_agent_user.add(
+            await self.message_agent_user.add(
                 message=MessageAgentUser(
                     emitter=emiter.USER.value,
                     user_id=self.user_id,

@@ -36,7 +36,7 @@ class AbstractPlan(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def get_task(self, task_id: str) -> Optional[AbstractTask]:
+    async def get_task(self, task_id: str) -> Optional[AbstractTask]:
         ...
 
     @abstractmethod
@@ -46,13 +46,13 @@ class AbstractPlan(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def get_ready_tasks(
+    async def get_ready_tasks(
         self, task_ids_set: Optional[list[str]] = None
     ) -> list[AbstractTask]:
         ...
 
     @abstractmethod
-    def get_active_tasks(
+    async  def get_active_tasks(
         self, task_ids_set: Optional[list[str]] = None
     ) -> list[AbstractTask]:
         ...
@@ -64,7 +64,7 @@ class AbstractPlan(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def get_last_achieved_tasks(self, count: int = 1) -> list[AbstractTask]:
+    async def get_last_achieved_tasks(self, count: int = 1) -> list[AbstractTask]:
         ...
 
     @abstractmethod
@@ -73,7 +73,7 @@ class AbstractPlan(AbstractBaseTask):
 
     @classmethod
     @abstractmethod
-    def create_in_db(cls, agent: BaseAgent) -> "AbstractPlan":
+    async def create_in_db(cls, agent: BaseAgent) -> "AbstractPlan":
         ...
 
     @abstractmethod
@@ -82,12 +82,12 @@ class AbstractPlan(AbstractBaseTask):
 
     @classmethod
     @abstractmethod
-    def get_plan_from_db(cls, plan_id: str, agent: BaseAgent) -> "AbstractPlan":
+    async def get_plan_from_db(cls, plan_id: str, agent: BaseAgent) -> "AbstractPlan":
         ...
 
-    @abstractmethod
-    def generate_pitch(self, task: Optional[AbstractTask] = None) -> str:
-        ...
+    # @abstractmethod
+    # def generate_pitch(self, task: Optional[AbstractTask] = None) -> str:
+    #     ...
 
     @abstractmethod
     def _registry_update_task_status_in_list(

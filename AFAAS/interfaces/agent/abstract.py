@@ -136,7 +136,7 @@ class AbstractAgent(ABC):
         @property
         def _type_(self):
             # == "".join(self.__class__.__qualname__.split(".")[:-1])  
-            return self.__class__.__qualname__.split(".")[0]    
+            return self.__class__.__qualname__.split(".")[0]
 
         @property
         def _module_(self):

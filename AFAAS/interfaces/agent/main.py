@@ -79,7 +79,7 @@ class BaseAgent(AbstractAgent, Configurable):
     #         embedding_model = embedding_model, 
     #     )
 
-    #     agent_id = agent._create_in_db(agent_settings=agent_settings)
+    #     agent_id = await agent._create_in_db(agent_settings=agent_settings)
     #     LOG.info(
     #         f"{cls.__name__} id #{agent_id} created in db. Now, finalizing creation..."
     #     )
@@ -93,35 +93,25 @@ class BaseAgent(AbstractAgent, Configurable):
     ################################################################################
     ################################ DB INTERACTIONS ################################
     ################################################################################
-    def create_agent(
+    async def create_agent(
         self
     ) -> str:
         LOG.info(f"Starting creation of {self.__class__.__name__} agent {self.agent_id}")
 
-        agent_table = self.db.get_table("agents")
-        agent_id = agent_table.add(self, id=self.agent_id)
+        agent_table = await self.db.get_table("agents")
+        agent_id = await agent_table.add(self, id=self.agent_id)
         return agent_id
 
-    # def _create_in_db(
-    #     self,
-    #     agent_settings: BaseAgent.SystemSettings,
-    # ) -> uuid.UUID:
-    #     # TODO : Remove the user_id argument
-
-    #     agent_table = self.db.get_table("agents")
-    #     agent_id = agent_table.add(agent_settings, id=agent_settings.agent_id)
-    #     return agent_id
-
-    def save_agent_in_db(self) -> str:
+    async def save_agent_in_db(self) -> str:
         LOG.trace(self.db)
-        agent_table = self.db.get_table("agents")
-        agent_id = agent_table.update(
+        agent_table = await self.db.get_table("agents")
+        agent_id = await agent_table.update(
             agent_id=self.agent_id, user_id=self.user_id, value=self
         )
         return agent_id
 
     @classmethod
-    def list_users_agents_from_db(
+    async def list_users_agents_from_db(
         cls,
         user_id: uuid.UUID,
         page: int = 1,
@@ -134,10 +124,10 @@ class BaseAgent(AbstractAgent, Configurable):
 
         db_settings = AbstractMemory.SystemSettings()
 
-        db = AbstractMemory.get_adapter(
+        db = await AbstractMemory.get_adapter(
             db_settings=db_settings
         )
-        agent_table: AgentsTable = db.get_table("agents")
+        agent_table: AgentsTable = await db.get_table("agents")
 
         filter = AbstractTable.FilterDict(
             {
@@ -156,12 +146,12 @@ class BaseAgent(AbstractAgent, Configurable):
             }
         )
 
-        agent_list: list[dict] = agent_table.list(filter=filter)
+        agent_list: list[dict] = await agent_table.list(filter=filter)
         return agent_list
 
 
     @classmethod
-    def get_agent_from_db(
+    async def get_agent_from_db(
         cls,
         agent_settings: BaseAgent.SystemSettings,
         agent_id: uuid.UUID,
@@ -173,11 +163,11 @@ class BaseAgent(AbstractAgent, Configurable):
         # db_settings = Memory.SystemSettings(configuration=agent_settings.db)
         db_settings = agent_settings.db
 
-        db = AbstractMemory.get_adapter(
+        db = await AbstractMemory.get_adapter(
             db_settings=db_settings
         )
-        agent_table: AgentsTable = db.get_table("agents")
-        agent_dict_from_db = agent_table.get(
+        agent_table: AgentsTable = await db.get_table("agents")
+        agent_dict_from_db = await agent_table.get(
             agent_id=str(agent_id), user_id=str(user_id)
         )
 

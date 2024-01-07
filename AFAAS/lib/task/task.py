@@ -59,7 +59,7 @@ class Task(AbstractTask):
         )
         try:
             # Lazy load the parent task
-            return self.agent.plan.get_task(self._task_parent_id)
+            return await self.agent.plan.get_task(self._task_parent_id)
         except KeyError:
             raise ValueError(f"No parent task found with ID {self._task_parent_id}")
 
@@ -146,10 +146,10 @@ class Task(AbstractTask):
     def plan_id(self) -> str:
         return self.agent.plan.plan_id
 
-    def is_ready(self) -> bool:
+    async def is_ready(self) -> bool:
         if (
-            len(self.task_predecessors.get_active_tasks_from_stack()) == 0
-            and len(self.subtasks.get_active_tasks_from_stack()) == 0
+            len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
+            and len(await self.subtasks.get_active_tasks_from_stack()) == 0
             and (
                 self.state == TaskStatusList.BACKLOG
                 or self.state == TaskStatusList.READY
@@ -220,24 +220,24 @@ class Task(AbstractTask):
     #############################################################################################
 
     @classmethod
-    def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> Task:
+    async def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> Task:
         db = agent.db
-        task_table = db.get_table("tasks")
-        task = task_table.get(task_id=task_id, plan_id=agent.plan.plan_id)
+        task_table = await db.get_table("tasks")
+        task = await task_table.get(task_id=task_id, plan_id=agent.plan.plan_id)
         return cls(**task, agent=agent)
 
     @classmethod
-    def create_in_db(cls, task: Task, agent: BaseAgent):
+    async def create_in_db(cls, task: Task, agent: BaseAgent):
         db = agent.db
-        task_table = db.get_table("tasks")
-        task_table.add(value=task, id=task.task_id)
+        task_table = await db.get_table("tasks")
+        await task_table.add(value=task, id=task.task_id)
 
-    def save_in_db(self):
+    async def save_in_db(self):
         from AFAAS.interfaces.db.db_table import AbstractTable
 
         db = self.agent.db
-        task_table: AbstractTable = db.get_table("tasks")
-        task_table.update(
+        task_table: AbstractTable = await db.get_table("tasks")
+        await task_table.update(
             value=self,
             task_id=self.task_id,
             plan_id=self.plan_id,
@@ -278,14 +278,14 @@ class Task(AbstractTask):
 
         return indented_structure
 
-    def get_sibblings(self) -> list[Task]:
+    async def get_sibblings(self) -> list[Task]:
         """
         Finds the sibblings of this task.
         """
         if self.task_parent is None:
             return []
 
-        return self.task_parent.subtasks.get_all_tasks_from_stack()
+        return await self.task_parent.subtasks.get_all_tasks_from_stack()
 
     def __hash__(self):
         return hash(self.task_id)
@@ -307,17 +307,17 @@ class Task(AbstractTask):
     ):
         plan_history: list[Task] = []
         if history > 0:
-            plan_history = self.agent.plan.get_last_achieved_tasks(count=history)
+            plan_history = await self.agent.plan.get_last_achieved_tasks(count=history)
 
         # 2a. Get the predecessors of the task
         task_predecessors: list[Task] = []
         if predecessors:
-            task_predecessors = self.task_predecessors.get_all_tasks_from_stack()
+            task_predecessors = await self.task_predecessors.get_all_tasks_from_stack()
 
         # 2b. Get the successors of the task
         task_successors: list[Task] = []
         if successors:
-            task_successors = self.task_successors.get_all_tasks_from_stack()
+            task_successors = await self.task_successors.get_all_tasks_from_stack()
 
         # 3. Remove predecessors from history to avoid redondancy
         history_and_predecessors = set(plan_history) | set(task_predecessors)
@@ -332,10 +332,10 @@ class Task(AbstractTask):
         if sibblings:
             if avoid_sibbling_predecessors_redundancy:
                 task_sibblings = (
-                    set(self.get_sibblings()) - history_and_predecessors
+                    set(await self.get_sibblings()) - history_and_predecessors
                 )  # - set([self])
             else:
-                task_sibblings = set(self.get_sibblings())  # - set([self])
+                task_sibblings = set(await self.get_sibblings())  # - set([self])
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases
         related_tasks: list[Task] = []
@@ -366,7 +366,7 @@ class Task(AbstractTask):
             LOG.debug(related_tasks_documents)
             ## 1. Make Task Object
             for task in related_tasks_documents:
-                related_tasks.append(self.agent.plan.get_task(task.metadata["task_id"]))
+                related_tasks.append(await self.agent.plan.get_task(task.metadata["task_id"]))
 
             ## 2. Make a set of related tasks and remove current tasks, sibblings, history and predecessors
             related_tasks = list(

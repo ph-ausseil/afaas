@@ -139,7 +139,7 @@ class UserContextLoop(BaseLoop):
                 if user_objectives.lower() == "y" and self.loop_count > 1:
                     interupt_refinement_process = True
 
-                await self.save_agent()  # TODO : self.save_agent()
+                await self.save_agent()
 
     def __repr__(self):
         """Return a string representation of the UserContextLoop.

@@ -22,7 +22,7 @@ class BaseSQLTable(AbstractTable):
     async def add(self, value: dict) -> uuid.UUID:
         id = uuid.uuid4()
         value["id"] = id
-        self.db.add(key=id, value=value, table_name=self.table_name)
+        await self.db.add(key=id, value=value, table_name=self.table_name)
         return id
 
 
@@ -123,7 +123,7 @@ class BaseNoSQLTable(AbstractTable):
             "add new " + str(self.__class__.__name__) + "with values " + str(value)
         )
 
-        self.db.add(key=key, value=value, table_name=self.table_name)
+        await self.db.add(key=key, value=value, table_name=self.table_name)
         return id
 
     @abc.abstractmethod
@@ -146,18 +146,15 @@ class BaseNoSQLTable(AbstractTable):
             "Update new " + str(self.__class__.__name__) + "with values " + str(value)
         )
 
-        self.db.update(key=key, value=value, table_name=self.table_name)
+        await self.db.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
     async def get(self, key: BaseNoSQLTable.Key) -> Any:
-        return self.db.get(key=key, table_name=self.table_name)
+        return await self.db.get(key=key, table_name=self.table_name)
 
     @abc.abstractmethod
     async def delete(self, key: BaseNoSQLTable.Key):
-        # key = {"primary_key": id}
-        # if hasattr(self, "secondary_key") and self.secondary_key:
-        #     key["secondary_key"] = self.secondary_key
-        self.db.delete(key=key, table_name=self.table_name)
+        await self.db.delete(key=key, table_name=self.table_name)
 
     async def list(
         self,
@@ -201,7 +198,7 @@ class BaseNoSQLTable(AbstractTable):
 
             # Example 1: Using BaseTable.Operators.GREATER_THAN for age greater than 25
             filter_dict = {'age': {'value': 25, 'operator': BaseTable.Operators.GREATER_THAN}}
-            result = base_table.list(filter_dict)
+            result = await base_table.list(filter_dict)
             # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'},
             #          {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}]
 
@@ -210,7 +207,7 @@ class BaseNoSQLTable(AbstractTable):
                 return len(value['city']) > len(filter_value)
 
             filter_dict = {'city': {'value': 'Chicago', 'operator': custom_comparison}}
-            result = base_table.list(filter_dict)
+            result = await base_table.list(filter_dict)
             # Output: [{'name': 'John', 'age': 25, 'city': 'New York'},
             #          {'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
 
@@ -220,11 +217,11 @@ class BaseNoSQLTable(AbstractTable):
                 'city': {'value': 'New York', 'operator': BaseTable.Operators.NOT_EQUAL_TO},
                 'name': {'value': 'Bob', 'operator': custom_comparison}
             }
-            result = base_table.list(filter_dict)
+            result = await base_table.list(filter_dict)
             # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
         """
         LOG.trace(f"{self.__class__.__name__}.list()")
-        data_list: dict = self.db.list(table_name=self.table_name, filter=filter)
+        data_list: dict = await self.db.list(table_name=self.table_name, filter=filter)
         filtered_data_list: list = []
 
         LOG.notice("May need to be moved to JSONFileMemory")
