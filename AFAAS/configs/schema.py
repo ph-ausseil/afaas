@@ -92,6 +92,8 @@ class SystemConfiguration(BaseModel):
             "configuration",
             "name",
             "description",
+            "message_agent_user",
+            "db",
         }
         allow_inf_nan = False
         validate_assignment = True
@@ -137,18 +139,6 @@ class AFAASModel(BaseModel):
         return data
 
     def dict(self, include_all=False, *args, **kwargs):
-        """
-        Serialize the object to a dictionary representation.
-
-        Args:
-            remove_technical_values (bool, optional): Whether to exclude technical values. Default is True.
-            *args: Additional positional arguments to pass to the base class's dict method.
-            **kwargs: Additional keyword arguments to pass to the base class's dict method.
-            kwargs['exclude'] excludes the fields from the serialization
-
-        Returns:
-            dict: A dictionary representation of the object.
-        """
         # TODO: Move to System settings ?
         self.prepare_values_before_serialization()  # Call the custom treatment before .dict()
         if not include_all:
@@ -157,18 +147,6 @@ class AFAASModel(BaseModel):
         return super().dict(*args, **kwargs)
 
     def json(self, *args, **kwargs):
-        """
-        Serialize the object to a dictionary representation.
-
-        Args:
-            remove_technical_values (bool, optional): Whether to exclude technical values. Default is True.
-            *args: Additional positional arguments to pass to the base class's dict method.
-            **kwargs: Additional keyword arguments to pass to the base class's dict method.
-            kwargs['exclude'] excludes the fields from the serialization
-
-        Returns:
-            dict: A dictionary representation of the object.
-        """
         LOG.warning("Warning : Recomended use json_api() or json_memory()")
         LOG.warning("BaseAgent.SystemSettings.json()")
         self.prepare_values_before_serialization()  # Call the custom treatment before .json()
@@ -226,6 +204,8 @@ class SystemSettings(AFAASModel):
             "description",
             "parent_agent",
             "current_task",
+            "message_agent_user",
+            "db",
             "plan",
         }
 
@@ -233,7 +213,7 @@ class SystemSettings(AFAASModel):
 S = TypeVar("S", bound=SystemSettings)
 
 
-class Configurable(abc.ABC, Generic[S]):
+class Configurable(abc.ABC, Generic[S], AFAASModel):
     """A base class for all configurable objects."""
 
     prefix: str = ""
@@ -262,6 +242,22 @@ class AFAASMessageType(str, enum.Enum):
     AGENT_LLM = "agent_llm"
     AGENT_AGENT = "agent_agent"
     AGENT_USER = "agent_user"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def _update_user_config_from_env(instance: BaseModel) -> dict[str, Any]:

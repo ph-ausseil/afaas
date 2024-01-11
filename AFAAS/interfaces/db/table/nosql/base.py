@@ -8,7 +8,7 @@ from typing import Any, Literal, Optional, TypedDict
 
 from pydantic import BaseModel
 
-from AFAAS.configs.schema import AFAASModel
+from AFAAS.configs.schema import AFAASModel, Configurable
 from AFAAS.interfaces.db.db_table import AbstractTable
 from AFAAS.lib.sdk.logger import AFAASLogger
 
@@ -35,7 +35,7 @@ class BaseNoSQLTable(AbstractTable):
 
     secondary_key: Optional[str]
 
-    async def deserialize(dct):
+    def deserialize(dct):
         if "_type_" in dct:
             parts = dct["_type_"].rsplit(".", 1)
             module = __import__(parts[0])
@@ -50,7 +50,7 @@ class BaseNoSQLTable(AbstractTable):
     # NOTE : Move to marshmallow ?!?
     # https://marshmallow.readthedocs.io/en/stable/quickstart.html#serializing-objects-dumping
     @classmethod
-    async def serialize_value(self, value) -> dict:
+    def serialize_value(self, value) -> dict:
         stack = [(value, {}, None)]
         stack[0][1]
         count = 0
@@ -102,9 +102,12 @@ class BaseNoSQLTable(AbstractTable):
 
         return parent_dict
 
+    #FIXME: Remove the id argument
+    # if value[self.primary_key] exit & is not None then use it
+    # else, raise a warning & generate an ID
     async def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
         # Serialize non-serializable objects
-        if isinstance(value, AFAASModel):
+        if isinstance(value, AFAASModel) or isinstance(value, Configurable):
             value = value.dict_db()
         else:
             LOG.warning("Class not hinheriting from AFAASModel")
