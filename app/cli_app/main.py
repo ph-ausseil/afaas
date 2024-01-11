@@ -50,6 +50,7 @@ async def run_cli_demo():
         user_id=user_id,
     )
 
+    selected_agent_index: int = 0
     if len(agent_dict_list) > 0:
         LOG.info(f"User {user_id} has {len(agent_dict_list)} agents.")
         if CONSOLE_LOG_LEVEL > logging.DEBUG:
@@ -59,7 +60,7 @@ async def run_cli_demo():
                     f"{i+1}. {agent_dict['agent_name']}({agent_dict['agent_id']}) : {agent_dict['agent_goal_sentence']}"
                 )
 
-            selected_agent_index: int = 0
+
             i: int = 0
             while selected_agent_index < 1 or selected_agent_index > len(
                 agent_dict_list
@@ -81,6 +82,8 @@ async def run_cli_demo():
         else:
             selected_agent_index: int = 1
 
+
+    if (selected_agent_index > 0)  :     
         agent_dict = agent_dict_list[selected_agent_index - 1]
         agent_settings = PlannerAgent.SystemSettings(
             **agent_dict_list[selected_agent_index - 1]
@@ -91,7 +94,6 @@ async def run_cli_demo():
         agent: PlannerAgent = await PlannerAgent.load(
             settings=agent_settings, **agent_settings.dict()
         )
-
     else:
         #
         # New requirement gathering process
@@ -112,7 +114,6 @@ async def run_cli_demo():
 
         # Step 3. Create the agent.
         agent: PlannerAgent = await PlannerAgent.load(settings = agent_settings , **agent_settings.dict())
-        await agent.db_create()
 
     await agent.run(
         user_input_handler=handle_user_input_request,
