@@ -55,6 +55,8 @@ class Task(AbstractTask):
             "task_parent",
             "task_predecessors",
             "task_successors",
+            "_task_parent_future",
+            "_task_parent_loading"
         }
 
     ###
