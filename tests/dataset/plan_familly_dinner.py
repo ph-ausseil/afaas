@@ -603,9 +603,9 @@ def task_ready_no_predecessors_or_subtasks() -> Task:
 def default_task():
     return _default_task()
 
-def _default_task():
+async def _default_task():
     # Task 'task_101_buy_groceries' has no predecessors or subtasks and is ready
-    t = plan_familly_dinner().get_task(task_id="101")
+    t = await plan_familly_dinner().get_task(task_id="101")
     return t
 
 

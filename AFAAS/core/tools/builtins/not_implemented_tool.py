@@ -25,6 +25,6 @@ async def not_implemented_tool(task: Task, agent: BaseAgent, **kwargs) -> None:
         if kwargs:
             new_query += "The following parameters were provided:\n" + \
                          "".join(f" - {k}: {v}\n" for k, v in kwargs.items())
-        return await user_interaction(question=new_query, task=task, agent=agent, skip_proxy=True)
+        return await user_interaction(query=new_query, task=task, agent=agent, skip_proxy=True)
 
     return await inner_not_implemented_tool(task, agent, **kwargs)

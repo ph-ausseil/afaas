@@ -10,7 +10,7 @@ from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
-from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
+from AFAAS.lib.message_agent_user import MessageAgentUser, Emiter
 from AFAAS.lib.message_common import AFAASMessageStack
 
 
@@ -41,7 +41,7 @@ async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy 
 
     await agent.message_agent_user.add(
         message=MessageAgentUser(
-            emitter=emiter.AGENT.value,
+            emitter=Emiter.AGENT.value,
             user_id=agent.user_id,
             agent_id= agent.agent_id,
             message=str(query),
@@ -51,7 +51,7 @@ async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy 
 
     await agent.message_agent_user.add(
             message=MessageAgentUser(
-                emitter=emiter.USER.value,
+                emitter=Emiter.USER.value,
                 user_id=agent.user_id,
                 agent_id=agent.agent_id,
                 message=str(user_response),
