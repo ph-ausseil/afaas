@@ -1,5 +1,7 @@
+from __future__ import annotations
 import json
-from typing import Any, ClassVar, Generator, Optional
+from typing import Any, ClassVar, Generator, Optional, Type, TYPE_CHECKING
+from abc import ABC, abstractmethod
 
 from AFAAS.configs.schema import AFAASModel
 from AFAAS.interfaces.db.db import AbstractMemory
@@ -7,10 +9,13 @@ from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)
 
+if TYPE_CHECKING:
 
-class AFAASMessage(AFAASModel):
+    from AFAAS.interfaces.agent.main import BaseAgent
+
+class AFAASMessage(ABC, AFAASModel):
     message_id: str
-    _table_name: ClassVar[str] = "message"
+    _table_name: ClassVar[str] #= "message"
     task_id: Optional[str]
 
 
@@ -18,9 +23,10 @@ class AFAASMessageStack(AFAASModel):
     _messages: list[AFAASMessage] = []
     _db: AbstractMemory = AbstractMemory.get_adapter()
 
-    def add(self, message: AFAASMessage):
+    async def db_create(self, message: AFAASMessage):
         self._messages.append(message)
-        self._db.get_table(message._table_name).add(message)
+        table = await self.db.get_table(message._table_name)
+        await table.add(value= message , id = message.message_id)
         return message.message_id
 
     def __init__(self, **data: Any):
@@ -58,3 +64,26 @@ class AFAASMessageStack(AFAASModel):
 
     def __str__(self):
         return self._messages.__str__()
+
+
+
+    async def load(self, agent : BaseAgent, cls : Type[AFAASMessage]) -> list[AFAASMessage]:
+        from AFAAS.interfaces.db.db_table import AbstractTable
+        table = await agent.db.get_table(cls._table_name)
+        list = await table.list(
+            filter=AbstractTable.FilterDict(
+            {
+                "agent_id": [
+                    AbstractTable.FilterItem(
+                        value=str(agent.agent_id), operator=AbstractTable.Operators.EQUAL_TO
+                    )
+                ]
+            }
+        ),
+            order_column="created_at",
+            order_direction="desc",
+        )
+        for message in list:
+            self._messages.append(cls(**message))
+
+        return self
