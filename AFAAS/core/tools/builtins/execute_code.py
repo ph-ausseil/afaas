@@ -10,7 +10,7 @@ import docker
 from docker.errors import DockerException, ImageNotFound, NotFound
 from docker.models.containers import Container as DockerContainer
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import (
     CodeExecutionError,

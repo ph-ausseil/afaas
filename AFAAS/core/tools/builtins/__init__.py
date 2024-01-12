@@ -1,4 +1,4 @@
-TOOL_CATEGORIES = [
+BUILTIN_MODULES = [
     "AFAAS.core.tools.builtins.afaas_refine_user_context",
     "AFAAS.core.tools.builtins.afaas_make_initial_plan",
     "AFAAS.core.tools.builtins.afaas_routing",

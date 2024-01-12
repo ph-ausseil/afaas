@@ -7,7 +7,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 from AFAAS.core.tools.builtins import (
-    TOOL_CATEGORIES,  # FIXME: This is a temporary fix but shall not be delt here
+    BUILTIN_MODULES,  # FIXME: This is a temporary fix but shall not be delt here
 )
 from AFAAS.core.tools.simple import DefaultToolRegistry
 from AFAAS.interfaces.adapters import AbstractLanguageModelProvider
@@ -41,7 +41,7 @@ class PlannerAgent(BaseAgent):
                 db=self.db,
                 workspace=self.workspace,
                 model_providers=self.default_llm_provider,
-                modules=TOOL_CATEGORIES,
+                modules=BUILTIN_MODULES,
             )
         return self._tool_registry
 

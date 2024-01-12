@@ -6,7 +6,7 @@ TOOL_CATEGORY = "framework"
 TOOL_CATEGORY_TITLE = "Framework"
 
 # from AFAAS.lib.app import clean_input
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema

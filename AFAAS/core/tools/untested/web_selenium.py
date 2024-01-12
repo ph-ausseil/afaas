@@ -21,7 +21,7 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.lib.sdk.errors import ToolExecutionError
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.utils.json_schema import JSONSchema

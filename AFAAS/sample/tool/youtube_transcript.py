@@ -1,11 +1,11 @@
 from llama_hub.youtube_transcript import YoutubeTranscriptReader
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 
 
 @tool(
     name="youtube_transcript",
-    description="Provide a Transcript of a Youtube Video.",
+    description="Provide a transcript of a Youtube Video.",
     parameters={
         "youtube_url": {
             "type": "string",

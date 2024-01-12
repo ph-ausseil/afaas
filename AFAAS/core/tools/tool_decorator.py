@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import inspect
 import asyncio
+import os
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, ParamSpec, TypeVar
 
 from langchain_core.tools import BaseTool
@@ -17,12 +18,20 @@ if TYPE_CHECKING:
 
 from AFAAS.core.tools.tools import Tool
 from AFAAS.lib.utils.json_schema import JSONSchema
+from dotenv import load_dotenv
 
 # Unique identifier for AutoGPT commands
 AFAAS_TOOL_IDENTIFIER = "afaas_tool"
 
 P = ParamSpec("P")
 CO = TypeVar("CO", bound=ToolOutput)
+
+
+
+# Load the .env file
+load_dotenv()
+#TODO: Allow tool to define if they are safe or not (safe mode is not implemented yet)
+SAFE_MODE = os.environ.get("SAFE_MODE", "true").lower() == "true"
 
 
 def tool(

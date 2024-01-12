@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
 from AFAAS.core.agents.usercontext.main import UserContextAgent
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 

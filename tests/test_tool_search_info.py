@@ -5,7 +5,7 @@ from AFAAS.lib.utils.json_schema import JSONSchema
 
 # Assuming the not_implemented_tool function is defined in a module named `tools`
 from AFAAS.core.tools.builtins.search_info import search_info, AbstractChatModelResponse
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.interfaces.agent.main import BaseAgent
 from tests.dataset.plan_familly_dinner import (
     Task,
