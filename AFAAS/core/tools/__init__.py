@@ -4,3 +4,4 @@ from __future__ import annotations
 
 from AFAAS.core.tools.simple import DefaultToolRegistry
 from AFAAS.core.tools.tools import Tool
+from AFAAS.core.tools.builtins import BUILTIN_MODULES
