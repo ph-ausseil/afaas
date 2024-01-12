@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from AFAAS.configs.schema import AFAASModel, Configurable
 from AFAAS.interfaces.db.db_table import AbstractTable
 from AFAAS.lib.sdk.logger import AFAASLogger
-
+from AFAAS.interfaces.agent.main import BaseAgent
 LOG = AFAASLogger(name=__name__)
 
 
@@ -107,8 +107,12 @@ class BaseNoSQLTable(AbstractTable):
     # else, raise a warning & generate an ID
     async def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
         # Serialize non-serializable objects
-        if isinstance(value, AFAASModel) or isinstance(value, Configurable):
+        if isinstance(value, BaseAgent):    
+            value = value.dict()
+        if isinstance(value, AFAASModel):
             value = value.dict_db()
+        elif isinstance(value, Configurable):
+            value.dict()
         else:
             LOG.warning("Class not hinheriting from AFAASModel")
             value = self.__class__.serialize_value(value)

@@ -119,7 +119,7 @@ class DefaultToolRegistry(Configurable, BaseToolsRegistry):
         # for (
         #     tool_name,
         #     tool_configuration,
-        # ) in self._configuration.tools.items():
+        # ) in self._settings.configuration.tools.items():
         #     self.register_tool(tool_name, tool_configuration)
 
         self.tools = {}

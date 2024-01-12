@@ -19,7 +19,7 @@
 
 #         configuration: ToolConfiguration,
 #     ):
-#         self._configuration = configuration
+#         self._settings.configuration = configuration
 
 #     @classmethod
 #     def description(cls) -> str:

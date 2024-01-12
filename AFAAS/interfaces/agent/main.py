@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from AFAAS.configs.schema import Configurable
+from AFAAS.configs.schema import Configurable, AFAASModel
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.sdk.logger import AFAASLogger
@@ -13,7 +13,7 @@ from AFAAS.core.adapters.openai.chatmodel import AFAASChatOpenAI
 from AFAAS.core.workspace.local import AGPTLocalFileWorkspace
 
 
-class BaseAgent(AbstractAgent, Configurable):
+class BaseAgent(AFAASModel , AbstractAgent, Configurable):
 
     @property
     def default_llm_provider(self) -> AbstractLanguageModelProvider:
@@ -32,6 +32,34 @@ class BaseAgent(AbstractAgent, Configurable):
 
         class Config(AbstractAgent.SystemSettings.Config):
             pass
+    class Config(AFAASModel.Config):
+        default_exclude = set(AbstractAgent.SystemSettings.Config.default_exclude ) | {
+            'embedding_model', 
+            'settings',
+            'vectorstores', 
+            'workflow_registry', 
+            'db', 
+            'default_llm_provider', 
+            'prompt_manager', 
+            'workspace', 
+            '_settings', 
+            '_prompt_manager', 
+            '_db', 
+            '_workspace', 
+            '_default_llm_provider', 
+            '_embedding_model', 
+            '_vectorstores', 
+            '_workflow_registry', 
+            '_loop', 
+            '_tool_registry', 
+            '_tool_executor', 
+        }
+
+    def __init__(self, **kwargs):
+        #super().__init__(**kwargs)
+        AFAASModel.__init__(self, **kwargs)
+        Configurable.__init__(self, **kwargs)
+        AbstractAgent.__init__(self, **kwargs)
 
     ################################################################################
     ################################ DB INTERACTIONS ################################

@@ -65,7 +65,7 @@ class AFAASChatOpenAI(Configurable[OpenAISettings], AbstractChatModelProvider):
         self._chat = settings.chat
 
         retry_handler = _OpenAIRetryHandler(
-            num_retries=self._configuration.retries_per_request,
+            num_retries=self._settings.configuration.retries_per_request,
         )
 
         self._create_chat_completion = retry_handler(_create_chat_completion)
@@ -261,7 +261,7 @@ class AFAASChatOpenAI(Configurable[OpenAISettings], AbstractChatModelProvider):
         if self._should_retry_function_call(
             tools=tools, response_message=response_message
         ):
-            if self._func_call_fails_count <= self._configuration.maximum_retry:
+            if self._func_call_fails_count <= self._settings.configuration.maximum_retry:
                 return await self._retry_chat_completion(
                     model_prompt=chat_messages,
                     tools=tools,
@@ -380,7 +380,7 @@ class AFAASChatOpenAI(Configurable[OpenAISettings], AbstractChatModelProvider):
     ) -> Dict[str, Any]:
         if (
             self._func_call_fails_count
-            >= self._configuration.maximum_retry_before_default_function
+            >= self._settings.configuration.maximum_retry_before_default_function
         ):
             completion_kwargs["tool_calls"] = default_tool_choice
         else:
