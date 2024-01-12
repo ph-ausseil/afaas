@@ -125,7 +125,7 @@ class AbstractAgent(ABC):
             for field_name, field_type in self.__annotations__.items():
                 # Check if field_type is a class before calling issubclass
                 if isinstance(field_type, type) and field_name in data and issubclass(field_type, AFAASMessageStack):
-                    setattr(self, field_name, AFAASMessageStack(_stack=data[field_name]))
+                    setattr(self, field_name, AFAASMessageStack(_messages=data[field_name]))
 
         @property
         def _type_(self):
