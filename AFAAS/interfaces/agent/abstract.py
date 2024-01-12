@@ -132,7 +132,7 @@ class AbstractAgent(ABC):
                 # Check if field_type is a class before calling issubclass
                 #FIXME:0.0.2 Implement same behaviour for TaskStack in AbstractBaseTask
                 if isinstance(field_type, type) and field_name in data and issubclass(field_type, AFAASMessageStack):
-                    setattr(self, field_name, AFAASMessageStack(_stack=data[field_name]))
+                    setattr(self, field_name, AFAASMessageStack(_messages=data[field_name]))
 
         @property
         def _type_(self):
