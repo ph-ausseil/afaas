@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Awaitable, Callable
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Coroutine
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -18,7 +18,10 @@ from AFAAS.interfaces.db.db import AbstractMemory
 from AFAAS.interfaces.tools.base import BaseToolsRegistry
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
-from AFAAS.lib.task.plan import Plan
+from AFAAS.lib.task.plan import Plan 
+
+from AFAAS.lib.message_agent_user import MessageAgentUser, Emiter
+from AFAAS.lib.message_common import AFAASMessageStack
 
 from .loop import PlannerLoop
 
@@ -160,36 +163,46 @@ class PlannerAgent(BaseAgent):
             agent.plan = await Plan.get_plan_from_db(
                 plan_id=agent.plan_id, agent=agent
             )
-            agent._loop.set_current_task(task=await agent.plan.get_next_task())
-        else:
-            agent.plan = await Plan.db_create(agent=agent)
-            agent.plan_id = agent.plan.plan_id
-            agent._loop.set_current_task(task=await agent.plan.get_ready_tasks()[0])
-            await agent.db_create()
 
-        from AFAAS.lib.message_agent_user import MessageAgentUser, emiter
-        from AFAAS.lib.message_common import AFAASMessageStack
-        # Message agent user initialization
-        agent.message_agent_user = AFAASMessageStack(db=agent.db)
-        # FIXME:v.0.0.1 : The first message seem not to be saved in the DB #91 https://github.com/ph-ausseil/afaas/issues/91
-        await agent.message_agent_user.add(
-            message=MessageAgentUser(
-                emitter=emiter.AGENT.value,
-                user_id=agent.user_id,
-                agent_id=agent.agent_id,
-                message="What would you like to do ?",
-            )
-        )
-        await agent.message_agent_user.add(
-            message=MessageAgentUser(
-                emitter=emiter.USER.value,
-                user_id=agent.user_id,
-                agent_id=agent.agent_id,
-                message=agent.agent_goal_sentence,
-            )
-        )
+            current_task = await agent.plan.get_next_task()
+            agent._loop.set_current_task(task= current_task)
+
+            message_agent_user =  AFAASMessageStack(db=agent.db)
+            agent.message_agent_user = await message_agent_user.load(agent=agent, cls=MessageAgentUser)
+        else:
+            await agent.create()
 
         return agent
+
+    async def create(self):
+            #TODO: Make it a method not a classmethod
+            self.plan = await Plan.db_create(agent=self)
+            self.plan_id = self.plan.plan_id
+
+            ready_task = await self.plan.get_ready_tasks()
+            self._loop.set_current_task(task= ready_task[0])
+
+            await self.db_create()
+
+            # Message agent user initialization
+            self.message_agent_user = AFAASMessageStack(db=self.db)
+            # FIXME:v.0.0.1 : The first message seem not to be saved in the DB #91 https://github.com/ph-ausseil/afaas/issues/91
+            await self.message_agent_user.db_create(
+                message=MessageAgentUser(
+                    emitter=Emiter.AGENT.value,
+                    user_id=self.user_id,
+                    agent_id=self.agent_id,
+                    message="What would you like to do ?",
+                )
+            )
+            await self.message_agent_user.db_create(
+                message=MessageAgentUser(
+                    emitter=Emiter.USER.value,
+                    user_id=self.user_id,
+                    agent_id=self.agent_id,
+                    message=self.agent_goal_sentence,
+                )
+            )
 
     """ #NOTE: This is a remnant of a plugin system on stand-by that have not been implemented yet.
         ###

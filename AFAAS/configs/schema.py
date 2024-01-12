@@ -213,7 +213,7 @@ class SystemSettings(AFAASModel):
 S = TypeVar("S", bound=SystemSettings)
 
 
-class Configurable(abc.ABC, Generic[S], AFAASModel):
+class Configurable(abc.ABC, Generic[S]):
     """A base class for all configurable objects."""
 
     prefix: str = ""
@@ -233,10 +233,8 @@ class Configurable(abc.ABC, Generic[S], AFAASModel):
         LOG.warning(f"{__qualname__}.json()")
         return super().json(**dumps_kwargs)
 
-    def __init__(self, settings: S):
+    def __init__(self, settings: S, **kwargs):
         self._settings = settings
-        self._configuration = settings.configuration
-
 
 class AFAASMessageType(str, enum.Enum):
     AGENT_LLM = "agent_llm"

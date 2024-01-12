@@ -39,7 +39,7 @@ class LocalFileWorkspace(AbstractFileWorkspace):
         settings: LocalFileWorkspace.SystemSettings,
         agent_systems: list[Configurable],
     ):
-        # self._configuration = settings.configuration
+        # self._settings.configuration = settings.configuration
         # LOG = logger
         # LOG = LOG.getChild("workspace")
         self._root = self._sanitize_path(settings.configuration.root)

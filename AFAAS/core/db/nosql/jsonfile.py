@@ -71,7 +71,7 @@ class JSONFileMemory(NoSQLMemory):
         table_name: str,
         filter: AbstractTable.FilterDict = {},
     ) -> list[dict]:
-        table_path = Path(self._configuration.json_file_path, table_name)
+        table_path = Path(self._settings.configuration.json_file_path, table_name)
         data = []
         for json_file in table_path.glob("**/*.json"):
             with json_file.open() as f:
@@ -79,7 +79,7 @@ class JSONFileMemory(NoSQLMemory):
         return data
 
     def _get_file_path(self, key: dict, table_name: str) -> str:
-        file_path = Path(self._configuration.json_file_path, table_name)
+        file_path = Path(self._settings.configuration.json_file_path, table_name)
 
         if "secondary_key" in key:
             file_path = file_path / str(key["secondary_key"])
