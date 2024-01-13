@@ -30,8 +30,6 @@ def gmail_search_arg_converter(args, agent):
         "resource": args.get("resource", "messages"),  # Default to messages
         "max_results": args.get("max_results", 10),
     }
-
-
 @tool_from_langchain(arg_converter=gmail_search_arg_converter)
 class AdaptedGmailSearch(GmailSearch):
     pass

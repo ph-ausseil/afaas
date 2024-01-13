@@ -19,22 +19,23 @@ from AFAAS.interfaces.tools.context_items import FileContextItem, FolderContextI
 from AFAAS.lib.sdk.errors import ToolExecutionError
 from AFAAS.lib.utils.json_schema import JSONSchema
 
-from .file_operations_utils import sanitize_path_arg
+from ....core.tools.builtins.file_operations_utils import sanitize_path_arg
 
 COMMAND_CATEGORY = "file_operations"
 COMMAND_CATEGORY_TITLE = "File Operations"
 
 
 def agent_implements_context(agent: BaseAgent) -> bool:
-    return isinstance(agent, ContextMixin)
+    return False
+    #return isinstance(agent, ContextMixin)
 
 
 @tool(
-    "open_file",
-    "Opens a file for editing or continued viewing;"
+    name = "open_file",
+    description = "Opens a file for editing or continued viewing;"
     " creates it if it does not exist yet. "
     "Note: If you only need to read or write a file once, use `write_to_file` instead.",
-    {
+    parameters={
         "file_path": JSONSchema(
             type=JSONSchema.Type.STRING,
             description="The path of the file to open",
@@ -47,15 +48,6 @@ def agent_implements_context(agent: BaseAgent) -> bool:
 def open_file(
     file_path: Path, task: Task, agent: BaseAgent
 ) -> tuple[str, FileContextItem]:
-    """Open a file and return a context item
-
-    Args:
-        file_path (Path): The path of the file to open
-
-    Returns:
-        str: A status message indicating what happened
-        FileContextItem: A ContextItem representing the opened file
-    """
     # Try to make the file path relative
     relative_file_path = None
     with contextlib.suppress(ValueError):
@@ -87,9 +79,9 @@ def open_file(
 
 
 @tool(
-    "open_folder",
-    "Open a folder to keep track of its content",
-    {
+    name = "open_folder",
+    description="Open a folder to keep track of its content",
+    parameters={
         "path": JSONSchema(
             type=JSONSchema.Type.STRING,
             description="The path of the folder to open",

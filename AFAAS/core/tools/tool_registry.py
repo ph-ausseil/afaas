@@ -142,6 +142,13 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         cls.cache_manager.set_cache_time()
 
 
+    def add_all_tool_categories(self):
+        # Retrieve all categories from the cache
+        all_categories = self.cache_manager.get_all_categories()
+
+        # Add each category to the registry
+        for category in all_categories:
+            self.add_tool_category(category)
 
 
     def add_tool_categories(self, categories: list[str]): 

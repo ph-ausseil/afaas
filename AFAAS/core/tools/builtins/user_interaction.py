@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-TOOL_CATEGORY = "framework"
-TOOL_CATEGORY_TITLE = "Framework"
-
 # from AFAAS.lib.app import clean_input
 from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
 from AFAAS.lib.message_agent_user import MessageAgentUser, Emiter
@@ -26,7 +24,8 @@ from AFAAS.lib.message_common import AFAASMessageStack
             description="The question or prompt to the user",
             required=True,
         )
-    }
+    },
+    categories=[AbstractTool.FRAMEWORK_CATEGORY]
 )
 async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy = False) -> str:
 

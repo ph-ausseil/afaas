@@ -41,8 +41,8 @@ class PlannerAgent(BaseAgent):
                 db=self.db,
                 workspace=self.workspace,
                 model_providers=self.default_llm_provider,
-                category=BUILTIN_MODULES,
             )
+            self._tool_registry.add_tool_category(category="framework")
         return self._tool_registry
 
     @tool_registry.setter

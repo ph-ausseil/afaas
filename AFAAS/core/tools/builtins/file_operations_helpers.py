@@ -13,7 +13,6 @@ LOG = AFAASLogger(name=__name__)
 
 Operation = Literal["write", "append", "delete"]
 
-
 def text_checksum(text: str) -> str:
     """Get the hex checksum for the given text."""
     return hashlib.md5(text.encode("utf-8")).hexdigest()

@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from AFAAS.interfaces.task.meta import TaskStatusList
-
-TOOL_CATEGORY = "framework"
-TOOL_CATEGORY_TITLE = "Framework"
+from AFAAS.interfaces.tools.base import AbstractTool
 
 from typing import TYPE_CHECKING
 
@@ -25,6 +23,7 @@ LOG = AFAASLogger(name=__name__)
     description="Make a plan to tacle a tasks",
     # parameters = ,
     hide=True,
+    categories=[AbstractTool.FRAMEWORK_CATEGORY, 'planning']
 )
 async def afaas_make_initial_plan(task: Task, agent: BaseAgent) -> None:
     # plan =  self.execute_strategy(

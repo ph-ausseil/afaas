@@ -35,6 +35,8 @@ class AbstractTool(AgentMixin, abc.ABC):
 
     default_configuration: ClassVar[ToolConfiguration]
 
+    FRAMEWORK_CATEGORY = "framework"
+
     @classmethod
     def name(cls) -> str:
         """The name of the ability."""

@@ -10,7 +10,7 @@ class CacheManager:
     def __init__(self):
 
         load_dotenv()
-        self.use_redis = os.getenv('USE_REDIS') == 'true'
+        use_redis = os.getenv('USE_REDIS', 'False').lower() == 'true'
         self.redis_config = {
             'host': os.getenv('REDIS_HOST'),
             'port': int(os.getenv('REDIS_PORT')), 
@@ -19,8 +19,13 @@ class CacheManager:
         self.json_file_path= os.getenv('JSON_CACHE_FILE_PATH')
         self.cache = {}
 
-        if self.use_redis:
-            self.redis_client = redis.Redis(**self.redis_config)
+        self.use_redis = False
+        if use_redis:
+            try : 
+                self.redis_client = redis.Redis(**self.redis_config)
+                self.use_redis = True
+            except :
+                self.load_from_json()
         else:
             self.load_from_json()
 
@@ -63,3 +68,20 @@ class CacheManager:
     def get_cache_time(self):
         """Get the last updated time from the cache. Returns 0 if not set."""
         return self.get('last_updated', 0)
+
+    def get_all_categories(self) -> list[str]:
+        """
+        Retrieve all categories from the cache, excluding special keys like 'last_updated'.
+
+        Returns:
+            list[str]: A list of all category names stored in the cache.
+        """
+        if self.use_redis:
+            # Retrieve all keys from Redis and filter out 'last_updated'
+            all_keys = self.redis_client.keys('*')
+            all_categories = [key.decode('utf-8') for key in all_keys if key.decode('utf-8') != 'last_updated']
+        else:
+            # For JSON cache, filter out 'last_updated' from the keys
+            all_categories = list(set(self.cache.keys()) - {'last_updated'})
+
+        return all_categories
