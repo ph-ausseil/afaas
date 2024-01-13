@@ -138,10 +138,10 @@ class Tool:
         )
 
         # Avoid circular import
-        from AFAAS.core.tools.tool_decorator import AFAAS_TOOL_IDENTIFIER
+        from AFAAS.core.tools.tool_decorator import TOOL_WRAPPER_MARKER
 
         # Set attributes on the command so that our import module scanner will recognize it
-        setattr(command, AFAAS_TOOL_IDENTIFIER, True)
+        setattr(command, TOOL_WRAPPER_MARKER, True)
         setattr(command, "tool", command)
 
         return command

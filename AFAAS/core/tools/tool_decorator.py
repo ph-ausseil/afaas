@@ -21,7 +21,7 @@ from AFAAS.lib.utils.json_schema import JSONSchema
 from dotenv import load_dotenv
 
 # Unique identifier for AutoGPT commands
-AFAAS_TOOL_IDENTIFIER = "afaas_tool"
+TOOL_WRAPPER_MARKER = "afaas_tool"
 
 P = ParamSpec("P")
 CO = TypeVar("CO", bound=ToolOutput)
@@ -93,7 +93,7 @@ def tool(
                 except NotImplementedError as e:
                     return asyncio.run(not_implemented_tool(*args, **kwargs))
         setattr(wrapper, "tool", cmd)
-        setattr(wrapper, AFAAS_TOOL_IDENTIFIER, True)
+        setattr(wrapper, TOOL_WRAPPER_MARKER, True)
 
         return wrapper
 
