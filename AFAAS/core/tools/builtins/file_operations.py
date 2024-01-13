@@ -18,7 +18,7 @@ from AFAAS.core.tools.builtins.file_operations_utils import (  # FIXME: replace 
     decode_textual_file,
 )
 from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
-from AFAAS.core.tools.tools import Tool
+from AFAAS.core.tools.tool import Tool
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import DuplicateOperationError
 from AFAAS.lib.sdk.logger import AFAASLogger

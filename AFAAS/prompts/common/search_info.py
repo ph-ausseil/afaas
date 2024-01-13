@@ -23,7 +23,7 @@ from AFAAS.interfaces.prompts.strategy import (
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.utils.json_schema import JSONSchema
 from AFAAS.interfaces.agent.main import BaseAgent
-from AFAAS.core.tools.tools import Tool
+from AFAAS.core.tools.tool import Tool
 
 LOG = AFAASLogger(name=__name__)
 

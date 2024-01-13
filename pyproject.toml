@@ -74,6 +74,7 @@ aiohttp = "^3.8.1"
 airbyte-cdk = "^0.58.1"
 google-auth-oauthlib = "^1.2.0"
 googlemaps = "^4.10.0"
+dirsync = "^2.2.5"
 
 
 [tool.poetry.extras]

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import abc
+from dataclasses import dataclass, field
 from pprint import pformat
+from types import ModuleType
 from typing import Any, ClassVar
 
 import inflection
@@ -13,6 +15,7 @@ from AFAAS.interfaces.adapters.language_model import AbstractPromptConfiguration
 from AFAAS.interfaces.agent.features.agentmixin import AgentMixin
 from AFAAS.interfaces.tools.schema import ToolResult
 from AFAAS.lib.utils.json_schema import JSONSchema
+
 
 
 class ToolConfiguration(SystemConfiguration):
@@ -27,7 +30,7 @@ class ToolConfiguration(SystemConfiguration):
 ToolConfiguration.update_forward_refs()
 
 
-class BaseTool(AgentMixin, abc.ABC):
+class AbstractTool(AgentMixin, abc.ABC):
     """A class representing an agent ability."""
 
     default_configuration: ClassVar[ToolConfiguration]
@@ -57,17 +60,6 @@ class BaseTool(AgentMixin, abc.ABC):
     def __str__(self) -> str:
         return pformat(self.spec)
 
-    # def dump(self) -> dict:
-    #     return {
-    #         "name": self.name(),
-    #         "description": self.description(),
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": self.arguments(),
-    #             "required": self.required_arguments(),
-    #         },
-    #     }
-
     @property
     @classmethod
     def spec(cls) -> CompletionModelFunction:
@@ -78,7 +70,7 @@ class BaseTool(AgentMixin, abc.ABC):
         )
 
 
-class BaseToolsRegistry(AgentMixin, abc.ABC):
+class AbstractToolRegistry(AgentMixin, abc.ABC):
     def __init__(self, settings):
         pass  # NOTE : Avoid passing too many arguments to AgentMixin
 
@@ -97,9 +89,31 @@ class BaseToolsRegistry(AgentMixin, abc.ABC):
         ...
 
     @abc.abstractmethod
-    def get_tool(self, tool_name: str) -> BaseTool:
+    def get_tool(self, tool_name: str) -> AbstractTool:
         ...
 
     @abc.abstractmethod
     async def perform(self, tool_name: str, **kwargs: Any) -> ToolResult:
         ...
+
+@dataclass
+class ToolCategory:
+    """
+    Represents a category of tools.
+
+    Attributes:
+        name: Name of the category.
+        title: Display title for the category.
+        description: Description of the category.
+        tools: List of Tool objects associated with the category.
+        modules: List of ModuleType objects related to the category.
+    """
+
+    name: str
+    title: str
+    description: str
+    tools: list[AbstractTool] = field(default_factory=list[AbstractTool])
+    modules: list[ModuleType] = field(default_factory=list[ModuleType])
+
+    class Config:
+        arbitrary_types_allowed = True

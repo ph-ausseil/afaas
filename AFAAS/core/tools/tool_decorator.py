@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
     from AFAAS.configs.config import Config
 
-from AFAAS.core.tools.tools import Tool
+from AFAAS.core.tools.tool import Tool
 from AFAAS.lib.utils.json_schema import JSONSchema
 from dotenv import load_dotenv
 
@@ -38,6 +38,7 @@ def tool(
     name: str,
     description: str,
     parameters: dict[str, JSONSchema] = {},
+    categories : list[str] = ['uncategorized'],
     enabled: Literal[True] | Callable[[Config], bool] = True,
     disabled_reason: Optional[str] = None,
     aliases: list[str] = [],
@@ -64,6 +65,7 @@ def tool(
             tech_description=tech_description,
             exec_function=func,
             parameters=typed_parameters,
+            categories=categories,
             enabled=enabled,
             disabled_reason=disabled_reason,
             aliases=aliases,
@@ -99,6 +101,7 @@ def tool(
 
 
 def tool_from_langchain(
+    categories : list[str] = ['uncategorized'],
     arg_converter: Optional[Callable] = None,
     enabled: bool = True,
     disabled_reason: Optional[str] = None,
@@ -127,6 +130,7 @@ def tool_from_langchain(
             name=base_tool.name,
             description=base_tool.description,
             tech_description=base_tool.description,  # Assuming this is intentional
+            categories=categories,
             exec_function=wrapper,
             parameters=[
                 ToolParameter(name=name, spec=schema)
@@ -141,10 +145,3 @@ def tool_from_langchain(
         )(wrapper)
 
     return decorator
-
-
-# from langchain_community.tools.github.tool import GitHubAction
-
-# @tool_from_langchain()
-# class AdaptedGitHubTool(GitHubAction):
-#     pass

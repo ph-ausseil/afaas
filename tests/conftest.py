@@ -5,7 +5,7 @@ import pytest
 
 from AFAAS.core.agents.planner.main import PlannerAgent
 from AFAAS.core.workspace import AbstractFileWorkspace
-from AFAAS.interfaces.tools.base import BaseToolsRegistry
+from AFAAS.interfaces.tools.base import AbstractToolRegistry
 from tests.dataset.agent_planner import agent_dataset
 
 
@@ -80,7 +80,7 @@ def local_workspace() -> AbstractFileWorkspace:
 
 
 @pytest.fixture
-def empty_tool_registry() -> BaseToolsRegistry:
+def empty_tool_registry() -> AbstractToolRegistry:
     registry = agent_dataset().tool_registry
     registry.tools = {}
     return registry

@@ -1,0 +1,65 @@
+from __future__ import annotations
+import redis
+from dotenv import load_dotenv
+import json
+import time
+import os
+
+
+class CacheManager:
+    def __init__(self):
+
+        load_dotenv()
+        self.use_redis = os.getenv('USE_REDIS') == 'true'
+        self.redis_config = {
+            'host': os.getenv('REDIS_HOST'),
+            'port': int(os.getenv('REDIS_PORT')), 
+            'db': int(os.getenv('REDIS_DB'))
+         }
+        self.json_file_path= os.getenv('JSON_CACHE_FILE_PATH')
+        self.cache = {}
+
+        if self.use_redis:
+            self.redis_client = redis.Redis(**self.redis_config)
+        else:
+            self.load_from_json()
+
+    def load_from_json(self):
+        if os.path.exists(self.json_file_path):
+            with open(self.json_file_path, 'r') as file:
+                self.cache = json.load(file)
+
+    def save_to_json(self):
+        with open(self.json_file_path, 'w') as file:
+            json.dump(self.cache, file, indent=4)
+
+    def get(self, key):
+        if self.use_redis:
+            value = self.redis_client.get(key)
+            return json.loads(value) if value else None
+        return self.cache.get(key)
+
+    def set(self, key, value):
+        if self.use_redis:
+            self.redis_client.set(key, json.dumps(value))
+        else:
+            self.cache[key] = value
+            self.save_to_json()
+
+    def clear_cache(self):
+        """
+        Clear the entire cache.
+        """
+        if self.use_redis:
+            self.redis_client.flushdb()  # Clears all keys in the current Redis database
+        else:
+            self.cache = {}  # Reset the in-memory cache
+            self.save_to_json()  # Save the empty cache to the JSON file
+
+    def set_cache_time(self, time_stamp = time.time()):
+        """Set the last updated time in the cache."""
+        self.set('last_updated', time_stamp)
+
+    def get_cache_time(self):
+        """Get the last updated time from the cache. Returns 0 if not set."""
+        return self.get('last_updated', 0)

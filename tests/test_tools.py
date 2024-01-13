@@ -12,8 +12,8 @@ import pytest
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.simple import DefaultToolRegistry
-from AFAAS.core.tools.tools import Tool
+from AFAAS.core.tools.tool_registry import DefaultToolRegistry
+from AFAAS.core.tools.tool import Tool
 from AFAAS.interfaces.tools.tool_parameters import ToolParameter
 from AFAAS.lib.utils.json_schema import JSONSchema
 
@@ -91,7 +91,7 @@ def test_register_tool(example_tool: Tool, empty_tool_registry: DefaultToolRegis
     empty_tool_registry.register(example_tool)
 
     assert empty_tool_registry.get_tool(example_tool.name) == example_tool
-    assert len(empty_tool_registry.tools) == 1
+    assert len(empty_tool_registry.tools_by_name) == 1
 
 
 def test_unregister_tool(example_tool: Tool, empty_tool_registry: DefaultToolRegistry):
@@ -100,7 +100,7 @@ def test_unregister_tool(example_tool: Tool, empty_tool_registry: DefaultToolReg
     empty_tool_registry.register(example_tool)
     empty_tool_registry.unregister(example_tool)
 
-    assert len(empty_tool_registry.tools) == 0
+    assert len(empty_tool_registry.tools_by_name) == 0
     assert example_tool.name not in empty_tool_registry
 
 
@@ -122,7 +122,7 @@ def test_register_tool_aliases(
     assert empty_tool_registry.get_tool(command.name) == command
     for alias in command.aliases:
         assert empty_tool_registry.get_tool(alias) == command
-    assert len(empty_tool_registry.tools) == 1
+    assert len(empty_tool_registry.tools_by_name) == 1
 
 
 def test_unregister_tool_aliases(
@@ -134,7 +134,7 @@ def test_unregister_tool_aliases(
     empty_tool_registry.register(command)
     empty_tool_registry.unregister(command)
 
-    assert len(empty_tool_registry.tools) == 0
+    assert len(empty_tool_registry.tools_by_name) == 0
     assert command.name not in empty_tool_registry
     for alias in command.aliases:
         assert alias not in empty_tool_registry
