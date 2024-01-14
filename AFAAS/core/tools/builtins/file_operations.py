@@ -185,15 +185,14 @@ def file_search_args(input_args: dict[str, any], agent: BaseAgent):
     return input_args
 
 
-# file_search = Tool.generate_from_langchain_tool(
-#     tool=FileSearchTool(), 
-#     arg_converter=file_search_args,
-#     categories=[AbstractTool.FRAMEWORK_CATEGORY, TOOL_CATEGORY],
-# )
+file_search = Tool.generate_from_langchain_tool(
+    tool=FileSearchTool(), 
+    arg_converter=file_search_args,
+    categories=[AbstractTool.FRAMEWORK_CATEGORY, TOOL_CATEGORY],
+)
 
-
-@tool_from_langchain(arg_converter=file_search_args,
-                     categories=[AbstractTool.FRAMEWORK_CATEGORY, TOOL_CATEGORY],)
-class AdaptedFileSearchTool(FileSearchTool):
-    pass
+# @tool_from_langchain(arg_converter=file_search_args,
+#                      categories=[AbstractTool.FRAMEWORK_CATEGORY, TOOL_CATEGORY],)
+# class AdaptedFileSearchTool(FileSearchTool):
+#     pass
 

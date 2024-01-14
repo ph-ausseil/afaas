@@ -4,7 +4,7 @@ import functools
 import inspect
 import asyncio
 import os
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, ParamSpec, TypeVar, Type
 
 from langchain_core.tools import BaseTool
 
@@ -99,7 +99,7 @@ def tool(
 
     return decorator
 
-
+## TO REMOVE
 def tool_from_langchain(
     categories : list[str] = ['uncategorized'],
     arg_converter: Optional[Callable] = None,
@@ -110,7 +110,8 @@ def tool_from_langchain(
     hide: bool = False,
     success_check_callback: Callable = Tool.default_success_check_callback,
 ):
-    def decorator(base_tool: BaseTool):
+    def decorator(base_tool: Type[BaseTool]):
+        base_tool_instance = base_tool()
         def wrapper(*args, **kwargs):
             # Extract 'agent' from kwargs if it exists, as it's not used in this context
             agent = kwargs.pop("agent", None)
@@ -122,20 +123,21 @@ def tool_from_langchain(
                 tool_input = kwargs
 
             # Run the BaseTool's run method and return its result
-            return base_tool.arun(tool_input=tool_input)
+            return base_tool_instance.arun(tool_input=tool_input)
 
         # Apply the @tool decorator to the wrapper function
-        # We use the properties of base_tool (name, description, etc.) to define the tool
+        # We use the properties of base_tool_instance (name, description, etc.) to define the tool
         return tool(
-            name=base_tool.name,
-            description=base_tool.description,
-            tech_description=base_tool.description,  # Assuming this is intentional
+            name=base_tool_instance.name,
+            description=base_tool_instance.description,
+            tech_description=base_tool_instance.description,  # Assuming this is intentional
             categories=categories,
-            exec_function=wrapper,
-            parameters=[
-                ToolParameter(name=name, spec=schema)
-                for name, schema in base_tool.args.items()
-            ],
+            #exec_function=wrapper,
+            # parameters=[
+            #     ToolParameter(name=name, spec=schema)
+            #     for name, schema in base_tool_instance.args.items()
+            # ],
+            parameters = base_tool_instance.args,
             enabled=enabled,
             disabled_reason=disabled_reason,
             aliases=aliases,
@@ -145,3 +147,7 @@ def tool_from_langchain(
         )(wrapper)
 
     return decorator
+
+# TODO/FIXME:
+# Huging face Tools :
+# https://github.com/huggingface/transformers/blob/main/src/transformers/tools/base.py#L471

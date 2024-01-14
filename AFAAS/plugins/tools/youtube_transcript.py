@@ -1,7 +1,19 @@
+from __future__ import annotations
 from llama_hub.youtube_transcript import YoutubeTranscriptReader
 
 from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.lib.sdk.logger import AFAASLogger
 
+LOG = AFAASLogger(name=__name__)
+
+try:
+    import youtube_transcript_api
+except ImportError:
+    import subprocess
+    import subprocess
+    LOG.info("youtube_transcript_api package is not installed. Installing...")
+    subprocess.run(["pip", "install", "youtube_transcript_api"])
+    LOG.info("youtube_transcript_api package has been installed.")
 
 @tool(
     name="youtube_transcript",
@@ -13,6 +25,7 @@ from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
             "required": True,
         },
     },
+    categories=["youtube" , "video"]
 )
 def youtube_transcript(youtube_url: str):
     loader = YoutubeTranscriptReader()

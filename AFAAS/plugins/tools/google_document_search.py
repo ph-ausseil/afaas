@@ -31,6 +31,6 @@ def document_search(query: str, document_id: str, k: int = 10):
     gdoc_ids = [document_id]
     loader = GoogleDocsReader()
     documents = loader.load_data(document_ids=gdoc_ids)
-    index = VectorStoreIndex.from_documents(documents)
+    index : VectorStoreIndex = VectorStoreIndex.from_documents(documents)
 
     return index.query(query, k=k)

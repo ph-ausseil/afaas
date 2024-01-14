@@ -35,6 +35,11 @@ class CacheManager:
                 self.cache = json.load(file)
 
     def save_to_json(self):
+        # Extract the directory from the file path
+        directory = os.path.dirname(self.json_file_path)
+
+        # Create the directory if it doesn't exist
+        os.makedirs(directory, exist_ok=True)
         with open(self.json_file_path, 'w') as file:
             json.dump(self.cache, file, indent=4)
 
@@ -67,7 +72,7 @@ class CacheManager:
 
     def get_cache_time(self):
         """Get the last updated time from the cache. Returns 0 if not set."""
-        return self.get('last_updated', 0)
+        return self.get('last_updated') or 0
 
     def get_all_categories(self) -> list[str]:
         """

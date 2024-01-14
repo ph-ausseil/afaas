@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 
 from AFAAS.interfaces.tools.tool_output import ToolOutput
 from AFAAS.interfaces.tools.tool_parameters import ToolParameter
+from AFAAS.lib.utils.json_schema import JSONSchema
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
@@ -36,6 +37,7 @@ class Tool:
         self,
         name: str,
         description: str,
+        categories : list[str],
         exec_function: Callable[..., ToolOutput],
         parameters: list[ToolParameter],
         success_check_callback: Callable[..., Any],
@@ -57,6 +59,7 @@ class Tool:
         self.hide = hide
         self.success_check_callback = success_check_callback
         self.tech_description = tech_description or description
+        self.categories =categories
 
     @property
     def is_async(self) -> bool:
@@ -77,74 +80,84 @@ class Tool:
 
     def __str__(self) -> str:
         params = [
-            f"{param.name}: {param.spec.type.value if param.spec.required else f'Optional[{param.spec.type.value}]'}"
+            f"{param.name}: {'string' if param.spec.type is None and param.spec.required else 'Optional[string]' if param.spec.type is None else param.spec.type.value if param.spec.required else f'Optional[{param.spec.type.value}]'}"
             for param in self.parameters
         ]
         return f"{self.name}: {self.description.rstrip('.')}. Params: ({', '.join(params)})"
 
-    # @classmethod
-    # def generate_from_langchain_tool(
-    #     cls, tool: BaseTool, arg_converter: Optional[Callable] = None
-    # ) -> "Tool":
-    #     def wrapper(*args, **kwargs):
-    #         # a Tool's run function doesn't take an agent as an arg, so just remove that
-    #         agent = kwargs.pop("agent")
+    @classmethod
+    def generate_from_langchain_tool(
+        cls, 
+        tool: BaseTool, 
+        arg_converter: Optional[Callable] = None,
+        categories : list[str] = ['undefined'],
+        success_check_callback = None
+    ) -> "Tool":
 
-    #         # Allow the command to do whatever arg conversion it needs
-    #         if arg_converter:
-    #             tool_input = arg_converter(kwargs, agent)
-    #         else:
-    #             tool_input = kwargs
+        success_check_callback = success_check_callback or cls.default_success_check_callback
 
-    #         LOG.debug(f"Running LangChain tool {tool.name} with arguments {kwargs}")
+        def wrapper(*args, **kwargs):
+            # a Tool's run function doesn't take an agent as an arg, so just remove that
+            agent = kwargs.pop("agent")
 
-    #         return tool.run(tool_input=tool_input)
+            # Allow the command to do whatever arg conversion it needs
+            if arg_converter:
+                tool_input = arg_converter(kwargs, agent)
+            else:
+                tool_input = kwargs
 
-    #     typed_parameters = [
-    #         ToolParameter(
-    #             name=name,
-    #             spec=schema,
-    #         )
-    #         for name, schema in tool.args.items()
-    #     ]
+            LOG.debug(f"Running LangChain tool {tool.name} with arguments {kwargs}")
 
-    #     # typed_parameters = [
-    #     #         ToolParameter(
-    #     #             name=name,
-    #     #             type=schema.get("type"),
-    #     #             description=schema.get("description", schema.get("title")),
-    #     #             required=bool(
-    #     #                 tool.args_schema.__fields__[name].required
-    #     #             )  # gives True if `field.required == pydantic.Undefined``
-    #     #             if tool.args_schema
-    #     #             else True,
-    #     #         )
-    #     #         for name, schema in tool.args.items()
-    #     #     ]
+            return tool.arun(tool_input=tool_input)
 
-    #     tool = Tool(
-    #         name=tool.name,
-    #         description=tool.description,
-    #         tech_description=tool.description,  # Added this line
-    #         exec_function=wrapper,
-    #         parameters=typed_parameters,
-    #         enabled=True,
-    #         disabled_reason=None,
-    #         aliases=[],
-    #         available=True,
-    #         hide=False,
-    #         # Add other optional parameters as needed, like disabled_reason, aliases, etc.
-    #         success_check_callback=Tool.default_success_check_callback,  # Added this line
-    #     )
+        # typed_parameters = [
+        #     ToolParameter(
+        #         name=name,
+        #         spec=schema,
+        #     )
+        #     for name, schema in tool.args.items()
+        # ]
 
-    #     # Avoid circular import
-    #     from AFAAS.core.tools.tool_decorator import TOOL_WRAPPER_MARKER
+        typed_parameters = [
+                ToolParameter(
+                    name=name,
+                    spec = JSONSchema(
+                    type=schema.get("type"),
+                    description=schema.get("description", schema.get("title")),
+                    required=bool(
+                        tool.args_schema.__fields__[name].required
+                    )  # gives True if `field.required == pydantic.Undefined``
+                    if tool.args_schema
+                    else True,
+                    )
+                )
+                for name, schema in tool.args.items()
+            ]
 
-    #     # Set attributes on the command so that our import module scanner will recognize it
-    #     setattr(tool, TOOL_WRAPPER_MARKER, True)
-    #     setattr(tool, "tool", tool)
+        tool = Tool(
+            categories=categories,
+            name=tool.name,
+            description=tool.description,
+            tech_description=tool.description,  # Added this line
+            exec_function=wrapper,
+            parameters=typed_parameters,
+            enabled=True,
+            disabled_reason=None,
+            aliases=[],
+            available=True,
+            hide=False,
+            # Add other optional parameters as needed, like disabled_reason, aliases, etc.
+            success_check_callback=success_check_callback,  # Added this line
+        )
 
-    #     return tool
+        # Avoid circular import
+        from AFAAS.core.tools.tool_decorator import TOOL_WRAPPER_MARKER
+
+        # Set attributes on the command so that our import module scanner will recognize it
+        setattr(tool, TOOL_WRAPPER_MARKER, True)
+        setattr(tool, "tool", tool)
+
+        return tool
 
     async def default_success_check_callback(
         self, task: AbstractTask, tool_output: Any

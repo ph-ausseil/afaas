@@ -15,7 +15,7 @@ from AFAAS.interfaces.agent.assistants.prompt_manager import BasePromptManager
 from AFAAS.interfaces.agent.assistants.tool_executor import ToolExecutor
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.db.db import AbstractMemory
-from AFAAS.interfaces.tools.base import AbstractToolRegistry
+from AFAAS.interfaces.tools.base import AbstractToolRegistry, AbstractTool
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan 
@@ -42,7 +42,7 @@ class PlannerAgent(BaseAgent):
                 workspace=self.workspace,
                 model_providers=self.default_llm_provider,
             )
-            self._tool_registry.add_tool_category(category="framework")
+            self._tool_registry.add_tool_category(category=AbstractTool.FRAMEWORK_CATEGORY)
         return self._tool_registry
 
     @tool_registry.setter

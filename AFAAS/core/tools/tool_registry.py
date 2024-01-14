@@ -110,36 +110,36 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
     plugin_directory = 'AFAAS/plugins/tools/'
     cache_manager = CacheManager()
     categories = {}
-    @classmethod
-    def initialize_cache(cls):
+    def initialize_cache(self):
         current_time = time.time()
-        last_updated_in_cache = cls.cache_manager.get_cache_time()
+        last_updated_in_cache = self.cache_manager.get_cache_time() or 0
         # Determine if the cache needs to be updated
         needs_update = any(
-            os.path.getmtime(os.path.join(cls.plugin_directory, f)) > last_updated_in_cache
-            for f in os.listdir(cls.plugin_directory)
+            os.path.getmtime(os.path.join(self.plugin_directory, f)) > last_updated_in_cache
+            for f in os.listdir(self.plugin_directory)
             if f.endswith('.py') and not f.startswith('__')
         )
 
         if needs_update :
-            cls.rebuild_cache()
-            cls.last_updated = current_time
-            cls.cache_manager.set_cache_time()
+            self.rebuild_cache()
+            self.last_updated = current_time
 
-    @classmethod
-    def rebuild_cache(cls):
-        cls.cache_manager.clear_cache()
-        for filename in os.listdir(cls.plugin_directory):
+    def rebuild_cache(self):
+        self.cache_manager.clear_cache()
+        for filename in os.listdir(self.plugin_directory):
             if filename.endswith('.py') and not filename.startswith('__'):
-                module_path = f"{cls.plugin_directory.replace('/', '.')}{filename[:-3]}"
-                module = cls._import_tool_module(module_path)
+                module_path = f"{self.plugin_directory.replace('/', '.')}{filename[:-3]}"
+                module = self._import_tool_module(module_path)
                 for name, attr in inspect.getmembers(module):
-                        for category in attr.tool.categories:
-                            existing_modules = cls.cache_manager.get(category, {})
-                            existing_modules.update({attr.tool.name : module_path })
-                            cls.cache_manager.set(category, existing_modules)
+                    if hasattr(attr, TOOL_WRAPPER_MARKER):  # Check if attr is a tool
+                        tool_instance = getattr(attr, 'tool')
+                        for category in tool_instance.categories:
+                            existing_modules = self.cache_manager.get(category) or {}
+                            existing_modules.update({tool_instance.name: module_path})
+                            self.cache_manager.set(category, existing_modules)
 
-        cls.cache_manager.set_cache_time()
+        self.cache_manager.set_cache_time()
+
 
 
     def add_all_tool_categories(self):
@@ -237,18 +237,18 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
     #             )
     #         self.categories[category].tools.append(tool_name)
 
-    def register(self, cmd: AbstractTool) -> None:
-        if cmd.name in self.tools_by_name:
-            LOG.warn(f"Tool '{cmd.name}' already registered and will be overwritten!")
-        self.tools_by_name[cmd.name] = cmd
+    def register(self, tool: AbstractTool) -> None:
+        if tool.name in self.tools_by_name:
+            LOG.warn(f"Tool '{tool.name}' already registered and will be overwritten!")
+        self.tools_by_name[tool.name] = tool
 
-        if cmd.name in self.tool_aliases:
+        if tool.name in self.tool_aliases:
             LOG.warn(
-                f"Tool '{cmd.name}' will overwrite alias with the same name of "
-                f"'{self.tool_aliases[cmd.name]}'!"
+                f"Tool '{tool.name}' will overwrite alias with the same name of "
+                f"'{self.tool_aliases[tool.name]}'!"
             )
-        for alias in cmd.aliases:
-            self.tool_aliases[alias] = cmd
+        for alias in tool.aliases:
+            self.tool_aliases[alias] = tool
 
     # def unregister(self, tool: BaseTool) -> None:
     #     if tool.name in self.tools:
@@ -278,9 +278,6 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
 
         return function_list
 
-
-
-
     async def perform(self, tool_name: str, **kwargs) -> ToolResult:
         LOG.warning("### FUNCTION DEPRECATED !!! ###")
         tool = self.get_tool(tool_name)
@@ -295,15 +292,6 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         if tool := self.get_tool(tool_name):
             return tool(**kwargs, agent=agent)
         raise KeyError(f"Tool '{tool_name}' not found in registry")
-
-    # def list_available_tools(self, agent: BaseAgent) -> Iterator[AbstractTool]:
-
-    #     for tool in self.tools.values():
-    #         available = tool.available
-    #         if callable(tool.available):
-    #             available = tool.available(agent)
-    #         if available:
-    #             yield tool
 
     def list_tools_descriptions(self) -> list[str]:
         LOG.warning("Function deprecated")
@@ -325,8 +313,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
                 available_tools.append(tool)
         return available_tools
 
-    @classmethod
-    def _import_tool_module(cls, module_name: str) -> None:
+    def _import_tool_module(self, module_name: str) -> None:
         module = importlib.import_module(module_name)
 
         #category = self.register_module_category(module)
@@ -349,10 +336,16 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
                 tool = attr()
 
             if tool:
-                cls.register(tool)
-                #category.tools.append(tool)
-                for category in tool.categories :
-                    cls.categories[category].append(tool.name)
+                self.register(tool)
+                # NOTE: Keeping it but not sure we need to populate a list of category
+                # for category in tool.categories:
+                #     if category not in self.categories:
+                #         # Initialize the category if it doesn't exist
+                #         self.categories[category] = []
+                #     # Append the tool name to the category
+                #     self.categories[category].append(tool.name)
+
+        return module
 
     async def call(self, tool_name: str, **kwargs) -> ToolResult:
         LOG.warning("ToolRegistry.call() is deprecated")
