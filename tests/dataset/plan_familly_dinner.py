@@ -596,12 +596,12 @@ def _plan_step_11() -> Plan:
 
 
 @pytest.fixture
-def task_ready_no_predecessors_or_subtasks() -> Task:
-    return _default_task()
+async def task_ready_no_predecessors_or_subtasks() -> Task:
+    return await _default_task()
 
 @pytest.fixture
-def default_task():
-    return _default_task()
+async def default_task():
+    return await _default_task()
 
 async def _default_task():
     # Task 'task_101_buy_groceries' has no predecessors or subtasks and is ready
@@ -610,42 +610,42 @@ async def _default_task():
 
 
 @pytest.fixture(scope="function")
-def task_ready_all_predecessors_done(plan_step_2b: Plan) -> Task:
+async def task_ready_all_predecessors_done(plan_step_2b: Plan) -> Task:
     # Task 'task_300_2_2_line_pan' with all predecessors done
-    t = plan_step_2b.get_task(task_id="300.2.2")
+    t = await plan_step_2b.get_task(task_id="300.2.2")
     return copy.deepcopy(t)
 
 
 @pytest.fixture(scope="function")
-def task_ready_all_subtasks_done(plan_step_8: Plan) -> Task:
+async def task_ready_all_subtasks_done(plan_step_8: Plan) -> Task:
     # Task 'task_300_1_gather_ingredients' with all subtasks done
-    t = plan_step_8.get_task(task_id="300.1")
+    t = await plan_step_8.get_task(task_id="300.1")
     return copy.deepcopy(t)
 
 
 @pytest.fixture(scope="function")
-def task_with_mixed_predecessors(plan_step_7: Plan) -> Task:
+async def task_with_mixed_predecessors(plan_step_7: Plan) -> Task:
     # Task 'task_300_6_serve_bread' with some predecessors done and some not
-    t = plan_step_7.get_task(task_id="300.6")
+    t = await plan_step_7.get_task(task_id="300.6")
     return copy.deepcopy(t)
 
 
 @pytest.fixture(scope="function")
-def task_with_unmet_predecessors(plan_step_0: Plan) -> Task:
+async def task_with_unmet_predecessors(plan_step_0: Plan) -> Task:
     # Task '300.3.3' has unmet predecessors at plan_step_0
-    t = plan_step_0.get_task(task_id="300.3.3")
+    t = await plan_step_0.get_task(task_id="300.3.3")
     return copy.deepcopy(t)
 
 
 @pytest.fixture(scope="function")
-def task_with_ongoing_subtasks(plan_step_0: Plan) -> Task:
+async def task_with_ongoing_subtasks(plan_step_0: Plan) -> Task:
     # Task '200' has ongoing subtasks at plan_step_0
-    t = plan_step_0.get_task(task_id="200")
+    t = await plan_step_0.get_task(task_id="200")
     return copy.deepcopy(t)
 
 
 @pytest.fixture(scope="function")
-def task_awaiting_preparation(plan_step_0: Plan) -> Task:
+async def task_awaiting_preparation(plan_step_0: Plan) -> Task:
     # Task '300.4' is not ready yet at plan_step_0
-    t = plan_step_0.get_task(task_id="300.4")
+    t = await plan_step_0.get_task(task_id="300.4")
     return copy.deepcopy(t)

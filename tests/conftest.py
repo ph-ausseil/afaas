@@ -82,5 +82,5 @@ def local_workspace() -> AbstractFileWorkspace:
 @pytest.fixture
 def empty_tool_registry() -> AbstractToolRegistry:
     registry = agent_dataset().tool_registry
-    registry.tools = {}
+    registry.tools_by_name = {}
     return registry

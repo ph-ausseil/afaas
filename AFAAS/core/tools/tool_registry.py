@@ -102,7 +102,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         #     self.register_tool(tool_name, tool_configuration)
 
         self.tools_by_name : dict[AbstractTool] = {}
-        self.tool_aliases : dict[AbstractTool]  = {}
+        #self.tool_aliases : dict[AbstractTool]  = {}
         self._tool_module : dict[AbstractTool]  = {}
 
         self.initialize_cache()
@@ -183,7 +183,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
             LOG.error(f"Tool '{tool_name}' not found in cache.")
 
     def __contains__(self, tool_name: str):
-        return tool_name in self.tools_by_name or tool_name in self.tool_aliases
+        return tool_name in self.tools_by_name #or tool_name in self.tool_aliases
 
     def register_tool(
         self,
@@ -248,21 +248,21 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
             LOG.warn(f"Tool '{tool.name}' already registered and will be overwritten!")
         self.tools_by_name[tool.name] = tool
 
-        if tool.name in self.tool_aliases:
-            LOG.warn(
-                f"Tool '{tool.name}' will overwrite alias with the same name of "
-                f"'{self.tool_aliases[tool.name]}'!"
-            )
-        for alias in tool.aliases:
-            self.tool_aliases[alias] = tool
+        # if tool.name in self.tool_aliases:
+        #     LOG.warn(
+        #         f"Tool '{tool.name}' will overwrite alias with the same name of "
+        #         f"'{self.tool_aliases[tool.name]}'!"
+        #     )
+        # for alias in tool.aliases:
+        #     self.tool_aliases[alias] = tool
 
-    # def unregister(self, tool: BaseTool) -> None:
-    #     if tool.name in self.tools:
-    #         del self.tools[tool.name]
-    #         for alias in tool.aliases:
-    #             del self.tool_aliases[alias]
-    #     else:
-    #         raise KeyError(f"Tool '{tool.name}' not found in registry.")
+    def unregister(self, tool: AbstractTool) -> None:
+        if tool.name in self.tools_by_name:
+            del self.tools_by_name[tool.name]
+            # for alias in tool.aliases:
+            #     del self.tool_aliases[alias]
+        else:
+            raise KeyError(f"Tool '{tool.name}' not found in registry.")
 
 
     # def reload_tools(self) -> None:
