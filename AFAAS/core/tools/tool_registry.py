@@ -70,6 +70,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         db: AbstractMemory,
         workspace: AbstractFileWorkspace,
         model_providers: dict[ModelProviderName, AbstractChatModelProvider],
+        include_builtins = True
     ):
         """
         Initialize the DefaultToolRegistry.
@@ -105,6 +106,11 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         self._tool_module : dict[AbstractTool]  = {}
 
         self.initialize_cache()
+
+        if include_builtins : 
+            from AFAAS.core.tools.builtins import BUILTIN_MODULES
+            for module in BUILTIN_MODULES :
+                self._import_tool_module(module_name=module)
 
     last_updated = 0
     plugin_directory = 'AFAAS/plugins/tools/'
