@@ -56,6 +56,7 @@ async def agent_dataset() -> PlannerAgent:
         agent_goal_sentence="Prepare a family dinner",
     )
 
+    #FIXME : 
     agent = PlannerAgent(settings=agent_settings, **agent_settings.dict())
     db_config = MemoryConfig()
     db_config.json_file_path += "/pytest"
@@ -67,6 +68,8 @@ async def agent_dataset() -> PlannerAgent:
         **agent_settings.dict(),
         db=AbstractMemory.get_adapter(settings=db_settings),
     )
+    #NOTE:Hack 
+    agent.db._settings.configuration.json_file_path += "/pytest"
 
     agent._user_input_handler = UserMessageHandlers.user_input_handler
     agent._user_message_handler = UserMessageHandlers.user_message_handler

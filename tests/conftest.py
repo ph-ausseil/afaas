@@ -1,4 +1,6 @@
+
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -44,12 +46,24 @@ async def agent() -> PlannerAgent:
 def reset_environment_each_test():
     # Code to reset the environment before each test
     setup_environment()
+    base_dir = Path("~/AFAAS/data/pytest").expanduser().resolve()
+    # Walk through the directory structure
+    for root, dirs, files in os.walk(base_dir):
+        for dir_name in dirs:
+            # Check if the directory name starts with 'pytest_'
+            if dir_name.startswith('pytest_'):
+                dir_path = Path(root) / dir_name
+                # Delete the directory
+                shutil.rmtree(dir_path)
+                print(f"Deleted directory: {dir_path}")
+
     delete_logs()
 
     yield
 
     # Code to clean up after each test
     delete_logs()
+
 
 
 def setup_environment():

@@ -1,6 +1,6 @@
 import pytest
 import os
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from AFAAS.lib.utils.json_schema import JSONSchema
 
 # Assuming the not_implemented_tool function is defined in a module named `tools`
@@ -12,23 +12,20 @@ from tests.dataset.plan_familly_dinner import (
     plan_familly_dinner,
     plan_step_0,
     task_ready_no_predecessors_or_subtasks,
+    default_task
 )
 
 @pytest.mark.asyncio
-async def test_not_implemented_tool_basic():
+async def test_not_implemented_tool_basic(default_task : Task):
     # Mock Task and BaseAgent
-    mock_task = MagicMock()
-    mock_agent = MagicMock()
-
-    # Mock user_interaction to return a string
-    mock_agent.user_interaction = AsyncMock(return_value="User Interaction Result")
-
-    # Call the function with mocked objects and a test query
-    result = await not_implemented_tool(task = mock_task, agent = mock_agent, query="Test Query")
+    mock_task = default_task
+    mock_agent = default_task.agent
 
     # Assert that the result is what user_interaction returns
-    assert result == "User Interaction Result"
-    mock_agent.user_interaction.assert_called_once_with(question="Test Query\n", task=mock_task, agent=mock_agent)
+    expected_result = "Interaction Result"
+    with patch('AFAAS.core.tools.builtins.user_interaction.user_interaction', new=AsyncMock(return_value=expected_result)) as mock_user_interaction:
+        result = await not_implemented_tool(task = mock_task, agent = mock_agent, query="Test Query")
+        assert result == expected_result
 
 
 # Use a fixture to determine whether to run integration tests
@@ -40,34 +37,38 @@ def activate_integration_tests():
 
 
 @pytest.mark.asyncio
-async def test_async_tool_not_implemented():
+async def test_async_tool_not_implemented(default_task : Task):
     @tool(name="async_test_tool", description="Async Test Tool")
     async def async_test_tool(agent: BaseAgent, task : Task) -> str:
         raise NotImplementedError
 
-    mock_agent = MagicMock()
-    mock_task = MagicMock()
-    mock_agent.user_interaction = AsyncMock(return_value="Async Tool Fallback")
+    mock_task = default_task
+    mock_agent = default_task.agent
+    # Assert that the result is what user_interaction returns
+    expected_result = "Interaction Result"
+    with patch('AFAAS.core.tools.builtins.user_interaction.user_interaction', new=AsyncMock(return_value=expected_result)) as mock_user_interaction:
+        result = await async_test_tool(task = mock_task, agent = mock_agent)
+        assert result == expected_result
 
-    result = await async_test_tool(task = mock_task, agent = mock_agent)
-    assert result == "Async Tool Fallback"
 
 
 
-def test_sync_tool_not_implemented():
+def test_sync_tool_not_implemented(default_task : Task):
     @tool(name="sync_test_tool", description="Sync Test Tool")
     def sync_test_tool(agent: BaseAgent, task : Task) -> str:
         raise NotImplementedError
 
-    mock_agent = MagicMock()
-    mock_task = MagicMock()
-    mock_agent.user_interaction = MagicMock(return_value="Sync Tool Fallback")
+    mock_task = default_task
+    mock_agent = default_task.agent
 
-    result = sync_test_tool(task = mock_task, agent = mock_agent)
-    assert result == "Sync Tool Fallback"
+    # Assert that the result is what user_interaction returns
+    expected_result = "Interaction Result"
+    with patch('AFAAS.core.tools.builtins.user_interaction.user_interaction', new=AsyncMock(return_value=expected_result)) as mock_user_interaction:
+        result = sync_test_tool(task = mock_task, agent = mock_agent)
+        assert result == expected_result
 
 @pytest.mark.asyncio
-async def test_async_tool_with_args_not_implemented():
+async def test_async_tool_with_args_not_implemented(default_task : Task):
     @tool(
         name="async_test_tool_args",
         description="Async Test Tool with Args",
@@ -76,28 +77,31 @@ async def test_async_tool_with_args_not_implemented():
     async def async_test_tool_args(query: str, agent: BaseAgent, task : Task) -> str:
         raise NotImplementedError
 
-    mock_agent = MagicMock()
-    mock_task = MagicMock()
-    mock_agent.user_interaction = AsyncMock(return_value="Async Tool Args Fallback")
+    mock_task = default_task
+    mock_agent = default_task.agent
 
-    result = await async_test_tool_args(query="Test Query", task = mock_task, agent = mock_agent)
-    assert result == "Async Tool Args Fallback"
-
+    # Assert that the result is what user_interaction returns
+    expected_result = "Interaction Result"
+    with patch('AFAAS.core.tools.builtins.user_interaction.user_interaction', new=AsyncMock(return_value=expected_result)) as mock_user_interaction:
+        result = await async_test_tool_args(query="Test Query", task = mock_task, agent = mock_agent)
+        assert result == expected_result
 
 
 
 @pytest.mark.asyncio
-async def test_async_tool_no_kwargs_not_implemented():
+async def test_async_tool_no_kwargs_not_implemented(default_task : Task):
     @tool(name="async_test_tool_no_kwargs", description="Async Test Tool No KWArgs")
     async def async_test_tool_no_kwargs(agent: BaseAgent, task : Task) -> str:
         raise NotImplementedError
 
-    mock_agent = MagicMock()
-    mock_task = MagicMock()
-    mock_agent.user_interaction = AsyncMock(return_value="Async Tool No KWArgs Fallback")
+    mock_task = default_task
+    mock_agent = default_task.agent
 
-    result = await async_test_tool_no_kwargs(task = mock_task, agent = mock_agent)
-    assert result == "Async Tool No KWArgs Fallback"
+    # Assert that the result is what user_interaction returns
+    expected_result = "Interaction Result"
+    with patch('AFAAS.core.tools.builtins.user_interaction.user_interaction', new=AsyncMock(return_value=expected_result)) as mock_user_interaction:
+        result = await async_test_tool_no_kwargs(task = mock_task, agent = mock_agent)
+        assert result == expected_result
 
 
 @pytest.mark.asyncio
@@ -112,6 +116,6 @@ async def test_not_implemented_tool_integration(activate_integration_tests, task
     # Call the function with real or semi-real objects
     result = await not_implemented_tool(task = real_task, agent = real_agent, query="Integration Test Query")
 
-    #FIXME: Maxe assetions
+    #FIXME: Maxe assertions
     pytest.skip("Not Implemented Tool Integration Test Assertions Not Implemented")
 

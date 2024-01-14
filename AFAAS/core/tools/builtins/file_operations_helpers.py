@@ -39,7 +39,7 @@ def operations_from_log(
             try:
                 path, checksum = (x.strip() for x in tail.rsplit(" #", maxsplit=1))
             except ValueError:
-                LOG.warn(f"File log entry lacks checksum: '{line}'")
+                LOG.warning(f"File log entry lacks checksum: '{line}'")
                 path, checksum = tail.strip(), None
             yield (operation, path, checksum)
         elif operation == "delete":

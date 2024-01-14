@@ -38,7 +38,7 @@ async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy 
         #TODO: Create  message but as "hidden"
 
 
-    await agent.message_agent_user.add(
+    await agent.message_agent_user.db_create(
         message=MessageAgentUser(
             emitter=Emiter.AGENT.value,
             user_id=agent.user_id,
@@ -48,7 +48,7 @@ async def user_interaction(query: str, task: Task, agent: BaseAgent, skip_proxy 
     )
     user_response = await agent._user_input_handler(query)
 
-    await agent.message_agent_user.add(
+    await agent.message_agent_user.db_create(
             message=MessageAgentUser(
                 emitter=Emiter.USER.value,
                 user_id=agent.user_id,
