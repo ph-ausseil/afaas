@@ -15,8 +15,8 @@ def activate_integration_tests():
     return os.getenv("RUN_INTEGRATION_TESTS", "false").lower() == "true"
 
 @pytest.fixture
-def agent() -> PlannerAgent:
-    return agent_dataset()
+async def agent() -> PlannerAgent:
+    return await agent_dataset()
 
 #FIXME: Issue #99 https://github.com/ph-ausseil/afaas/issues/99 is a prerequisite for this
 # # Higher-level fixture to intercept Plan fixtures
@@ -75,12 +75,14 @@ def delete_logs():
 
 
 @pytest.fixture
-def local_workspace() -> AbstractFileWorkspace:
-    return agent_dataset().workspace
+async def local_workspace() -> AbstractFileWorkspace:
+    agent = await agent_dataset()
+    return agent.workspace
 
 
 @pytest.fixture
-def empty_tool_registry() -> AbstractToolRegistry:
-    registry = agent_dataset().tool_registry
+async def empty_tool_registry() -> AbstractToolRegistry:
+    agent = await agent_dataset()
+    registry = agent.tool_registry
     registry.tools_by_name = {}
     return registry
