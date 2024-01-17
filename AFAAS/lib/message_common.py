@@ -21,7 +21,7 @@ class AFAASMessage(ABC, AFAASModel):
 
 class AFAASMessageStack(AFAASModel):
     _messages: list[AFAASMessage] = []
-    _db: AbstractMemory = AbstractMemory.get_adapter()
+    db: AbstractMemory
 
     async def db_create(self, message: AFAASMessage):
         self._messages.append(message)
@@ -44,7 +44,6 @@ class AFAASMessageStack(AFAASModel):
         return len(self._messages)
 
     def __iter__(self):
-        LOG.error("Iterating over AFAASMessageStack")
         return iter(self._messages)
 
     @classmethod

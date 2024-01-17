@@ -8,10 +8,10 @@ from typing import Any, Literal, Optional, TypedDict
 
 from pydantic import BaseModel
 
-from AFAAS.configs.schema import AFAASModel
+from AFAAS.configs.schema import AFAASModel, Configurable
 from AFAAS.interfaces.db.db_table import AbstractTable
 from AFAAS.lib.sdk.logger import AFAASLogger
-
+from AFAAS.interfaces.agent.main import BaseAgent
 LOG = AFAASLogger(name=__name__)
 
 
@@ -19,10 +19,10 @@ class BaseSQLTable(AbstractTable):
     def __init__(self) -> None:
         raise NotImplementedError()
 
-    def add(self, value: dict) -> uuid.UUID:
+    async def add(self, value: dict) -> uuid.UUID:
         id = uuid.uuid4()
         value["id"] = id
-        self.db.add(key=id, value=value, table_name=self.table_name)
+        await self.db.add(key=id, value=value, table_name=self.table_name)
         return id
 
 
@@ -102,10 +102,17 @@ class BaseNoSQLTable(AbstractTable):
 
         return parent_dict
 
-    def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
+    #FIXME: Remove the id argument
+    # if value[self.primary_key] exit & is not None then use it
+    # else, raise a warning & generate an ID
+    async def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
         # Serialize non-serializable objects
+        if isinstance(value, BaseAgent):    
+            value = value.dict()
         if isinstance(value, AFAASModel):
             value = value.dict_db()
+        elif isinstance(value, Configurable):
+            value.dict()
         else:
             LOG.warning("Class not hinheriting from AFAASModel")
             value = self.__class__.serialize_value(value)
@@ -123,11 +130,11 @@ class BaseNoSQLTable(AbstractTable):
             "add new " + str(self.__class__.__name__) + "with values " + str(value)
         )
 
-        self.db.add(key=key, value=value, table_name=self.table_name)
+        await self.db.add(key=key, value=value, table_name=self.table_name)
         return id
 
     @abc.abstractmethod
-    def update(self, key: BaseNoSQLTable.Key, value: dict):
+    async def update(self, key: BaseNoSQLTable.Key, value: dict):
         # Serialize non-serializable objects
         if isinstance(value, BaseModel):
             value = value.dict()
@@ -146,20 +153,17 @@ class BaseNoSQLTable(AbstractTable):
             "Update new " + str(self.__class__.__name__) + "with values " + str(value)
         )
 
-        self.db.update(key=key, value=value, table_name=self.table_name)
+        await self.db.update(key=key, value=value, table_name=self.table_name)
 
     @abc.abstractmethod
-    def get(self, key: BaseNoSQLTable.Key) -> Any:
-        return self.db.get(key=key, table_name=self.table_name)
+    async def get(self, key: BaseNoSQLTable.Key) -> Any:
+        return await self.db.get(key=key, table_name=self.table_name)
 
     @abc.abstractmethod
-    def delete(self, key: BaseNoSQLTable.Key):
-        # key = {"primary_key": id}
-        # if hasattr(self, "secondary_key") and self.secondary_key:
-        #     key["secondary_key"] = self.secondary_key
-        self.db.delete(key=key, table_name=self.table_name)
+    async def delete(self, key: BaseNoSQLTable.Key):
+        await self.db.delete(key=key, table_name=self.table_name)
 
-    def list(
+    async def list(
         self,
         filter: AbstractTable.FilterDict = {},
         order_column: Optional[str] = None,
@@ -201,16 +205,16 @@ class BaseNoSQLTable(AbstractTable):
 
             # Example 1: Using BaseTable.Operators.GREATER_THAN for age greater than 25
             filter_dict = {'age': {'value': 25, 'operator': BaseTable.Operators.GREATER_THAN}}
-            result = base_table.list(filter_dict)
+            result = await base_table.list(filter_dict)
             # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'},
             #          {'name': 'Eve', 'age': 35, 'city': 'San Francisco'}]
 
             # Example 2: Using custom operator for a specific filter
-            def custom_comparison(value, filter_value):
+            async def custom_comparison(value, filter_value):
                 return len(value['city']) > len(filter_value)
 
             filter_dict = {'city': {'value': 'Chicago', 'operator': custom_comparison}}
-            result = base_table.list(filter_dict)
+            result = await base_table.list(filter_dict)
             # Output: [{'name': 'John', 'age': 25, 'city': 'New York'},
             #          {'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
 
@@ -220,11 +224,11 @@ class BaseNoSQLTable(AbstractTable):
                 'city': {'value': 'New York', 'operator': BaseTable.Operators.NOT_EQUAL_TO},
                 'name': {'value': 'Bob', 'operator': custom_comparison}
             }
-            result = base_table.list(filter_dict)
+            result = await base_table.list(filter_dict)
             # Output: [{'name': 'Alice', 'age': 30, 'city': 'Los Angeles'}]
         """
         LOG.trace(f"{self.__class__.__name__}.list()")
-        data_list: dict = self.db.list(table_name=self.table_name, filter=filter)
+        data_list: dict = await self.db.list(table_name=self.table_name, filter=filter)
         filtered_data_list: list = []
 
         LOG.notice("May need to be moved to JSONFileMemory")

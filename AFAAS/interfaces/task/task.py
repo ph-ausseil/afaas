@@ -28,14 +28,9 @@ class AbstractTask(AbstractBaseTask):
     # def plan_id(self) -> str:
     #     ...
 
-    @property
-    @abstractmethod
-    def task_parent(self) -> AbstractBaseTask:
-        ...
 
-    @task_parent.setter
     @abstractmethod
-    def task_parent(self, task: AbstractBaseTask):
+    async def task_parent(self) -> AbstractBaseTask:
         ...
 
     @property
@@ -69,7 +64,7 @@ class AbstractTask(AbstractBaseTask):
         return "T" + str(uuid.uuid4())
 
     @abstractmethod
-    def is_ready(self) -> bool:
+    async def is_ready(self) -> bool:
         ...
 
     @abstractmethod
@@ -82,30 +77,30 @@ class AbstractTask(AbstractBaseTask):
 
     @classmethod
     @abstractmethod
-    def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> "AbstractTask":
+    async def get_task_from_db(cls, task_id: str, agent: BaseAgent) -> "AbstractTask":
         ...
 
     @classmethod
     @abstractmethod
-    def create_in_db(cls, task: "AbstractTask", agent: BaseAgent):
+    async def db_create(cls, task: "AbstractTask", agent: BaseAgent):
         ...
 
     @abstractmethod
-    def save_in_db(self):
+    async def save_in_db(self):
         ...
 
     @abstractmethod
-    def get_task_path(
+    async def get_task_path(
         self, task_to_root: bool = False, include_self: bool = False
     ) -> list["AbstractTask"]:
         ...
 
     @abstractmethod
-    def get_formated_task_path(self) -> str:
+    async def get_formated_task_path(self) -> str:
         ...
 
     @abstractmethod
-    def get_sibblings(self) -> list["AbstractTask"]:
+    async def get_sibblings(self) -> list["AbstractTask"]:
         ...
 
     @abstractmethod

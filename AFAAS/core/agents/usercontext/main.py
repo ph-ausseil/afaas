@@ -28,8 +28,8 @@ class UserContextAgent(BaseAgent):
     def __init__(
         self,
         settings: UserContextAgent.SystemSettings,
-        user_id: uuid.UUID,
-        agent_id: uuid.UUID = SystemSettings.generate_uuid(),
+        user_id: str,
+        agent_id: str = SystemSettings.generate_uuid(),
         loop: UserContextLoop = UserContextLoop(),
         prompt_manager: BasePromptManager = BasePromptManager(),
         db: AbstractMemory = None,
@@ -64,9 +64,6 @@ class UserContextAgent(BaseAgent):
 
     def loop(self) -> UserContextLoop:
         return self._loop
-
-    def add_hook(self, hook: BaseLoopHook, uuid: uuid.UUID):
-        super().add_hook(hook, uuid)
 
     ################################################################################
     ################################ LOOP MANAGEMENT################################

@@ -35,25 +35,27 @@ class AgentMixin:
     ## Save agent component
     ###
     async def save_agent(self):
-        return self._agent.save_agent_in_db()
+        return await self._agent.db_save()
 
     async def save_plan(self):
-        return self._agent.plan.save()
+        return await self._agent.plan.save()
 
     ###
     ## Messaging
     ###
     def message_user(self, message: str):
+        LOG.warning("Deprecated , use user_interaction")
         return self._agent._user_input_handler(message)
 
     def get_user_input(self, message: str):
+        LOG.warning("Deprecated , use user_interaction")
         return self._agent._user_input_handler(message)
 
     ###
     ## Shorcuts
     ###
     def tool_registry(self) -> BaseToolsRegistry:
-        return self._agent._tool_registry
+        return self._agent.tool_registry
 
     def get_tool_list(self) -> list[Tool]:
         return self.tool_registry().get_tool_list()
@@ -64,8 +66,8 @@ class AgentMixin:
     def plan(self) -> Plan:
         return self._agent.plan
 
-    def get_table(self, table_name: str) -> AbstractTable:
-        return self._agent.db.get_table(table_name=table_name)
+    async def get_table(self, table_name: str) -> AbstractTable:
+        return await self._agent.db.get_table(table_name=table_name)
 
     def get_strategy(self, strategy_name: str) -> AbstractPromptStrategy:
         return self._agent._prompt_manager._prompt_strategies[strategy_name]

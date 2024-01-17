@@ -146,7 +146,7 @@ class BasePromptManager(AgentMixin):
         template_kwargs.update(kwargs)
         template_kwargs.update(model_configuration)
 
-        prompt = prompt_strategy.build_message(**template_kwargs)
+        prompt = await prompt_strategy.build_message(**template_kwargs)
 
         response: AbstractChatModelResponse = await provider.create_chat_completion(
             chat_messages=prompt.messages,

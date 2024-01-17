@@ -87,7 +87,7 @@ def is_duplicate_operation(
     Returns:
         True if the operation has already been performed on the file
     """
-    # FIXMEv0.0.2 : Set as AgentSetting
+    # FIXMEv0.0.2 : Set as AgentSetting #121 , https://github.com/ph-ausseil/afaas/issues/121
     LOG_FILE_OPERATION = (
         Path(__file__).parent.parent.parent.parent.parent
         / "logs"
@@ -116,7 +116,7 @@ def log_operation(
         file_path: The name of the file the operation was performed on
         checksum: The checksum of the contents to be written
     """
-    # FIXMEv0.0.2 : Set as AgentSetting
+    # FIXMEv0.0.2 : Set as AgentSetting  #121 , https://github.com/ph-ausseil/afaas/issues/121
     LOG_FILE_OPERATION = (
         Path(__file__).parent.parent.parent.parent.parent
         / "logs"
