@@ -11,7 +11,7 @@ from itertools import islice
 
 from duckduckgo_search import DDGS
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.lib.sdk.errors import ConfigurationError

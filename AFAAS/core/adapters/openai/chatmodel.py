@@ -188,7 +188,7 @@ class AFAASChatOpenAI(Configurable[OpenAISettings], AbstractChatModelProvider):
         try:
             encoding = tiktoken.encoding_for_model(encoding_model)
         except KeyError:
-            LOG.warn(
+            LOG.warning(
                 f"Model {model_name} not found. Defaulting to cl100k_base encoding."
             )
             encoding = tiktoken.get_encoding("cl100k_base")

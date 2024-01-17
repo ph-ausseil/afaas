@@ -162,7 +162,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
         from AFAAS.lib.task.plan import Plan
 
         if isinstance(self, Plan):
-            LOG.debug(self, "Adding task to plan")
+            LOG.debug(repr(self), "Adding task to plan")
 
         LOG.debug(
             f"Adding task {task.debug_formated_str()} as subtask of {self.task_id}"
@@ -302,28 +302,23 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
     async def find_ready_subbranch(self) -> list[AbstractBaseTask]:
         ready_tasks = []
+        found_ready = False
 
-        async def check_task(task: AbstractTask, found_ready: bool) -> bool:
-            nonlocal ready_tasks
+        async def check_task(task: AbstractTask) -> None:
+            nonlocal ready_tasks, found_ready
+
             if await task.is_ready():
                 ready_tasks.append(task)
-                return True
+                found_ready = True
 
-            # If a ready task has already been found in this branch, check only siblings
-            if found_ready:
-                return False
-
-            # Check subtasks
-            for subtask_id in task.subtasks:
-                if check_task(await self.agent.plan.get_task(subtask_id), found_ready):
-                    found_ready = True
-
-            return found_ready
+            # If a ready task has already been found in this branch, stop diving into subtasks
+            if not found_ready:
+                for subtask_id in task.subtasks:
+                    await check_task(await self.agent.plan.get_task(subtask_id))
 
         # Start checking from the root tasks in the plan
         for task_id in self.subtasks:
-            if await check_task(await self.agent.plan.get_task(task_id), False):
-                break  # Break after finding the first ready task and its siblings
+            await check_task(await self.agent.plan.get_task(task_id))
 
         return ready_tasks
 

@@ -9,26 +9,26 @@ from AFAAS.lib.sdk.user_message_handlers import UserMessageHandlers
 
 LOG = AFAASLogger(name=__name__)
 
-user_id = "pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a"
+# user_id = "pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a"
 
-agent_settings: PlannerAgent.SystemSettings = PlannerAgent.SystemSettings(
-    user_id=user_id,
-    agent_id="pytest_A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c" + str(uuid.uuid4()),
-    agent_goal_sentence="Prepare a family dinner",
-)
+# agent_settings: PlannerAgent.SystemSettings = PlannerAgent.SystemSettings(
+#     user_id=user_id,
+#     agent_id="pytest_A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c" + str(uuid.uuid4()),
+#     agent_goal_sentence="Prepare a family dinner",
+# )
 
-db_config = MemoryConfig()
-db_config.json_file_path += "/pytest"
-db_settings = AbstractMemory.SystemSettings()
-db_settings.configuration = db_config
+# db_config = MemoryConfig()
+# db_config.json_file_path += "/pytest"
+# db_settings = AbstractMemory.SystemSettings()
+# db_settings.configuration = db_config
 
-agent = PlannerAgent(
-    settings=agent_settings,
-    **agent_settings.dict(),
-    db=AbstractMemory.get_adapter(settings=db_settings),
-)
+# agent = PlannerAgent(
+#     settings=agent_settings,
+#     **agent_settings.dict(),
+#     db=AbstractMemory.get_adapter(settings=db_settings),
+# )
 
-PLANNERAGENT = agent
+# PLANNERAGENT = agent
 
 
 # import sys
@@ -39,7 +39,7 @@ PLANNERAGENT = agent
 # sys.path.append(str(parent_dir))
 
 
-def agent_dataset() -> PlannerAgent:
+async def agent_dataset() -> PlannerAgent:
     import uuid
 
     from AFAAS.core.agents.planner.main import PlannerAgent
@@ -56,17 +56,20 @@ def agent_dataset() -> PlannerAgent:
         agent_goal_sentence="Prepare a family dinner",
     )
 
+    #FIXME : 
     agent = PlannerAgent(settings=agent_settings, **agent_settings.dict())
     db_config = MemoryConfig()
     db_config.json_file_path += "/pytest"
     db_settings = AbstractMemory.SystemSettings()
     db_settings.configuration = db_config
 
-    agent = PlannerAgent(
+    agent = await PlannerAgent.load(
         settings=agent_settings,
         **agent_settings.dict(),
         db=AbstractMemory.get_adapter(settings=db_settings),
     )
+    #NOTE:Hack 
+    agent.db._settings.configuration.json_file_path += "/pytest"
 
     agent._user_input_handler = UserMessageHandlers.user_input_handler
     agent._user_message_handler = UserMessageHandlers.user_message_handler

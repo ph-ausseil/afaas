@@ -231,9 +231,9 @@ class Plan(AbstractPlan):
             return None
         elif await task.task_parent() is not None:
             t = await task.task_parent()
-            await t.find_ready_subbranch()
-            if len(t) > 0:
-                return t[0]
+            ready_tasks = await t.find_ready_subbranch()
+            if len(ready_tasks) > 0:
+                return ready_tasks[0]
             else:
                 return await self._find_outer_next_task(
                     task=await task.task_parent(), origin_task=task
@@ -416,10 +416,9 @@ class Plan(AbstractPlan):
         initial_task = Task(
             agent=self.agent,
             plan_id=self.plan_id,
-            task_parent=self,
+            #task_parent=self,
             state=status,
             _task_parent_id=self.plan_id,
-            _task_predecessors_id=None,
             responsible_agent_id=None,
             task_goal=self.task_goal,
             command=Task.default_command(),
@@ -442,9 +441,8 @@ class Plan(AbstractPlan):
                     agent=self.agent,
                     plan_id=self.plan_id,
                     _task_parent_id=self.plan_id,
-                    task_parent=self,
+                    #task_parent=self,
                     state=status,
-                    _task_predecessors_id=None,
                     responsible_agent_id=None,
                     task_goal="Refine a user requirements for better exploitation by Agents",
                     command="afaas_refine_user_context",

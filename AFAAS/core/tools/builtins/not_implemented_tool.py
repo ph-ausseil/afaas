@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
 
+from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
@@ -18,6 +19,7 @@ async def not_implemented_tool(task: Task, agent: BaseAgent, **kwargs) -> None:
     @tool(
         name="not_implemented_tool",
         description="Ask a user to perform a task that is currently not supported by the system.",
+        categories=[AbstractTool.FRAMEWORK_CATEGORY]
     )
     async def inner_not_implemented_tool(task: Task, agent: BaseAgent, **kwargs) -> None:
         # Function implementation
@@ -25,6 +27,6 @@ async def not_implemented_tool(task: Task, agent: BaseAgent, **kwargs) -> None:
         if kwargs:
             new_query += "The following parameters were provided:\n" + \
                          "".join(f" - {k}: {v}\n" for k, v in kwargs.items())
-        return await user_interaction(question=new_query, task=task, agent=agent, skip_proxy=True)
+        return await user_interaction(query=new_query, task=task, agent=agent, skip_proxy=True)
 
     return await inner_not_implemented_tool(task, agent, **kwargs)

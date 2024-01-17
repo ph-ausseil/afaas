@@ -7,8 +7,8 @@ if TYPE_CHECKING:
     from AFAAS.interfaces.db.db_table import AbstractTable
     from AFAAS.interfaces.adapters import \
         CompletionModelFunction , AbstractChatModelResponse
-    from AFAAS.interfaces.tools.base import BaseToolsRegistry
-    from AFAAS.core.tools.tools import Tool
+    from AFAAS.interfaces.tools.base import AbstractToolRegistry
+    from AFAAS.core.tools.tool import Tool
     from AFAAS.interfaces.prompts.strategy import AbstractPromptStrategy
 
     from AFAAS.interfaces.agent.main import BaseAgent
@@ -54,7 +54,7 @@ class AgentMixin:
     ###
     ## Shorcuts
     ###
-    def tool_registry(self) -> BaseToolsRegistry:
+    def tool_registry(self) -> AbstractToolRegistry:
         return self._agent.tool_registry
 
     def get_tool_list(self) -> list[Tool]:

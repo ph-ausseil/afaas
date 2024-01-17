@@ -1,11 +1,13 @@
+
 import os
+import shutil
 from pathlib import Path
 
 import pytest
 
 from AFAAS.core.agents.planner.main import PlannerAgent
 from AFAAS.core.workspace import AbstractFileWorkspace
-from AFAAS.interfaces.tools.base import BaseToolsRegistry
+from AFAAS.interfaces.tools.base import AbstractToolRegistry
 from tests.dataset.agent_planner import agent_dataset
 
 
@@ -15,8 +17,8 @@ def activate_integration_tests():
     return os.getenv("RUN_INTEGRATION_TESTS", "false").lower() == "true"
 
 @pytest.fixture
-def agent() -> PlannerAgent:
-    return agent_dataset()
+async def agent() -> PlannerAgent:
+    return await agent_dataset()
 
 #FIXME: Issue #99 https://github.com/ph-ausseil/afaas/issues/99 is a prerequisite for this
 # # Higher-level fixture to intercept Plan fixtures
@@ -44,12 +46,24 @@ def agent() -> PlannerAgent:
 def reset_environment_each_test():
     # Code to reset the environment before each test
     setup_environment()
+    base_dir = Path("~/AFAAS/data/pytest").expanduser().resolve()
+    # Walk through the directory structure
+    for root, dirs, files in os.walk(base_dir):
+        for dir_name in dirs:
+            # Check if the directory name starts with 'pytest_'
+            if dir_name.startswith('pytest_'):
+                dir_path = Path(root) / dir_name
+                # Delete the directory
+                shutil.rmtree(dir_path)
+                print(f"Deleted directory: {dir_path}")
+
     delete_logs()
 
     yield
 
     # Code to clean up after each test
     delete_logs()
+
 
 
 def setup_environment():
@@ -75,12 +89,14 @@ def delete_logs():
 
 
 @pytest.fixture
-def local_workspace() -> AbstractFileWorkspace:
-    return agent_dataset().workspace
+async def local_workspace() -> AbstractFileWorkspace:
+    agent = await agent_dataset()
+    return agent.workspace
 
 
 @pytest.fixture
-def empty_tool_registry() -> BaseToolsRegistry:
-    registry = agent_dataset().tool_registry
-    registry.tools = {}
+async def empty_tool_registry() -> AbstractToolRegistry:
+    agent = await agent_dataset()
+    registry = agent.tool_registry
+    registry.tools_by_name = {}
     return registry

@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-TOOL_CATEGORY = "framework"
-TOOL_CATEGORY_TITLE = "Framework"
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
@@ -42,6 +40,7 @@ LOG = AFAASLogger(name=__name__)
             description="Optional : If given, will accurately will return a result reproducing the patern of the example",
         ),
     },
+    categories=[AbstractTool.FRAMEWORK_CATEGORY]
 )
 async def query_language_model(task: Task, 
                                agent: BaseAgent, 

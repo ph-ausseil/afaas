@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-TOOL_CATEGORY = "framework"
-TOOL_CATEGORY_TITLE = "Framework"
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
-from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
+from AFAAS.interfaces.adapters import AbstractChatModelResponse
+from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.core.tools.builtins.user_interaction import user_interaction
 from AFAAS.core.tools.builtins.query_language_model import query_language_model
 LOG = AFAASLogger(name=__name__)
@@ -35,7 +33,7 @@ LOG = AFAASLogger(name=__name__)
             required=True,
         ),  
     },
-
+    categories=[AbstractTool.FRAMEWORK_CATEGORY]
 )
 async def search_info(query : str, reasoning : str, task: Task, agent: BaseAgent) -> str:
 
