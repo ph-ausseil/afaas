@@ -10,6 +10,7 @@ from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.base import AbstractBaseTask
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.task.task import AbstractTask
+from AFAAS.interfaces.task.plan import AbstractPlan
 from AFAAS.lib.sdk.logger import AFAASLogger, logging
 from AFAAS.prompts.common.afaas_task_post_rag_update import (
     AfaasPostRagTaskUpdateStrategy,
@@ -26,9 +27,7 @@ if TYPE_CHECKING:
 class Task(AbstractTask):
 
     def __init__(self, **data):
-        LOG.trace(
-            f"Entering {self.__class__.__name__}.__init__() : {data['task_goal']}"
-        )
+
         super().__init__(**data)
         LOG.trace(
             f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
@@ -56,7 +55,8 @@ class Task(AbstractTask):
             "task_predecessors",
             "task_successors",
             "_task_parent_future",
-            "_task_parent_loading"
+            "_task_parent_loading",
+            "_task_parent"
         }
 
     ###
@@ -69,13 +69,13 @@ class Task(AbstractTask):
     def plan_id(self) -> str:
         return self.agent.plan.plan_id
 
-    _task_parent_id: str = Field()
+    _task_parent_id: str = Field(...)
     _task_parent: Optional[Task] = None
 
     async def task_parent(self) -> AbstractBaseTask:
-        LOG.trace(
-            f"{self.debug_formated_str(status = True)} {self.__class__.__name__}.task_parent()({self._task_parent_id})"
-        )
+        # LOG.trace(
+        #     f"{self.debug_formated_str(status = True)} {self.__class__.__name__}.task_parent()({self._task_parent_id})"
+        # )
         try:
             # Lazy load the parent task
             return await self.agent.plan.get_task(self._task_parent_id)
@@ -105,7 +105,7 @@ class Task(AbstractTask):
             )
         return self._task_successors
 
-    @validator("state", pre=True, always=True)
+    @validator("state", pre=True)
     def set_state(cls, new_state, values):
         task_id = values.get("task_id")
         if task_id and new_state:
@@ -117,11 +117,11 @@ class Task(AbstractTask):
                     task_id=task_id, status=new_state
                 )
         else:
-            LOG.error(f"Task {task_id} has state is None")
+            LOG.error(f"Task {task_id} state is None")
         return new_state
 
 
-    command: Optional[str] = Field(default_factory=lambda: Task.default_command())
+    command: Optional[str] = Field(default_factory=lambda: Task.default_tool())
     arguments: Optional[dict] = Field(default={})
 
     task_text_output: Optional[str]
@@ -130,14 +130,14 @@ class Task(AbstractTask):
     """ The agent summary of his own doing while performing the task as a UML diagram"""
 
 
-    async def is_ready(self) -> bool:
+    async def is_ready(self) -> bool :   
         if (
-            len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
-            and len(await self.subtasks.get_active_tasks_from_stack()) == 0
-            and (
+            (
                 self.state == TaskStatusList.BACKLOG
-                or self.state == TaskStatusList.READY
+                or self.state == TaskStatusList.READY 
             )
+            and len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
+            and len(await self.subtasks.get_active_tasks_from_stack()) == 0
         ):
             # NOTE: This remove subtasks stored in the plan as they should not be required anymore
             for task_id in self.subtasks:
@@ -154,6 +154,19 @@ class Task(AbstractTask):
             return True
 
         return False
+
+    async def close_task(self) : 
+        self.state = TaskStatusList.DONE
+        LOG.info(f"Terminating Task : {self.debug_formated_str()}")
+        #TODO: MOVE to the validator state for robustness
+
+        if len(set( await self.get_sibblings_ids()) - set(self.agent.plan.get_all_done_tasks_ids())) == 0 :
+
+            parent = await self.task_parent()
+            if (not isinstance(parent, AbstractPlan)):
+                #FIXME:  Make resumé of Parent
+                parent.state = TaskStatusList.DONE
+
 
     def add_predecessor(self, task: Task):
         """
@@ -216,7 +229,7 @@ class Task(AbstractTask):
         task_table = await db.get_table("tasks")
         await task_table.add(value=task, id=task.task_id)
 
-    async def save_in_db(self):
+    async def db_save(self):
         from AFAAS.interfaces.db.db_table import AbstractTable
 
         db = self.agent.db
@@ -271,6 +284,16 @@ class Task(AbstractTask):
 
         parent_task = await self.task_parent()
         return await parent_task.subtasks.get_all_tasks_from_stack()
+
+    async def get_sibblings_ids(self) -> list[Task]:
+        """
+        Finds the sibblings of this task.
+        """
+        if await self.task_parent() is None:
+            return []
+
+        parent_task = await self.task_parent()
+        return parent_task.subtasks.get_all_task_ids_from_stack()
 
     def __hash__(self):
         return hash(self.task_id)

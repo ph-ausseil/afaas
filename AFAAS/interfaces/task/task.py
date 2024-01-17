@@ -86,7 +86,7 @@ class AbstractTask(AbstractBaseTask):
         ...
 
     @abstractmethod
-    async def save_in_db(self):
+    async def db_save(self):
         ...
 
     @abstractmethod

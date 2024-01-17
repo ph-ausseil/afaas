@@ -15,6 +15,7 @@ LOG = AFAASLogger(name=__name__)
 if TYPE_CHECKING:
     from .stack import TaskStack
     from .task import AbstractTask
+    from .meta import TaskStatusList
 
 
 class AbstractBaseTask(abc.ABC, AFAASModel):
@@ -96,7 +97,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
     _default_command: str = None
 
     @classmethod
-    def default_command(cls) -> str:
+    def default_tool(cls) -> str:
         if cls._default_command is not None:
             return cls._default_command
 
@@ -167,6 +168,8 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
         LOG.debug(
             f"Adding task {task.debug_formated_str()} as subtask of {self.task_id}"
         )
+        task._task_parent_id = self.task_id
+        task._task_parent = self
         self.subtasks.add(task=task)
         self.agent.plan._register_new_task(task=task)
 
@@ -217,7 +220,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
             # If it's a leaf and has a parent
             if not task.subtasks and task_parent:
                 all_done = all(
-                    st.status == "DONE"
+                    st.state == TaskStatusList.DONE
                     for st in await task_parent.subtasks.get_done_tasks_from_stack()
                 )
                 if all_done:
@@ -250,9 +253,12 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
         )
         ready_tasks = []
 
-        async def check_task(task: AbstractBaseTask):
+        async def check_task(task: AbstractTask):
             if await task.is_ready():
                 ready_tasks.append(task)
+
+            if task.state != TaskStatusList.IN_PROGRESS_WITH_SUBTASKS :
+                return
 
             # Check subtasks recursively
             for subtask in await task.subtasks.get_all_tasks_from_stack():
@@ -279,9 +285,12 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
             + "- Plan.get_next_task()\n"
         )
 
-        async def check_task(task: AbstractBaseTask) -> Optional[AbstractBaseTask]:
+        async def check_task(task: AbstractTask) -> Optional[AbstractTask]:
             if await task.is_ready():
                 return task
+
+            if task.state != TaskStatusList.IN_PROGRESS_WITH_SUBTASKS :
+                return None
 
             # Check subtasks recursively
             for subtask in await task.subtasks.get_all_tasks_from_stack() or []:

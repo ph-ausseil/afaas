@@ -6,6 +6,7 @@ from AFAAS.core.agents.planner.main import PlannerAgent
 from AFAAS.interfaces.db.db import AbstractMemory, MemoryAdapterType, MemoryConfig
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.sdk.user_message_handlers import UserMessageHandlers
+from AFAAS.lib.message_common import AFAASMessage, AFAASMessageStack
 
 LOG = AFAASLogger(name=__name__)
 
@@ -39,7 +40,8 @@ LOG = AFAASLogger(name=__name__)
 # sys.path.append(str(parent_dir))
 
 
-async def agent_dataset() -> PlannerAgent:
+async def agent_dataset(user_id = "pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a", 
+                        agent_id = "pytest_A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c" ) -> PlannerAgent:
     import uuid
 
     from AFAAS.core.agents.planner.main import PlannerAgent
@@ -48,29 +50,32 @@ async def agent_dataset() -> PlannerAgent:
 
     LOG = AFAASLogger(name=__name__)
 
-    user_id = "pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a"
 
     agent_settings: PlannerAgent.SystemSettings = PlannerAgent.SystemSettings(
-        user_id=user_id,
-        agent_id="pytest_A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c",
+        user_id= user_id,
+        agent_id= agent_id,
         agent_goal_sentence="Prepare a family dinner",
     )
 
-    #FIXME : 
-    agent = PlannerAgent(settings=agent_settings, **agent_settings.dict())
-    db_config = MemoryConfig()
-    db_config.json_file_path += "/pytest"
-    db_settings = AbstractMemory.SystemSettings()
-    db_settings.configuration = db_config
+    # #FIXME : 
+    # #agent = PlannerAgent(settings=agent_settings, **agent_settings.dict())
+    # db_config = MemoryConfig()
+    # db_config.json_file_path += "/pytest"
+    # db_settings = AbstractMemory.SystemSettings()
+    # db_settings.configuration = db_config
+    # db = AbstractMemory.get_adapter(settings=db_settings)
 
-    agent = await PlannerAgent.load(
-        settings=agent_settings,
-        **agent_settings.dict(),
-        db=AbstractMemory.get_adapter(settings=db_settings),
-    )
-    #NOTE:Hack 
-    agent.db._settings.configuration.json_file_path += "/pytest"
+    # agent = await PlannerAgent.load(
+    #     settings=agent_settings,
+    #     **agent_settings.dict(),
+    #     db=db ,
+    # )
+    # #NOTE:Hack 
+    # #agent.db._settings.configuration.json_file_path += "/pytest"
+    agent = PlannerAgent(settings=agent_settings , **agent_settings.dict())
 
+    agent.message_agent_user = AFAASMessageStack(db=agent.db)
     agent._user_input_handler = UserMessageHandlers.user_input_handler
     agent._user_message_handler = UserMessageHandlers.user_message_handler
+    await agent.db_create()
     return agent

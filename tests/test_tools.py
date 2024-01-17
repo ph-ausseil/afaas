@@ -75,6 +75,7 @@ def example_tool():
     )
 
 
+@pytest.mark.asyncio
 def test_tool_call(example_tool: Tool, agent: BaseAgent):
     """Test that Tool(*args) calls and returns the result of exec_function(*args)."""
     result = example_tool(arg1=1, arg2="test", agent=agent)

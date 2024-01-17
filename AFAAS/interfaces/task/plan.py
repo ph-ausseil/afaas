@@ -61,7 +61,7 @@ class AbstractPlan(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def get_first_ready_tasks(
+    async def get_first_ready_tasks(
         self, task_ids_set: Optional[list[str]] = None
     ) -> AbstractTask:
         ...
@@ -80,7 +80,7 @@ class AbstractPlan(AbstractBaseTask):
         ...
 
     @abstractmethod
-    def save(self):
+    def db_save(self):
         ...
 
     @classmethod

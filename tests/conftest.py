@@ -5,47 +5,81 @@ from pathlib import Path
 
 import pytest
 
-from AFAAS.core.agents.planner.main import PlannerAgent
+from AFAAS.core.agents.planner.main import PlannerAgent, Plan
 from AFAAS.core.workspace import AbstractFileWorkspace
 from AFAAS.interfaces.tools.base import AbstractToolRegistry
 from tests.dataset.agent_planner import agent_dataset
+from AFAAS.lib.task.task import Task
 
+os.environ['CI_RUNTIME'] = 'true'
+
+if os.getenv('_PYTEST_RAISE', "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        raise excinfo.value
+
+    # def pytest_exception_interact(node, call, report):
+    #     print( call.excinfo.traceback[0] )
+    #     pass
 
 @pytest.fixture(scope="session")
 def activate_integration_tests():
     # Use an environment variable to control the activation of integration tests
+
     return os.getenv("RUN_INTEGRATION_TESTS", "false").lower() == "true"
 
+# @pytest.fixture(scope='function', autouse=True)
+# def capture_fixture_name(request):
+#     yield
+#     if hasattr(request.node, 'rep_setup'):
+#         if request.node.parent.get_closest_marker("pytest.mark.asyncio"):
+#             # This is an asynchronous test
+#             fixture_name = request.node.function.__dict__.get('fixtureinfo', None)
+#             if fixture_name:
+#                 request.node.user_properties.append(("Fixture Used (Async)", fixture_name.name))
+#         else:
+#             # This is a synchronous test
+#             fixture_name = request.node.function.__dict__.get('fixtureinfo', None)
+#             if fixture_name:
+#                 request.node.user_properties.append(("Fixture Used (Sync)", fixture_name.name))
+
+@pytest.mark.asyncio
 @pytest.fixture
 async def agent() -> PlannerAgent:
     return await agent_dataset()
 
-#FIXME: Issue #99 https://github.com/ph-ausseil/afaas/issues/99 is a prerequisite for this
 # # Higher-level fixture to intercept Plan fixtures
+# @pytest.mark.asyncio
 # @pytest.fixture(autouse=True)
-# def intercept_plan_fixtures(request):
+# async def intercept_plan_fixtures(request):
 #     # Identify fixtures that are used in the test and start with 'plan_'
 #     plan_fixture_names = [name for name in request.fixturenames if name.startswith('plan_')]
 
 #     for fixture_name in plan_fixture_names:
-#         plan = request.getfixturevalue(fixture_name)
-#         plan.agent.create_in_db()
-#         plan.create_in_db(agent = plan.agent)
+#         plan : Plan = request.getfixturevalue(fixture_name)
+#         await plan.db_create()
 
+# @pytest.mark.asyncio
 # @pytest.fixture(autouse=True)
-# def intercept_plan_fixtures(request):
+# def intercept_task_fixtures(request):
 #     # Identify fixtures that are used in the test and start with 'plan_'
 #     task_fixture_names = [name for name in request.fixturenames if name.startswith('task_')]
 
 #     for fixture_name in task_fixture_names:
-#         task = request.getfixturevalue(fixture_name)
-#         task.agent.create_in_db()
-#         task.agent.plan.create_in_db(agent = task.agent)
+#         task : Task = request.getfixturevalue(fixture_name)
+
+#         task.agent.plan.db_save()
 
 @pytest.fixture(scope="function", autouse=True)
 def reset_environment_each_test():
     # Code to reset the environment before each test
     setup_environment()
+    delete_logs()
     base_dir = Path("~/AFAAS/data/pytest").expanduser().resolve()
     # Walk through the directory structure
     for root, dirs, files in os.walk(base_dir):
@@ -57,12 +91,11 @@ def reset_environment_each_test():
                 shutil.rmtree(dir_path)
                 print(f"Deleted directory: {dir_path}")
 
-    delete_logs()
-
     yield
 
     # Code to clean up after each test
     delete_logs()
+
 
 
 

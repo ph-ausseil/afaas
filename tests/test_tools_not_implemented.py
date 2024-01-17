@@ -9,7 +9,8 @@ from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.interfaces.agent.main import BaseAgent
 from tests.dataset.plan_familly_dinner import (
     Task,
-    plan_familly_dinner,
+    _plan_familly_dinner,
+    plan_familly_dinner_with_tasks_saved_in_db,
     plan_step_0,
     task_ready_no_predecessors_or_subtasks,
     default_task

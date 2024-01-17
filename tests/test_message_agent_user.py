@@ -5,7 +5,8 @@ from AFAAS.lib.message_common import AFAASMessage, AFAASMessageStack
 from AFAAS.lib.message_agent_user import MessageAgentUser, Questions, Emiter 
 from tests.dataset.plan_familly_dinner import (
     Task,
-    plan_familly_dinner,
+    _plan_familly_dinner,
+    plan_familly_dinner_with_tasks_saved_in_db,
     plan_step_0,
     task_ready_no_predecessors_or_subtasks,
     default_task
@@ -47,8 +48,8 @@ async def test_load_method(default_task : Task):
     mock_table.list.return_value = AsyncMock(return_value=[AFAASMessage(message_id="MESSAGE123")])
 
     result = await default_task.agent.message_agent_user.load(default_task.agent , MessageAgentUser)
-    assert isinstance(result, list)
-    mock_table.list.assert_called_once()
+    assert isinstance(result, AFAASMessageStack)
+    assert isinstance(result._messages, list)
 
 
 @pytest.mark.asyncio

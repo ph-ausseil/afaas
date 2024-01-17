@@ -50,7 +50,7 @@ async def afaas_make_initial_plan(task: Task, agent: BaseAgent) -> None:
     )
     agent.plan.subtasks.sort(key=lambda t: t.priority, reverse=True)
     agent._loop._current_task = agent.plan[-1]
-    agent._loop._current_task.context.status = TaskStatusList.READY
+    agent._loop._current_task.context.state = TaskStatusList.READY
     return plan
 
 
@@ -79,5 +79,5 @@ async def afaas_make_initial_plan(task: Task, agent: BaseAgent) -> None:
 #     )
 #     agent.plan.tasks.sort(key=lambda t: t.priority, reverse=True)
 #     agent._loop._current_task = agent.plan[-1]
-#     agent._loop._current_task.context.status = TaskStatusList.READY
+#     agent._loop._current_task.context.state = TaskStatusList.READY
 #     return plan

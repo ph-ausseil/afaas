@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import asyncio
 import uuid
 import threading
 from typing import ClassVar
@@ -81,9 +81,7 @@ class Plan(AbstractPlan):
                 task = Task(**task_as_dict, agent=agent)
                 instance._register_task(task=task)
 
-                # self._all_task_ids.append(task.task_id)
                 if task.state == TaskStatusList.READY:
-                    LOG.notice("DEBUG : Task is ready may have subtasks...")
                     instance._registry_update_task_status_in_list(
                         task_id=task.task_id, status=TaskStatusList.READY
                     )
@@ -93,22 +91,20 @@ class Plan(AbstractPlan):
                     )
         return instance
 
-    @classmethod
-    async def db_create(cls, agent: BaseAgent):
-        LOG.debug(f"Creating plan for agent {agent.agent_id}")
-        await agent.db.get_table("plans")
+    # @classmethod
+    # async def db_create(cls, agent: BaseAgent):
+    #     LOG.debug(f"Creating plan for agent {agent.agent_id}")
+    #     await agent.db.get_table("plans")
 
-        plan = cls(
-            agent_id=agent.agent_id,
-            task_goal=agent.agent_goal_sentence,
-            tasks=[],
-            agent=agent,
-        )
+    #     plan = cls(
+    #         agent_id=agent.agent_id,
+    #         task_goal=agent.agent_goal_sentence,
+    #         tasks=[],
+    #         agent=agent,
+    #     )
 
-        plan._create_initial_tasks(status=TaskStatusList.READY)
-
-        await plan.save(creation=True)
-        return plan
+    #     await plan.db_save(creation=True)
+    #     return plan
 
     @classmethod
     async def get_plan_from_db(cls, plan_id: str, agent: BaseAgent) -> Plan:
@@ -267,7 +263,6 @@ class Plan(AbstractPlan):
         Get the all ready tasks from Plan._ready_task_ids
         """
         LOG.debug(f"Getting ready tasks from plan {self.plan_id}")
-        #FIXME:v0.0.2 task_ids_set is not used
 
         ready_tasks = set(self._ready_task_ids)
         if(task_ids_set is not None) and (len(task_ids_set) > 0):
@@ -317,7 +312,9 @@ class Plan(AbstractPlan):
         return self._loaded_tasks_dict.pop(task_id)
 
     def _registry_update_task_status_in_list(
-        self, task_id: Task, status: TaskStatusList
+        self, 
+        status: TaskStatusList, 
+        task_id : str
     ):
         """
         Update the status of a task in the task list.
@@ -330,13 +327,26 @@ class Plan(AbstractPlan):
             ValueError: If the status is not a valid TaskStatusList value.
 
         """
+
         LOG.debug(f"Updating task {task_id} status to {status}")
         if status == TaskStatusList.READY:
-            self._ready_task_ids.append(task_id)
+            if (task_id not in self._ready_task_ids ) : 
+                self._ready_task_ids.append(task_id)
+        if status == TaskStatusList.IN_PROGRESS_WITH_SUBTASKS : 
+            if task_id in self._ready_task_ids:
+                self._ready_task_ids.remove(task_id)
         elif status == TaskStatusList.DONE:
             if task_id in self._ready_task_ids:
                 self._ready_task_ids.remove(task_id)
-            self._done_task_ids.append(task_id)
+            elif task_id not in self._done_task_ids : 
+                self._done_task_ids.append(task_id)
+
+            # if len(set(task.get_sibblings_ids()) - set(task.agent.plan.get_all_done_tasks_ids())) == 0 :
+            #     loop = asyncio.get_event_loop()
+            #     parent = loop.run_until_complete(task.task_parent())
+            #     if (not isinstance(parent, Plan)):
+            #         #FIXME:  Make resumé of Parent
+            #         parent.state = TaskStatusList.DONE
 
     def _register_new_task(self, task: Task):
         """
@@ -411,7 +421,7 @@ class Plan(AbstractPlan):
     #############################################################################################
 
 
-    def _create_initial_tasks(self, status: TaskStatusList):
+    def create_initial_tasks(self, status: TaskStatusList):
         LOG.debug(f"Creating initial task for plan {self.plan_id}")
         initial_task = Task(
             agent=self.agent,
@@ -421,7 +431,7 @@ class Plan(AbstractPlan):
             _task_parent_id=self.plan_id,
             responsible_agent_id=None,
             task_goal=self.task_goal,
-            command=Task.default_command(),
+            command=Task.default_tool(),
             long_description="This is the initial task of the plan, no task has been performed yet and this tasks will consist in splitting the goal into subtasks",
             arguments={"note_to_agent_length": 400},
             acceptance_criteria=["A plan has been made to achieve the specific task"],
@@ -459,7 +469,16 @@ class Plan(AbstractPlan):
 
         self.add_tasks(tasks=initial_task_list)
 
-    async def save(self, creation=False):
+    async def db_create(self):
+
+        agent = self.agent
+        if agent:
+            db = agent.db
+            self.agent_id = agent.agent_id
+            plan_table = await db.get_table("plans")
+            await plan_table.add(value=self, id=self.plan_id)
+
+    async def db_save(self) :        
         ###
         # Step 1 : Lazy saving : Update Existing Tasks
         ###
@@ -469,7 +488,7 @@ class Plan(AbstractPlan):
                 task: Task = self._loaded_tasks_dict.get(task_id)
                 if task:
                     LOG.db_log(f"Saving task {task.task_goal}")
-                    await task.save_in_db()  # Save the task
+                    await task.db_save()  # Save the task
 
         ###
         # Step 2 : Lazy saving : Create New Tasks
@@ -490,15 +509,10 @@ class Plan(AbstractPlan):
         agent = self.agent
         if agent:
             db = agent.db
-
             plan_table = await db.get_table("plans")
-            if creation:
-                await plan_table.add(value=self, id=self.plan_id)
-            else:
-                await plan_table.update(
-                    plan_id=self.plan_id, agent_id=self.agent.agent_id, value=self
-                )
-
+            await plan_table.update(
+                plan_id=self.plan_id, agent_id=self.agent.agent_id, value=self
+            )
 
     # endregion
 

@@ -112,7 +112,7 @@ class BaseNoSQLTable(AbstractTable):
         if isinstance(value, AFAASModel):
             value = value.dict_db()
         elif isinstance(value, Configurable):
-            value.dict()
+            value = value.dict()
         else:
             LOG.warning("Class not hinheriting from AFAASModel")
             value = self.__class__.serialize_value(value)

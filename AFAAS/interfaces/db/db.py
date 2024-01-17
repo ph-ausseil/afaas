@@ -4,6 +4,7 @@ import abc
 import base64
 import json
 import uuid
+import os
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -43,7 +44,7 @@ class MemoryConfig(SystemConfiguration):
         description="The type of db adapter to use.",
     )
     json_file_path: str = Field(
-        str(Path("~/AFAAS/data/").expanduser().resolve()),
+        str(Path("~/AFAAS/data/pytest").expanduser().resolve()),
         description="The file path for the JSON file when using the JSONFileMemory adapter.",
     )
     # sqllikejson_file_path=str(Path("~/AFAAS/sqlikejsondata/").expanduser().resolve()),

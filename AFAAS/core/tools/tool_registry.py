@@ -245,7 +245,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
 
     def register(self, tool: AbstractTool) -> None:
         if tool.name in self.tools_by_name:
-            LOG.warning(f"Tool '{tool.name}' already registered and will be overwritten!")
+            LOG.notice(f"Tool '{tool.name}' already registered and will be overwritten!")
         self.tools_by_name[tool.name] = tool
 
         # if tool.name in self.tool_aliases:
