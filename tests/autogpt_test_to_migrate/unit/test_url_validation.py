@@ -1,3 +1,4 @@
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.url_utils.validators import validate_url
 from pytest import raises

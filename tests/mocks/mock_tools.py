@@ -1,7 +1,7 @@
 from AFAAS.core.tools.tool_decorator import tool
 from AFAAS.lib.utils.json_schema import JSONSchema
 
-COMMAND_CATEGORY = "mock"
+TOOL_CATEGORY = "mock"
 
 
 @tool(

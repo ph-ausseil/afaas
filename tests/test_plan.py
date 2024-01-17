@@ -31,6 +31,7 @@ from .dataset.plan_familly_dinner import (
     task_with_mixed_predecessors,
     task_with_ongoing_subtasks,
     task_with_unmet_predecessors,
+    default_task
 )
 
 # @pytest.mark.parametrize(

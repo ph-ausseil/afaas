@@ -1,3 +1,4 @@
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 
@@ -17,7 +18,7 @@ async def test_browse_website_nonexistent_url(
         await read_webpage(
             url=url,
             question=question,
-            agent=task_ready_no_predecessors_or_subtasks.agent,
+            agent=default_task.agent,
         )
 
         # Sanity check that the response is not too long

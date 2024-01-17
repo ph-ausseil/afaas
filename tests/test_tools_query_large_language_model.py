@@ -2,6 +2,14 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from AFAAS.core.tools.builtins.query_language_model import query_language_model
 
+from tests.dataset.plan_familly_dinner import (
+    Task,
+    plan_familly_dinner,
+    plan_step_0,
+    task_ready_no_predecessors_or_subtasks,
+    default_task
+)
+
 @pytest.mark.asyncio
 async def test_query_language_model_returns_string():
     # Mock the Task and BaseAgent objects
@@ -27,13 +35,19 @@ async def test_query_language_model_returns_string():
 
 
 @pytest.mark.asyncio
-async def test_query_language_model_integration(activate_integration_tests, mock_agent, mock_task):
+async def test_query_language_model_integration(activate_integration_tests, default_task : Task):
+
     if not activate_integration_tests:
         pytest.skip("Integration tests are not activated")
 
-    # Here, mock_agent.execute_strategy is not mocked
-    # Add the necessary setup for mock_agent and mock_task for a real scenario
-
     # Call the function with the real or semi-real objects
-    result = await query_language_model(mock_task, mock_agent)
+    result = await query_language_model(
+        task = default_task, 
+        agent= default_task.agent,
+        query="How to plan a familly dinner ?",
+        format="Aswer in 3 paragraphs",
+        persona="A drunk Paraguayan sailor",
+        )
+
+    assert  isinstance(result, str)
 

@@ -5,6 +5,7 @@ import uuid
 from AFAAS.core.agents.planner.main import PlannerAgent
 from AFAAS.interfaces.db.db import AbstractMemory, MemoryAdapterType, MemoryConfig
 from AFAAS.lib.sdk.logger import AFAASLogger
+from AFAAS.lib.sdk.user_message_handlers import UserMessageHandlers
 
 LOG = AFAASLogger(name=__name__)
 
@@ -66,4 +67,7 @@ def agent_dataset() -> PlannerAgent:
         **agent_settings.dict(),
         db=AbstractMemory.get_adapter(settings=db_settings),
     )
+
+    agent._user_input_handler = UserMessageHandlers.user_input_handler
+    agent._user_message_handler = UserMessageHandlers.user_message_handler
     return agent

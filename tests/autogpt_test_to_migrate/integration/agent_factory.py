@@ -1,10 +1,11 @@
+from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import (
     PlannerAgent,
     PlannerAgentConfiguration,
     PlannerAgentSettings,
 )
-from autogpt.memory.vector import get_memory
+
 from autogpt.models.command_registry import CommandRegistry
 
 from AFAAS.configs.config import AIProfile, Config
