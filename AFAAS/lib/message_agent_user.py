@@ -1,3 +1,4 @@
+from __future__ import annotations
 import enum
 import uuid
 from typing import Optional
@@ -41,7 +42,7 @@ class Questions(AFAASModel):
 
     @staticmethod
     def generate_uuid():
-        return "Q" + str(uuid.uuid4())
+        return "QUE" + str(uuid.uuid4())
 
     message: str
     type: Optional[QuestionTypes]
@@ -49,18 +50,26 @@ class Questions(AFAASModel):
     items: Optional[list[QuestionItems]]
 
 
-class emiter(enum.Enum):
+class Emiter(enum.Enum):
     USER = "USER"
     AGENT = "AGENT"
 
 
 class MessageAgentUser(AFAASMessage):
-    message_id: str = "MUA" + str(uuid.uuid4())
+
+    message_id: str = Field(default_factory=lambda: MessageAgentUser.generate_uuid())
     message_type: str = AFAASMessageType.AGENT_USER.value
-    emitter: emiter
+    emitter: Emiter
     user_id: str
     agent_id: str  # Always PlannerAgent not ProxyAgent
     message: str
     question: Questions = None
 
     _table_name = "message_agent_user"
+
+    def get_table_name(self):
+        return self._table_name
+
+    @classmethod
+    def generate_uuid(cls) : 
+        return "MAU" + str(uuid.uuid4())

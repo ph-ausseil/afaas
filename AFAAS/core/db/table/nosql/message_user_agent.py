@@ -4,7 +4,7 @@ from .....interfaces.db.table.nosql.base import BaseNoSQLTable
 
 
 class MessagesUserAgentTable(BaseNoSQLTable):
-    table_name = "messages_history"
+    table_name = "message_agent_user" #  FIXME:0.0.4 MessageAgentUser.get_table_name()
     primary_key = "message_id"
     secondary_key = "agent_id"
     third_key = "user_id"
