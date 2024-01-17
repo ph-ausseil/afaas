@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import functools
 import inspect
+import asyncio
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, ParamSpec, TypeVar
 
 from langchain_core.tools import BaseTool
 
 from AFAAS.interfaces.tools.tool_output import ToolOutput
 from AFAAS.interfaces.tools.tool_parameters import ToolParameter
+
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
@@ -61,18 +63,24 @@ def tool(
             success_check_callback=success_check_callback,
         )
 
+        from AFAAS.core.tools.builtins.not_implemented_tool import not_implemented_tool
         if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
-                return await func(*args, **kwargs)
+                try :
+                    return await func(*args, **kwargs)
+                except NotImplementedError as e:
+                    return await not_implemented_tool(*args, **kwargs)
 
         else:
 
             @functools.wraps(func)
             def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
-                return func(*args, **kwargs)
-
+                try :
+                    return func(*args, **kwargs)
+                except NotImplementedError as e:
+                    return asyncio.run(not_implemented_tool(*args, **kwargs))
         setattr(wrapper, "tool", cmd)
         setattr(wrapper, AFAAS_TOOL_IDENTIFIER, True)
 
