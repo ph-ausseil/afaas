@@ -64,7 +64,7 @@ class Task(AbstractTask):
     ###
     task_id: str = Field(default_factory=lambda: Task.generate_uuid())
 
-    plan_id: str = Field()
+    #plan_id: str = Field(...)
     @property
     def plan_id(self) -> str:
         return self.agent.plan.plan_id
@@ -157,9 +157,9 @@ class Task(AbstractTask):
 
     async def close_task(self) : 
         self.state = TaskStatusList.DONE
+
         LOG.info(f"Terminating Task : {self.debug_formated_str()}")
         #TODO: MOVE to the validator state for robustness
-
         if len(set( await self.get_sibblings_ids()) - set(self.agent.plan.get_all_done_tasks_ids())) == 0 :
 
             parent = await self.task_parent()

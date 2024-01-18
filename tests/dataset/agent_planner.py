@@ -43,6 +43,8 @@ LOG = AFAASLogger(name=__name__)
 async def agent_dataset(user_id = "pytest_U3ba0a1c6-8cdf-4daa-a244-297b2057146a", 
                         agent_id = "pytest_A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c" ) -> PlannerAgent:
     import uuid
+    # user_id = "pytest_USE" + str(uuid.uuid4())
+    # agent_id = "pytest_AGE" + str(uuid.uuid4())
 
     from AFAAS.core.agents.planner.main import PlannerAgent
     from AFAAS.interfaces.db.db import AbstractMemory, MemoryAdapterType, MemoryConfig

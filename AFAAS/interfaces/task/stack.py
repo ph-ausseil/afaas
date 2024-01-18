@@ -118,7 +118,7 @@ class TaskStack(AFAASModel):
         """
         Get all ready tasks.
         """
-        ready_task_ids_set = set(await self.parent_task.agent.plan.get_ready_tasks())
+        ready_task_ids_set = set(self.parent_task.agent.plan.get_ready_tasks_ids())
 
         common_task_ids = ready_task_ids_set.intersection(self._task_ids)
 
@@ -130,7 +130,7 @@ class TaskStack(AFAASModel):
         """
         Get all ready tasks.
         """
-        done_task_ids_set = set(await self.parent_task.agent.plan.get_done_tasks())
+        done_task_ids_set = set(self.parent_task.agent.plan.get_all_done_tasks_ids())
 
         common_task_ids = done_task_ids_set.intersection(self._task_ids)
 
@@ -142,7 +142,7 @@ class TaskStack(AFAASModel):
         """
         Get all active tasks.
         """
-        active_task_ids_set = set(await self.parent_task.agent.plan.get_active_tasks())
+        active_task_ids_set = set(self.parent_task.agent.plan.get_active_tasks_ids())
 
         common_task_ids = active_task_ids_set.intersection(self._task_ids)
 

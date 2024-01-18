@@ -10,8 +10,11 @@ from AFAAS.core.workspace import AbstractFileWorkspace
 from AFAAS.interfaces.tools.base import AbstractToolRegistry
 from tests.dataset.agent_planner import agent_dataset
 from AFAAS.lib.task.task import Task
+from AFAAS.lib.sdk.logger import AFAASLogger, logging
 
-os.environ['CI_RUNTIME'] = 'true'
+# LOG = AFAASLogger(name=__name__)
+# LOG.setLevel(logging.ERROR)
+os.environ['PYTEST_RUN'] = 'true'
 
 if os.getenv('_PYTEST_RAISE', "0") != "0":
 
@@ -49,7 +52,7 @@ def activate_integration_tests():
 #                 request.node.user_properties.append(("Fixture Used (Sync)", fixture_name.name))
 
 @pytest.mark.asyncio
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def agent() -> PlannerAgent:
     return await agent_dataset()
 
@@ -77,19 +80,15 @@ async def agent() -> PlannerAgent:
 
 @pytest.fixture(scope="function", autouse=True)
 def reset_environment_each_test():
-    # Code to reset the environment before each test
+    # AFAASLogger.setLevel(logging.ERROR)
     setup_environment()
     delete_logs()
     base_dir = Path("~/AFAAS/data/pytest").expanduser().resolve()
+    print(base_dir)
     # Walk through the directory structure
     for root, dirs, files in os.walk(base_dir):
-        for dir_name in dirs:
-            # Check if the directory name starts with 'pytest_'
-            if dir_name.startswith('pytest_'):
-                dir_path = Path(root) / dir_name
-                # Delete the directory
-                shutil.rmtree(dir_path)
-                print(f"Deleted directory: {dir_path}")
+        shutil.rmtree(root)
+        print(f"Deleted directory: {root}")
 
     yield
 
@@ -121,15 +120,27 @@ def delete_logs():
                     print("Error while deleting file:", e)
 
 
-@pytest.fixture
+@pytest.fixture(scope="function", autouse=True)
 async def local_workspace() -> AbstractFileWorkspace:
     agent = await agent_dataset()
     return agent.workspace
 
 
-@pytest.fixture
+@pytest.fixture(scope="function", autouse=True)
 async def empty_tool_registry() -> AbstractToolRegistry:
     agent = await agent_dataset()
     registry = agent.tool_registry
     registry.tools_by_name = {}
     return registry
+
+
+@pytest.fixture(scope="function", autouse=True)
+async def local_workspace() -> AbstractFileWorkspace:
+    agent = await agent_dataset()
+    return agent.workspace
+
+# # In your pytest fixture
+# @pytest.fixture(scope="function", autouse=True)
+# def reset_singleton():
+#      Plan.reset_instance()
+#      yield

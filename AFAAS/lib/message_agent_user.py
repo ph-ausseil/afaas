@@ -4,6 +4,7 @@ import uuid
 from typing import Optional
 
 from pydantic import Field
+import time
 
 from AFAAS.configs.schema import AFAASMessageType, AFAASModel
 from AFAAS.lib.message_common import AFAASMessage
@@ -72,4 +73,4 @@ class MessageAgentUser(AFAASMessage):
 
     @classmethod
     def generate_uuid(cls) : 
-        return "MAU" + str(uuid.uuid4())
+        return "MAU" + str(time.time()) + str(uuid.uuid4())

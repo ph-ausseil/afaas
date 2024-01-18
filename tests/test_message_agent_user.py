@@ -49,7 +49,7 @@ async def test_load_method(default_task : Task):
 
     result = await default_task.agent.message_agent_user.load(default_task.agent , MessageAgentUser)
     assert isinstance(result, AFAASMessageStack)
-    assert isinstance(result._messages, list)
+    assert isinstance(result._messages, dict)
 
 
 @pytest.mark.asyncio
@@ -69,16 +69,18 @@ async def test_load_method_integration(default_task : Task):
         message="Sample message 2"
     )
 
-    nb_loaded_messages_before = await agent.message_agent_user.load(agent , MessageAgentUser)
-
+    loaded_messages_before_creation = await agent.message_agent_user.load(agent , MessageAgentUser)
+    assert len(agent.message_agent_user)  == 0
     agent.message_agent_user = AFAASMessageStack(db=agent.db) 
+
+    assert len(agent.message_agent_user)  == 0
     await agent.message_agent_user.db_create(message=message1)
     await agent.message_agent_user.db_create(message=message2)
 
-    # Now call the load method
+    assert len(agent.message_agent_user)  == 2
     loaded_messages = await agent.message_agent_user.load(agent , MessageAgentUser)
 
     # Validate that the loaded messages match what was inserted
-    assert len(loaded_messages) == len(nb_loaded_messages_before) + 2
-    assert any(message.message == "Sample message 1" for message in loaded_messages)
-    assert any(message.message == "Sample message 2" for message in loaded_messages)
+    assert len(loaded_messages) == len(loaded_messages_before_creation) + 2
+    assert any(v.message == "Sample message 1" for k , v in loaded_messages)
+    assert any(v.message == "Sample message 2" for k , v  in loaded_messages)

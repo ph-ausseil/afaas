@@ -20,11 +20,11 @@ class AFAASMessage(ABC, AFAASModel):
 
 
 class AFAASMessageStack(AFAASModel):
-    _messages: list[AFAASMessage] = []
+    _messages: dict[AFAASMessage] = {}
     db: AbstractMemory
 
     async def db_create(self, message: AFAASMessage):
-        self._messages.append(message)
+        self._messages[message.message_id] = message
         table = await self.db.get_table(message._table_name)
         await table.add(value= message , id = message.message_id)
         return message.message_id
@@ -32,9 +32,9 @@ class AFAASMessageStack(AFAASModel):
     def __init__(self, **data: Any):
         super().__init__(**data)
         if not "_messages" in data.keys():
-            self._messages = []
+            self._messages = {}
 
-    def dict(self, *args, **kwargs) -> list[str]:
+    def dict(self, *args, **kwargs) -> dict[str]:
         return self._messages
 
     def json(self, *args, **kwargs):
@@ -44,7 +44,7 @@ class AFAASMessageStack(AFAASModel):
         return len(self._messages)
 
     def __iter__(self):
-        return iter(self._messages)
+        return iter(self._messages.items())
 
     @classmethod
     def __get_validators__(cls) -> Generator:
@@ -66,7 +66,7 @@ class AFAASMessageStack(AFAASModel):
 
 
 
-    async def load(self, agent : BaseAgent, cls : Type[AFAASMessage]) -> list[AFAASMessage]:
+    async def load(self, agent : BaseAgent, cls : Type[AFAASMessage]) -> dict[AFAASMessage]:
         from AFAAS.interfaces.db.db_table import AbstractTable
         table = await agent.db.get_table(cls._table_name)
         list = await table.list(
@@ -83,6 +83,8 @@ class AFAASMessageStack(AFAASModel):
             order_direction="desc",
         )
         for message in list:
-            self._messages.append(cls(**message))
-
+            if message['message_id'] not in self._messages.keys() : 
+                self._messages[message['message_id']] = cls(**message)
+            else : 
+                LOG.warning(f"Message {message['message_id']} already loaded")
         return self

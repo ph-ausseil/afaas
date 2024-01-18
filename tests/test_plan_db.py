@@ -15,10 +15,7 @@ from .dataset.agent_planner import agent_dataset
 from .dataset.plan_familly_dinner import (
     plan_step_0,
     plan_step_1,
-    plan_step_2a,
-    plan_step_2b,
-    plan_step_2c,
-    plan_step_2d,
+    plan_step_2,
     plan_step_3,
     plan_step_4,
     plan_step_5,
@@ -28,14 +25,16 @@ from .dataset.plan_familly_dinner import (
     plan_step_9,
     plan_step_10,
     plan_step_11,
+    plan_step_12,
+    plan_step_13,
+    plan_step_14,
     task_awaiting_preparation,
-    task_ready_all_predecessors_done,
-    task_ready_all_subtasks_done,
     task_ready_no_predecessors_or_subtasks,
     task_with_mixed_predecessors,
     task_with_ongoing_subtasks,
     task_with_unmet_predecessors,
-    default_task
+    default_task,
+    plan_with_no_task
 )
 from .utils.ascii_tree import print_tree , pytest_terminal_summary , test_trees
 
@@ -64,7 +63,7 @@ async def mock_plan_data(agent, tasks):
         dict: A dictionary representing the mock plan data.
     """
     return {
-        "plan_id": "mock_plan_" + agent.agent_id,
+        "plan_id": "mock_plan_" + str(uuid.uuid4()),
         "agent": agent,  # Assuming BaseAgent can be instantiated like this
         "tasks": tasks,
         "task_goal": agent.agent_goal_sentence
@@ -91,37 +90,47 @@ async def mock_plan_with_task_states(agent):
 
 
 @pytest.mark.asyncio
-async def test_load_plan_no_tasks(agent):
-    # Assuming a function to mock plan data
-    plan_data = await mock_plan_data(agent = agent, tasks=[])
-    loaded_plan = await Plan._load(**plan_data)
-    assert len(loaded_plan.get_all_tasks_ids()) == 0
+async def test_load_plan_no_tasks(plan_with_no_task):
+    assert len(plan_with_no_task.get_all_tasks_ids()) == 0
 
 @pytest.mark.asyncio
-async def test_load_plan_with_various_task_states(agent):
+async def test_load_plan_with_various_task_states(plan_with_no_task):
     # Mock plan data with tasks in different states
+    # prepare : Plan = await Plan._load(plan_id = plan_with_no_task.plan_id, agent = plan_with_no_task.agent)
 
-    plan_data = await mock_plan_data(agent = agent, tasks=[])
-    plan = Plan(**plan_data)
-    await plan.db_create()
-    plan.add_tasks(tasks=[
-        Task(agent = agent, **{"task_id": "task1", 
+    # assert prepare is None 
+
+    await plan_with_no_task.db_create()
+    plan_with_no_task.add_tasks(tasks=[
+        Task(agent = plan_with_no_task.agent , 
+             plan_id = plan_with_no_task.plan_id,
+             **{"task_id": "task1", 
                       "state": TaskStatusList.READY, 
                       "task_goal" : "Task Goal 1"},
                       ),
-        Task(agent = agent, **{"task_id": "task2", 
+        Task(agent = plan_with_no_task.agent , 
+             plan_id = plan_with_no_task.plan_id,
+             **{"task_id": "task2", 
                      "state": TaskStatusList.IN_PROGRESS_WITH_SUBTASKS, 
                      "task_goal" : "Task Goal 2"},
                       ),
-        Task(agent = agent, **{"task_id": "task3", 
+        Task(agent = plan_with_no_task.agent , 
+             plan_id = plan_with_no_task.plan_id,
+             **{"task_id": "task3", 
                      "state": TaskStatusList.DONE, 
                      "task_goal" : "Task Goal 3"},
                       )
     ])
-    await plan.db_save()
+    len(plan_with_no_task.get_all_tasks_ids()) == 3
+    await plan_with_no_task.db_save()
+    len(plan_with_no_task.get_all_tasks_ids()) == 3
 
-    plan_data = await mock_plan_with_task_states(agent = agent)
-    loaded_plan = await Plan._load(**plan_data)
+    plan_id = plan_with_no_task.plan_id
+    agent = plan_with_no_task.agent
+
+    Plan._instance = {}
+   #plan_data = await mock_plan_with_task_states(agent = plan_with_no_task.agent)
+    loaded_plan = await Plan.get_plan_from_db( plan_id = plan_id, agent = agent)
     assert len(loaded_plan.get_all_tasks_ids()) == 3
 
 
@@ -142,6 +151,7 @@ async def test_db_create_plan_with_db_error(mock_db_create, agent):
 async def test_get_existing_plan_from_db(default_task : Task):
     # Test retrieving an existing plan from the database
     await default_task.agent.plan.db_create()
+    Plan._instance = {}
     existing_plan = await Plan.get_plan_from_db(default_task.agent.plan.plan_id, default_task.agent)
     assert existing_plan is not None
 

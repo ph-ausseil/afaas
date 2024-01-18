@@ -18,15 +18,15 @@ LOG = AFAASLogger(name=__name__)
 
 class Plan(AbstractPlan):
 
-    # List & Dict for Lazy loading & lazy saving
-    _modified_tasks_ids: list[str] = []
-    _new_tasks_ids: list[str] = []
-    _loaded_tasks_dict: dict[Task] = {}
+    # # List & Dict for Lazy loading & lazy saving
+    # _modified_tasks_ids: list[str] = []
+    # _new_tasks_ids: list[str] = []
+    # _loaded_tasks_dict: dict[Task] = {}
 
-    # List for easier task Management
-    _all_task_ids: list[str] = []
-    _ready_task_ids: list[str] = []
-    _done_task_ids: list[str] = []
+    # # List for easier task Management
+    # _all_task_ids: list[str] = []
+    # _ready_task_ids: list[str] = []
+    # _done_task_ids: list[str] = []
 
     _instance: ClassVar[dict[Plan]] = {}
     lock : ClassVar[threading.Lock] = threading.Lock()
@@ -55,6 +55,22 @@ class Plan(AbstractPlan):
             Plan._instance[kwargs["agent"].agent_id] = self
             self.agent.plan: Plan = self
             self.initialized = True
+            # self.reset_instance()
+            self._modified_tasks_ids = []
+            self._new_tasks_ids = []
+            self._loaded_tasks_dict = {}
+            self._all_task_ids = []
+            self._ready_task_ids = []
+            self._done_task_ids = []
+
+    # @classmethod
+    # def reset_instance(cls) : 
+    #     cls._modified_tasks_ids = []
+    #     cls._new_tasks_ids = []
+    #     cls._loaded_tasks_dict = {}
+    #     cls._all_task_ids = []
+    #     cls._ready_task_ids = []
+    #     cls._done_task_ids = []
 
     @classmethod
     async def _load(cls, plan_id: str, agent: BaseAgent, **kwargs):
@@ -78,6 +94,10 @@ class Plan(AbstractPlan):
 
         # Process tasks
         for task_as_dict in all_tasks_from_db_dict:
+                #NOTE: Safegard as Pytest as create unexpected situation
+                if task_as_dict['task_id'] in instance._all_task_ids :
+                    raise Exception(f"Error {task_as_dict['task_id']} already exist in {instance._all_task_ids}")
+
                 task = Task(**task_as_dict, agent=agent)
                 instance._register_task(task=task)
 
@@ -258,19 +278,22 @@ class Plan(AbstractPlan):
         """
         return self._all_task_ids
 
-    async def get_ready_tasks(self, task_ids_set: list[str] = None) -> list[Task]:
+    def get_ready_tasks_ids(self, task_ids_set: list[str] = None) -> list[Task]:
         """
         Get the all ready tasks from Plan._ready_task_ids
         """
         LOG.debug(f"Getting ready tasks from plan {self.plan_id}")
 
-        ready_tasks = set(self._ready_task_ids)
+        ready_task_ids = set(self._ready_task_ids)
         if(task_ids_set is not None) and (len(task_ids_set) > 0):
-            active_task_ids = list (ready_tasks.intersection(set(task_ids_set)))
+            ready_task_ids = list (ready_task_ids.intersection(set(task_ids_set)))
 
-        return [await self.get_task(task_id=task_id) for task_id in ready_tasks]
+        return ready_task_ids
 
-    async def get_active_tasks(self, task_ids_set: list[str] = None) -> list[Task]:
+    async def get_ready_tasks(self, task_ids_set: list[str] = None) -> list[Task]:
+        return [await self.get_task(task_id=task_id) for task_id in self.get_ready_tasks_ids(task_ids_set = task_ids_set)]
+
+    def get_active_tasks_ids(self, task_ids_set: list[str] = None) -> list[Task]:
         """
         Active tasks are tasks not in Plan._done_task_ids but in Plan._all_task_ids
         """
@@ -282,7 +305,10 @@ class Plan(AbstractPlan):
         if (task_ids_set is not None) and (len(task_ids_set) > 0):
             active_task_ids = active_task_ids.intersection(set(task_ids_set))
 
-        return [await self.get_task(task_id) for task_id in active_task_ids]
+        return active_task_ids
+
+    async def get_active_tasks(self, task_ids_set: list[str] = None) -> list[Task]:
+        return [await self.get_task(task_id) for task_id in self.get_active_tasks_ids(task_ids_set = task_ids_set)]
 
     def get_all_done_tasks_ids(self) -> list[str]:
         """
@@ -332,13 +358,13 @@ class Plan(AbstractPlan):
         if status == TaskStatusList.READY:
             if (task_id not in self._ready_task_ids ) : 
                 self._ready_task_ids.append(task_id)
-        if status == TaskStatusList.IN_PROGRESS_WITH_SUBTASKS : 
+        elif status == TaskStatusList.IN_PROGRESS_WITH_SUBTASKS : 
             if task_id in self._ready_task_ids:
                 self._ready_task_ids.remove(task_id)
         elif status == TaskStatusList.DONE:
             if task_id in self._ready_task_ids:
                 self._ready_task_ids.remove(task_id)
-            elif task_id not in self._done_task_ids : 
+            if task_id not in self._done_task_ids : 
                 self._done_task_ids.append(task_id)
 
             # if len(set(task.get_sibblings_ids()) - set(task.agent.plan.get_all_done_tasks_ids())) == 0 :

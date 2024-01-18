@@ -39,7 +39,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
     class Config(AFAASModel.Config):
         # This is a list of Field to Exclude during serialization
-        default_exclude = set(AFAASModel.Config.default_exclude) | {"subtasks", "agent"}
+        default_exclude = set(AFAASModel.Config.default_exclude) | {"subtasks", "agent" , "_loaded_tasks_dict"}
         json_encoders = AFAASModel.Config.json_encoders | {}
 
     ###
@@ -164,7 +164,8 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         if isinstance(self, Plan):
             LOG.debug(repr(self), "Adding task to plan")
-
+        elif self.state in (TaskStatusList.READY , TaskStatusList.IN_PROGRESS_WITH_SUBTASKS):
+            raise Exception(f"Can't add task to {task.debug_formated_str(status=True)} ")
         LOG.debug(
             f"Adding task {task.debug_formated_str()} as subtask of {self.task_id}"
         )
