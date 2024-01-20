@@ -226,14 +226,6 @@ class Task(AbstractTask):
     async def db_create(cls, task: Task, agent: BaseAgent):
         db = agent.db
         task_table = await db.get_table("tasks")
-        # if task.task_id == "108":
-        #     raise Exception(
-        #         f"plan_id : {task.plan_id}\n\n\n"
-        #         f"task details : {task}\n\n\n"
-        #         f"task dict : {task.dict()}\n\n\n"
-        #         f"task dict db : {task.dict_db()}\n\n\n"
-        #         f"{await task.debug_dump_str()}"
-        #         )
         await task_table.add(value=task, id=task.task_id)
 
     async def db_save(self):
