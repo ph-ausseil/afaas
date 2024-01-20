@@ -12,7 +12,7 @@ class TasksTable(BaseNoSQLTable):
     from AFAAS.lib.task.task import Task
 
     async def add(self, value: dict, id: str = Task.generate_uuid()) -> str:
-        return await super().add(value, id)
+        return await super().add(value = value, id = id)
 
     # NOTE : overwrite parent update
     # Perform any custom logic needed for updating an agent

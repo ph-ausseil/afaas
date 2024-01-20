@@ -8,6 +8,7 @@ from pydantic import Field
 from AFAAS.configs.schema import AFAASModel
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.logger import AFAASLogger
+from .meta import TaskStatusList
 
 # from AFAAS.interfaces.tools.schema import ToolResult
 LOG = AFAASLogger(name=__name__)
@@ -38,7 +39,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
     class Config(AFAASModel.Config):
         # This is a list of Field to Exclude during serialization
-        default_exclude = set(AFAASModel.Config.default_exclude) | {"subtasks", "agent"}
+        default_exclude = set(AFAASModel.Config.default_exclude) | {"subtasks", "agent" , "_loaded_tasks_dict"}
         json_encoders = AFAASModel.Config.json_encoders | {}
 
     ###
@@ -96,7 +97,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
     _default_command: str = None
 
     @classmethod
-    def default_command(cls) -> str:
+    def default_tool(cls) -> str:
         if cls._default_command is not None:
             return cls._default_command
 
@@ -163,10 +164,14 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         if isinstance(self, Plan):
             LOG.debug(repr(self), "Adding task to plan")
-
+        elif self.state  not in (TaskStatusList.READY , TaskStatusList.IN_PROGRESS_WITH_SUBTASKS):
+            from tests.utils.ascii_tree import make_tree
+            raise Exception(f"Can't add task {task.debug_formated_str(status=True)} to {self.debug_formated_str(status=True)}.")
         LOG.debug(
             f"Adding task {task.debug_formated_str()} as subtask of {self.task_id}"
         )
+        task._task_parent_id = self.task_id
+        task._task_parent = self
         self.subtasks.add(task=task)
         self.agent.plan._register_new_task(task=task)
 
@@ -217,7 +222,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
             # If it's a leaf and has a parent
             if not task.subtasks and task_parent:
                 all_done = all(
-                    st.status == "DONE"
+                    st.state == TaskStatusList.DONE
                     for st in await task_parent.subtasks.get_done_tasks_from_stack()
                 )
                 if all_done:
@@ -250,9 +255,12 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
         )
         ready_tasks = []
 
-        async def check_task(task: AbstractBaseTask):
+        async def check_task(task: AbstractTask):
             if await task.is_ready():
                 ready_tasks.append(task)
+
+            if task.state != TaskStatusList.IN_PROGRESS_WITH_SUBTASKS :
+                return
 
             # Check subtasks recursively
             for subtask in await task.subtasks.get_all_tasks_from_stack():
@@ -279,9 +287,12 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
             + "- Plan.get_next_task()\n"
         )
 
-        async def check_task(task: AbstractBaseTask) -> Optional[AbstractBaseTask]:
+        async def check_task(task: AbstractTask) -> Optional[AbstractTask]:
             if await task.is_ready():
                 return task
+
+            if task.state != TaskStatusList.IN_PROGRESS_WITH_SUBTASKS :
+                return None
 
             # Check subtasks recursively
             for subtask in await task.subtasks.get_all_tasks_from_stack() or []:
@@ -300,7 +311,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         return None
 
-    async def find_ready_subbranch(self) -> list[AbstractBaseTask]:
+    async def find_ready_subbranch(self, origin : AbstractTask= None) -> list[AbstractBaseTask]:
         ready_tasks = []
         found_ready = False
 
@@ -318,8 +329,8 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         # Start checking from the root tasks in the plan
         for task_id in self.subtasks:
-            await check_task(await self.agent.plan.get_task(task_id))
-
+            if task_id != origin.task_id :
+                await check_task(await self.agent.plan.get_task(task_id))
         return ready_tasks
 
     # def find_task(self, task_id: str):

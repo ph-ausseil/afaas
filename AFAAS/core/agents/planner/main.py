@@ -18,7 +18,7 @@ from AFAAS.interfaces.db.db import AbstractMemory
 from AFAAS.interfaces.tools.base import AbstractToolRegistry, AbstractTool
 from AFAAS.interfaces.workflow import WorkflowRegistry
 from AFAAS.lib.sdk.logger import AFAASLogger
-from AFAAS.lib.task.plan import Plan 
+from AFAAS.lib.task.plan import Plan , TaskStatusList
 
 from AFAAS.lib.message_agent_user import MessageAgentUser, Emiter
 from AFAAS.lib.message_common import AFAASMessageStack
@@ -170,14 +170,22 @@ class PlannerAgent(BaseAgent):
             message_agent_user =  AFAASMessageStack(db=agent.db)
             agent.message_agent_user = await message_agent_user.load(agent=agent, cls=MessageAgentUser)
         else:
-            await agent.create()
+            await agent._create_with_plan_and_message()
 
         return agent
 
-    async def create(self):
+    async def _create_with_plan_and_message(self):
             #TODO: Make it a method not a classmethod
-            self.plan = await Plan.db_create(agent=self)
+            self.plan = Plan(  
+                agent_id=self.agent_id,
+                task_goal=self.agent_goal_sentence,
+                tasks=[],
+                agent=self,
+            )
+            await self.plan.db_create()
+            self.plan.create_initial_tasks(status=TaskStatusList.READY)
             self.plan_id = self.plan.plan_id
+            await self.plan.db_save()
 
             ready_task = await self.plan.get_ready_tasks()
             self._loop.set_current_task(task= ready_task[0])

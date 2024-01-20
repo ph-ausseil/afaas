@@ -42,7 +42,7 @@ class AbstractTable(abc.ABC):
         self.db = db
 
     @abc.abstractmethod
-    async def add(self, value: dict) -> uuid.UUID:
+    async def add(self, value: dict) -> str:
         ...
 
     @abc.abstractmethod

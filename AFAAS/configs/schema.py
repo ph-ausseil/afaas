@@ -161,9 +161,9 @@ class AFAASModel(BaseModel):
         return self.__repr__()
 
     def __repr__(self):
-        lines = [f"{self.__class__.__name__}("]
+        lines = [f"repr:{self.__class__.__name__}("]
 
-        for field_name, field_value in self.dict().items():
+        for field_name, field_value in self.__dict__.items():  # Use __dict__ to access object's attributes
             formatted_field_name = field_name.replace("_", " ").capitalize()
             if field_value is None:
                 value_str = "Not provided"

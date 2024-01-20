@@ -86,10 +86,13 @@ class TaskStack(AFAASModel):
             #             + f"- Consider parent predecessor when evaluatin `Task.is_ready()`\n"))
             from AFAAS.interfaces.task.meta import TaskStatusList
 
-            if not parent_is_plan and self.parent_task.state != TaskStatusList.READY:
-                LOG.warning(
-                    f"Added subtask should only be added if parent_task is READY. Current state of {self.parent_task.debug_formated_str()} is {self.parent_task.state}"
-                )
+            if not parent_is_plan :
+                if len(self) >= 1 and TaskStatusList.IN_PROGRESS_WITH_SUBTASKS:
+                    LOG.warning(
+                        f"Added subtask should only be added if parent_task is in progres . Current state of {self.parent_task.debug_formated_str()} is {self.parent_task.state}"
+                    )
+
+                self.parent_task.state = TaskStatusList.IN_PROGRESS_WITH_SUBTASKS
 
     async def get_task(self, task_id) -> AbstractBaseTask:
         """
@@ -105,7 +108,7 @@ class TaskStack(AFAASModel):
             await self.parent_task.agent.plan.get_task(task_id) for task_id in self._task_ids
         ]
 
-    def get_all_task_ids_from_stack(self) -> list[AbstractTask]:
+    def get_all_task_ids_from_stack(self) -> list[str]:
         """
         Get all tasks. If only_ready is True, return only ready tasks.
         """
@@ -115,7 +118,7 @@ class TaskStack(AFAASModel):
         """
         Get all ready tasks.
         """
-        ready_task_ids_set = set(await self.parent_task.agent.plan.get_ready_tasks())
+        ready_task_ids_set = set(self.parent_task.agent.plan.get_ready_tasks_ids())
 
         common_task_ids = ready_task_ids_set.intersection(self._task_ids)
 
@@ -127,7 +130,7 @@ class TaskStack(AFAASModel):
         """
         Get all ready tasks.
         """
-        done_task_ids_set = set(await self.parent_task.agent.plan.get_done_tasks())
+        done_task_ids_set = set(self.parent_task.agent.plan.get_all_done_tasks_ids())
 
         common_task_ids = done_task_ids_set.intersection(self._task_ids)
 
@@ -139,7 +142,7 @@ class TaskStack(AFAASModel):
         """
         Get all active tasks.
         """
-        active_task_ids_set = set(await self.parent_task.agent.plan.get_active_tasks())
+        active_task_ids_set = set(self.parent_task.agent.plan.get_active_tasks_ids())
 
         common_task_ids = active_task_ids_set.intersection(self._task_ids)
 
@@ -147,8 +150,8 @@ class TaskStack(AFAASModel):
             await self.parent_task.agent.plan.get_task(task_id) for task_id in common_task_ids
         ]
 
-    def __repr__(self):
-        return f"Stack Type : {self.description}\n" + super().__repr__()
+    # def __repr__(self):
+    #     return f"Stack Type : {self.description}\n" + super().__repr__()
 
     def __str__(self):
         return self._task_ids.__str__()

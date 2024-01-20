@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Awaitable, Callable, Dict, Optional
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.tools.tool_output import ToolOutput
 from AFAAS.lib.sdk.errors import AgentException, ToolExecutionError, UnknownToolError
-from AFAAS.lib.task.task import Task
+from AFAAS.lib.task.task import Task, TaskStatusList
+from AFAAS.lib.task.plan import Plan
 
 if TYPE_CHECKING:
     from AFAAS.core.agents.planner.main import PlannerAgent
@@ -189,15 +190,18 @@ class PlannerLoop(BaseLoop):
                 )
 
             if await current_task.is_ready():
-                """If the task still still match readiness criterias at this point, it means that we can close it"""
-                current_task.state = TaskStatusList.DONE
-                LOG.info(f"Terminating Task : {current_task.debug_formated_str()}")
+                """If the task still match readiness criterias at this point, it means that we can close it"""
+                await current_task.close_task()
             else:
                 """
                 If the task doesn't match readiness criterias at this point, it means that we can't close it
                 this situation is most likely due to the adition of subbtasks or predecessor during the excecution of the task
                 #TODO: Concider implementing this feature as a Tool Callback for Tools that can create subtasks
                 """
+                #FIXME: 
+                # Option 1 : May be remove that line as it could break tree trasversal  
+                # Option 2 : Create status ready with subtasks
+                LOG.error(f"Can't terminate Task : {current_task.debug_formated_str()}")
                 self.plan()._ready_task_ids.remove(current_task.task_id)
 
             LOG.debug(await self.plan().debug_dump_str(depth=2))
@@ -242,7 +246,7 @@ class PlannerLoop(BaseLoop):
                     input("Press Enter to continue...")
 
                 LOG.trace(f"Task Sibblings :")
-                task_sibblings: list[Task] = await self._current_task.get_sibblings()
+                task_sibblings: list[Task] = await self._current_task.get_siblings()
                 for i, task in enumerate(task_sibblings):
                     LOG.trace(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"

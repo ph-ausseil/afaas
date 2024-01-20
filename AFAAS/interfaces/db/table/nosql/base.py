@@ -19,7 +19,7 @@ class BaseSQLTable(AbstractTable):
     def __init__(self) -> None:
         raise NotImplementedError()
 
-    async def add(self, value: dict) -> uuid.UUID:
+    async def add(self, value: dict) -> str:
         id = uuid.uuid4()
         value["id"] = id
         await self.db.add(key=id, value=value, table_name=self.table_name)
@@ -107,12 +107,12 @@ class BaseNoSQLTable(AbstractTable):
     # else, raise a warning & generate an ID
     async def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:
         # Serialize non-serializable objects
-        if isinstance(value, BaseAgent):    
+        if isinstance(value, BaseAgent):
             value = value.dict()
         if isinstance(value, AFAASModel):
             value = value.dict_db()
         elif isinstance(value, Configurable):
-            value.dict()
+            value = value.dict()
         else:
             LOG.warning("Class not hinheriting from AFAASModel")
             value = self.__class__.serialize_value(value)

@@ -10,6 +10,7 @@ from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.base import AbstractBaseTask
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.task.task import AbstractTask
+from AFAAS.interfaces.task.plan import AbstractPlan
 from AFAAS.lib.sdk.logger import AFAASLogger, logging
 from AFAAS.prompts.common.afaas_task_post_rag_update import (
     AfaasPostRagTaskUpdateStrategy,
@@ -26,9 +27,7 @@ if TYPE_CHECKING:
 class Task(AbstractTask):
 
     def __init__(self, **data):
-        LOG.trace(
-            f"Entering {self.__class__.__name__}.__init__() : {data['task_goal']}"
-        )
+
         super().__init__(**data)
         LOG.trace(
             f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
@@ -36,6 +35,7 @@ class Task(AbstractTask):
         self._task_parent_loading = False
         #self._task_parent_loaded = asyncio.Event()
         self._task_parent_future = asyncio.Future()
+        self.plan_id = self.agent.plan.plan_id
 
     def __setattr__(self, key, value):
         # Set attribute as normal
@@ -56,7 +56,8 @@ class Task(AbstractTask):
             "task_predecessors",
             "task_successors",
             "_task_parent_future",
-            "_task_parent_loading"
+            "_task_parent_loading",
+            "_task_parent"
         }
 
     ###
@@ -64,18 +65,16 @@ class Task(AbstractTask):
     ###
     task_id: str = Field(default_factory=lambda: Task.generate_uuid())
 
-    plan_id: str = Field()
-    @property
-    def plan_id(self) -> str:
-        return self.agent.plan.plan_id
 
-    _task_parent_id: str = Field()
+    plan_id: Optional[str] = Field()
+
+    _task_parent_id: str = Field(...)
     _task_parent: Optional[Task] = None
 
     async def task_parent(self) -> AbstractBaseTask:
-        LOG.trace(
-            f"{self.debug_formated_str(status = True)} {self.__class__.__name__}.task_parent()({self._task_parent_id})"
-        )
+        # LOG.trace(
+        #     f"{self.debug_formated_str(status = True)} {self.__class__.__name__}.task_parent()({self._task_parent_id})"
+        # )
         try:
             # Lazy load the parent task
             return await self.agent.plan.get_task(self._task_parent_id)
@@ -105,7 +104,7 @@ class Task(AbstractTask):
             )
         return self._task_successors
 
-    @validator("state", pre=True, always=True)
+    @validator("state", pre=True)
     def set_state(cls, new_state, values):
         task_id = values.get("task_id")
         if task_id and new_state:
@@ -117,11 +116,11 @@ class Task(AbstractTask):
                     task_id=task_id, status=new_state
                 )
         else:
-            LOG.error(f"Task {task_id} has state is None")
+            LOG.error(f"Task {task_id} state is None")
         return new_state
 
 
-    command: Optional[str] = Field(default_factory=lambda: Task.default_command())
+    command: Optional[str] = Field(default_factory=lambda: Task.default_tool())
     arguments: Optional[dict] = Field(default={})
 
     task_text_output: Optional[str]
@@ -130,14 +129,14 @@ class Task(AbstractTask):
     """ The agent summary of his own doing while performing the task as a UML diagram"""
 
 
-    async def is_ready(self) -> bool:
+    async def is_ready(self) -> bool :   
         if (
-            len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
-            and len(await self.subtasks.get_active_tasks_from_stack()) == 0
-            and (
+            (
                 self.state == TaskStatusList.BACKLOG
-                or self.state == TaskStatusList.READY
+                or self.state == TaskStatusList.READY 
             )
+            and len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
+            and len(await self.subtasks.get_active_tasks_from_stack()) == 0
         ):
             # NOTE: This remove subtasks stored in the plan as they should not be required anymore
             for task_id in self.subtasks:
@@ -154,6 +153,19 @@ class Task(AbstractTask):
             return True
 
         return False
+
+    async def close_task(self) : 
+        self.state = TaskStatusList.DONE
+
+        LOG.info(f"Terminating Task : {self.debug_formated_str()}")
+        #TODO: MOVE to the validator state for robustness
+        if len(set( await self.get_siblings_ids(excluse_self=False)) - set(self.agent.plan.get_all_done_tasks_ids())) == 0 :
+
+            parent = await self.task_parent()
+            if (not isinstance(parent, AbstractPlan)):
+                #FIXME:  Make resumé of Parent
+                parent.state = TaskStatusList.DONE
+
 
     def add_predecessor(self, task: Task):
         """
@@ -216,7 +228,7 @@ class Task(AbstractTask):
         task_table = await db.get_table("tasks")
         await task_table.add(value=task, id=task.task_id)
 
-    async def save_in_db(self):
+    async def db_save(self):
         from AFAAS.interfaces.db.db_table import AbstractTable
 
         db = self.agent.db
@@ -262,15 +274,33 @@ class Task(AbstractTask):
 
         return indented_structure
 
-    async def get_sibblings(self) -> list[Task]:
+    async def get_siblings(self , excluse_self = True) -> list[Task]:
         """
         Finds the sibblings of this task.
         """
-        if await self.task_parent() is None:
+        parent_task = await self.task_parent()
+        if parent_task is None:
             return []
 
+        # Get all siblings including the task itself.
+        all_siblings = await parent_task.subtasks.get_all_tasks_from_stack()
+        if excluse_self:
+            return [task for task in all_siblings if task.task_id != self.task_id]
+
+        return all_siblings
+
+    async def get_siblings_ids(self, excluse_self = True)-> list[Task]:
         parent_task = await self.task_parent()
-        return await parent_task.subtasks.get_all_tasks_from_stack()
+        if parent_task is None:
+            return []
+
+        # Get all sibling IDs including the ID of the task itself.
+        all_sibling_ids = parent_task.subtasks.get_all_task_ids_from_stack()
+        if excluse_self:
+            # Exclude the ID of the task itself from the list of sibling IDs.
+            return [task_id for task_id in all_sibling_ids if task_id != self.task_id]
+
+        return all_sibling_ids
 
     def __hash__(self):
         return hash(self.task_id)
@@ -315,13 +345,13 @@ class Task(AbstractTask):
         # 5. Get the sibblings of the task and remove them from history to avoid redondancy
         task_sibblings: list[Task] = []
         if sibblings:
-            #sibblings_tmp = await self.get_sibblings()
+            #sibblings_tmp = await self.get_siblings()
             if avoid_sibbling_predecessors_redundancy:
                 task_sibblings = (
-                    set(await self.get_sibblings()) - history_and_predecessors
+                    set(await self.get_siblings()) - history_and_predecessors
                 )  # - set([self])
             else :
-                task_sibblings = set(await self.get_sibblings())  # - set([self])
+                task_sibblings = set(await self.get_siblings())  # - set([self])
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases
         related_tasks: list[Task] = []

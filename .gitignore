@@ -179,3 +179,4 @@ pri*
 # ignore
 ig*
 .github_access_token
+~/AFAAS/cache.json
