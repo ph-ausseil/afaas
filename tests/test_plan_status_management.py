@@ -33,6 +33,26 @@ from .dataset.plan_familly_dinner import (
     plan_step_12,
     plan_step_13,
     plan_step_14,
+    plan_step_15,
+    plan_step_16,
+    plan_step_17,
+    plan_step_18,
+    plan_step_19,
+    plan_step_20,
+    plan_step_21,
+    plan_step_22,
+    plan_step_23,
+    plan_step_24,
+    plan_step_25,
+    plan_step_26,
+    plan_step_27,
+    plan_step_28,
+    plan_step_29,
+    plan_step_30,
+    plan_step_31,
+    plan_step_32,
+    plan_step_33,
+
     task_awaiting_preparation,
     task_ready_no_predecessors_or_subtasks,
     task_with_mixed_predecessors,
@@ -41,7 +61,7 @@ from .dataset.plan_familly_dinner import (
     default_task,
     plan_with_no_task,
 )
-from .utils.ascii_tree import print_tree , pytest_terminal_summary , test_trees
+from .utils.ascii_tree import print_tree , pytest_terminal_summary , test_trees, make_tree
 
 import pytest
 
@@ -164,26 +184,36 @@ async def test_invalid_status_update(default_task: Task):
         task.state = "invalid_status"  # Assuming ValueError is raised for invalid status
 
 @pytest.mark.asyncio
-async def test_automatic_status_update_based_on_predecessors(task_with_mixed_predecessors: Task):
+async def test_status_not_updated_before_is_ready(task_with_mixed_predecessors: Task):
     task = task_with_mixed_predecessors
+
     predecessors = await task.task_predecessors.get_all_tasks_from_stack()
-    for predecessor_id in predecessors :
-        predecessor_task = await task.agent.plan.get_task(predecessor_id)
+    for predecessor in predecessors :
+
+        # raise Exception(
+        #     str(predecessors[0].task_id),
+        #     str(predecessors[1].task_id),
+        #     str(task_with_mixed_predecessors.agent.plan._all_task_ids) + "\n\n\n" ,
+        #     await make_tree(task_with_mixed_predecessors.agent.plan)
+
+        #     )
+        predecessor_task = await task.agent.plan.get_task(predecessor.task_id)
         await predecessor_task.close_task()
 
-    assert task.state == TaskStatusList.READY
+    assert task.state != TaskStatusList.READY
 
 
 @pytest.mark.asyncio
-async def test_automatic_status_update_based_on_predecessors_v2(task_with_mixed_predecessors: Task):
+async def task_status_updated_after_is_ready(task_with_mixed_predecessors: Task):
     task = task_with_mixed_predecessors
+
     predecessors = await task.task_predecessors.get_all_tasks_from_stack()
-    for predecessor_id in predecessors:
-        predecessor_task = await task.agent.plan.get_task(predecessor_id)
+    for predecessor in predecessors:
+        predecessor_task = await task.agent.plan.get_task(predecessor.task_id)
         await predecessor_task.close_task()
 
     # Check if the task state
-    task.is_ready()
+    await task.is_ready()
     assert task.state == TaskStatusList.READY
 
 @pytest.mark.asyncio
@@ -206,7 +236,7 @@ async def test_status_update_with_subtasks( task_with_ongoing_subtasks: Task):
     task = task_with_ongoing_subtasks
 
     # Complete all subtasks
-    subtasks = await task._subtasks.get_all_tasks_from_stack()
+    subtasks = await task.subtasks.get_all_tasks_from_stack()
     for subtask in subtasks:
         await subtask.close_task()
 
@@ -221,23 +251,15 @@ async def test_handling_tasks_with_unmet_predecessors( task_with_unmet_predecess
     await task.is_ready()
     # Assert that the task is not READY
     assert task.state != TaskStatusList.READY  # Assuming task is not READY if it has unmet predecessors
+    predecessors = await task.task_predecessors.get_active_tasks_from_stack()
+    assert len (predecessors) > 0
 
-@pytest.mark.asyncio
-async def test_task_awaiting_preparation(task_awaiting_preparation: Task):
-    task = task_awaiting_preparation
-    plan = task.agent.plan
+    for predecessor in predecessors :
+        predecessor : Task
+        await predecessor.close_task()
+    await task.is_ready()
+    assert task.state == TaskStatusList.READY
 
-    # Check initial state of the task
-    assert task.state != TaskStatusList.READY  # Assuming
-
-@pytest.mark.asyncio
-async def test_task_awaiting_preparation( task_awaiting_preparation: Task):
-    task = task_awaiting_preparation
-
-    task.is_ready()
-
-    # Check initial state of the task
-    assert task.state != TaskStatusList.READY  # Assuming
 
 
 @pytest.mark.asyncio
@@ -266,16 +288,19 @@ async def test_task_predecessors_successors(default_task: Task):
     assert successor in await  task.task_successors.get_all_tasks_from_stack()
 
 @pytest.mark.asyncio
-async def test_task_state_change_propagation(task_with_ongoing_subtasks: Task):
-    task = task_with_ongoing_subtasks
+async def test_task_state_change_propagation(default_task: Task):
+    task = default_task
     plan = task.agent.plan
-    await task.close_task()
 
-    # Assuming successors' state depends on this task
     successors =  await task.task_successors.get_all_tasks_from_stack()
     for successor_id in successors:
         successor_task = await plan.get_task(successor_id)
-        # Check if successor's state is updated as needed (depends on implementation)
+        assert successor_task.state == TaskStatusList.BACKLOG
+
+    await task.close_task()
+
+    for successor_id in successors:
+        successor_task = await plan.get_task(successor_id)
         assert successor_task.state == TaskStatusList.READY
 
 
@@ -283,11 +308,32 @@ async def test_task_state_change_propagation(task_with_ongoing_subtasks: Task):
 async def test_plan_loading_and_task_retrieval(plan_step_0: Plan):
     plan = plan_step_0
     task_id = "test_task"
-    new_task = Task(task_id=task_id, agent=plan.agent , task_goal = "task_goal")
+    new_task = Task(task_id=task_id, plan_id = plan.plan_id,  agent=plan.agent , task_goal = "task_goal")
 
     # Add a new task and simulate plan loading
+    assert task_id not in plan._all_task_ids
     plan.add_task(new_task)
-    loaded_plan = await Plan._load(plan.plan_id, plan.agent)
+    assert task_id in plan._all_task_ids
+    assert task_id in plan._new_tasks_ids
+
+    await plan.db_save()
+    plan._modified_tasks_ids = []
+    plan._new_tasks_ids = []
+    plan._loaded_tasks_dict = {}
+    plan._all_task_ids = []
+    plan._ready_task_ids = []
+    plan._done_task_ids = []
+    plan._instance = {}
+    plan.initialized = False
+    loaded_plan = await Plan.get_plan_from_db(plan_id = plan.plan_id, agent = plan.agent)
+    try : 
+        assert task_id in loaded_plan._all_task_ids 
+    except : 
+        raise Exception (
+            f"All tasks = {loaded_plan._all_task_ids}\n\n"
+            # f"{await make_tree(loaded_plan)}"
+        )
+    assert task_id not in loaded_plan._new_tasks_ids
 
     # Retrieve the task from the loaded plan
     retrieved_task = await loaded_plan.get_task(task_id)

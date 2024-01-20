@@ -41,14 +41,14 @@ from .utils.ascii_tree import print_tree , pytest_terminal_summary , test_trees
 @pytest.mark.asyncio
 async def test_new_plan_instance_creation(agent):
     # Test case for creating a new Plan instance with a given agent_id
-    plan = Plan(agent=agent)
+    plan = Plan(agent=agent, task_goal = agent.agent_goal_sentence)
     assert plan.agent.agent_id == "pytest_A639f7cda-c88c-44d7-b0b2-a4a4abbd4a6c"
 
 @pytest.mark.asyncio
 async def test_existing_plan_instance_retrieval(agent):
     # Test case for retrieving an existing Plan instance with an agent_id
-    first_plan = Plan(agent=agent)
-    second_plan = Plan(agent=agent)
+    first_plan = Plan(agent=agent, task_goal = agent.agent_goal_sentence)
+    second_plan = Plan(agent=agent, task_goal = agent.agent_goal_sentence + "12345")
     assert first_plan is second_plan
 
 async def mock_plan_data(agent, tasks):

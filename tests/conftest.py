@@ -139,8 +139,9 @@ async def local_workspace() -> AbstractFileWorkspace:
     agent = await agent_dataset()
     return agent.workspace
 
-# # In your pytest fixture
-# @pytest.fixture(scope="function", autouse=True)
-# def reset_singleton():
-#      Plan.reset_instance()
-#      yield
+# In your pytest fixture
+@pytest.fixture(scope="function", autouse=True)
+def reset_singleton():
+     Plan._instance = {}
+     Plan.initialized = False
+     yield

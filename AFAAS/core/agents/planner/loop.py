@@ -246,7 +246,7 @@ class PlannerLoop(BaseLoop):
                     input("Press Enter to continue...")
 
                 LOG.trace(f"Task Sibblings :")
-                task_sibblings: list[Task] = await self._current_task.get_sibblings()
+                task_sibblings: list[Task] = await self._current_task.get_siblings()
                 for i, task in enumerate(task_sibblings):
                     LOG.trace(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"

@@ -8,6 +8,7 @@ from pydantic import Field
 from AFAAS.configs.schema import AFAASModel
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.logger import AFAASLogger
+from .meta import TaskStatusList
 
 # from AFAAS.interfaces.tools.schema import ToolResult
 LOG = AFAASLogger(name=__name__)
@@ -15,7 +16,6 @@ LOG = AFAASLogger(name=__name__)
 if TYPE_CHECKING:
     from .stack import TaskStack
     from .task import AbstractTask
-    from .meta import TaskStatusList
 
 
 class AbstractBaseTask(abc.ABC, AFAASModel):
@@ -164,8 +164,9 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         if isinstance(self, Plan):
             LOG.debug(repr(self), "Adding task to plan")
-        elif self.state in (TaskStatusList.READY , TaskStatusList.IN_PROGRESS_WITH_SUBTASKS):
-            raise Exception(f"Can't add task to {task.debug_formated_str(status=True)} ")
+        elif self.state  not in (TaskStatusList.READY , TaskStatusList.IN_PROGRESS_WITH_SUBTASKS):
+            from tests.utils.ascii_tree import make_tree
+            raise Exception(f"Can't add task {task.debug_formated_str(status=True)} to {self.debug_formated_str(status=True)}.")
         LOG.debug(
             f"Adding task {task.debug_formated_str()} as subtask of {self.task_id}"
         )
@@ -310,7 +311,7 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         return None
 
-    async def find_ready_subbranch(self) -> list[AbstractBaseTask]:
+    async def find_ready_subbranch(self, origin : AbstractTask= None) -> list[AbstractBaseTask]:
         ready_tasks = []
         found_ready = False
 
@@ -328,8 +329,8 @@ class AbstractBaseTask(abc.ABC, AFAASModel):
 
         # Start checking from the root tasks in the plan
         for task_id in self.subtasks:
-            await check_task(await self.agent.plan.get_task(task_id))
-
+            if task_id != origin.task_id :
+                await check_task(await self.agent.plan.get_task(task_id))
         return ready_tasks
 
     # def find_task(self, task_id: str):

@@ -35,6 +35,7 @@ class Task(AbstractTask):
         self._task_parent_loading = False
         #self._task_parent_loaded = asyncio.Event()
         self._task_parent_future = asyncio.Future()
+        self.plan_id = self.agent.plan.plan_id
 
     def __setattr__(self, key, value):
         # Set attribute as normal
@@ -64,10 +65,8 @@ class Task(AbstractTask):
     ###
     task_id: str = Field(default_factory=lambda: Task.generate_uuid())
 
-    #plan_id: str = Field(...)
-    @property
-    def plan_id(self) -> str:
-        return self.agent.plan.plan_id
+
+    plan_id: Optional[str] = Field()
 
     _task_parent_id: str = Field(...)
     _task_parent: Optional[Task] = None
@@ -160,7 +159,7 @@ class Task(AbstractTask):
 
         LOG.info(f"Terminating Task : {self.debug_formated_str()}")
         #TODO: MOVE to the validator state for robustness
-        if len(set( await self.get_sibblings_ids()) - set(self.agent.plan.get_all_done_tasks_ids())) == 0 :
+        if len(set( await self.get_siblings_ids(excluse_self=False)) - set(self.agent.plan.get_all_done_tasks_ids())) == 0 :
 
             parent = await self.task_parent()
             if (not isinstance(parent, AbstractPlan)):
@@ -227,6 +226,14 @@ class Task(AbstractTask):
     async def db_create(cls, task: Task, agent: BaseAgent):
         db = agent.db
         task_table = await db.get_table("tasks")
+        # if task.task_id == "108":
+        #     raise Exception(
+        #         f"plan_id : {task.plan_id}\n\n\n"
+        #         f"task details : {task}\n\n\n"
+        #         f"task dict : {task.dict()}\n\n\n"
+        #         f"task dict db : {task.dict_db()}\n\n\n"
+        #         f"{await task.debug_dump_str()}"
+        #         )
         await task_table.add(value=task, id=task.task_id)
 
     async def db_save(self):
@@ -275,25 +282,33 @@ class Task(AbstractTask):
 
         return indented_structure
 
-    async def get_sibblings(self) -> list[Task]:
+    async def get_siblings(self , excluse_self = True) -> list[Task]:
         """
         Finds the sibblings of this task.
         """
-        if await self.task_parent() is None:
+        parent_task = await self.task_parent()
+        if parent_task is None:
             return []
 
-        parent_task = await self.task_parent()
-        return await parent_task.subtasks.get_all_tasks_from_stack()
+        # Get all siblings including the task itself.
+        all_siblings = await parent_task.subtasks.get_all_tasks_from_stack()
+        if excluse_self:
+            return [task for task in all_siblings if task.task_id != self.task_id]
 
-    async def get_sibblings_ids(self) -> list[Task]:
-        """
-        Finds the sibblings of this task.
-        """
-        if await self.task_parent() is None:
+        return all_siblings
+
+    async def get_siblings_ids(self, excluse_self = True)-> list[Task]:
+        parent_task = await self.task_parent()
+        if parent_task is None:
             return []
 
-        parent_task = await self.task_parent()
-        return parent_task.subtasks.get_all_task_ids_from_stack()
+        # Get all sibling IDs including the ID of the task itself.
+        all_sibling_ids = parent_task.subtasks.get_all_task_ids_from_stack()
+        if excluse_self:
+            # Exclude the ID of the task itself from the list of sibling IDs.
+            return [task_id for task_id in all_sibling_ids if task_id != self.task_id]
+
+        return all_sibling_ids
 
     def __hash__(self):
         return hash(self.task_id)
@@ -338,13 +353,13 @@ class Task(AbstractTask):
         # 5. Get the sibblings of the task and remove them from history to avoid redondancy
         task_sibblings: list[Task] = []
         if sibblings:
-            #sibblings_tmp = await self.get_sibblings()
+            #sibblings_tmp = await self.get_siblings()
             if avoid_sibbling_predecessors_redundancy:
                 task_sibblings = (
-                    set(await self.get_sibblings()) - history_and_predecessors
+                    set(await self.get_siblings()) - history_and_predecessors
                 )  # - set([self])
             else :
-                task_sibblings = set(await self.get_sibblings())  # - set([self])
+                task_sibblings = set(await self.get_siblings())  # - set([self])
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases
         related_tasks: list[Task] = []

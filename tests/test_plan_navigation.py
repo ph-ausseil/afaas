@@ -29,6 +29,20 @@ from .dataset.plan_familly_dinner import (
     plan_step_9,
     plan_step_10,
     _plan_step_10,
+    _plan_step_11,
+    _plan_step_12,
+    _plan_step_13,
+    _plan_step_14,
+    _plan_step_15,
+    _plan_step_16,
+    _plan_step_17,
+    _plan_step_18,
+    _plan_step_19,
+    _plan_step_20,
+    _plan_step_21,
+    _plan_step_22,
+    _plan_step_23,
+    _plan_step_24,
     plan_step_11,
     plan_step_12,
     plan_step_13,
@@ -46,27 +60,74 @@ import pytest
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "plan_step, current_task_id, expected_next_task_id",
+    "plan_step, current_task_id, current_task_status, expected_next_task_id",
     [
         # Current Task Provided
-        (plan_familly_dinner_with_tasks_saved_in_db, '101', '102'),
-       # (_plan_step_3, '300.1.2', '107'),
-        (_plan_step_10, '108', '201'),
-        (plan_familly_dinner_with_tasks_saved_in_db, None, '101'),
+         (plan_familly_dinner_with_tasks_saved_in_db, '101', TaskStatusList.READY,  '101'),
+         (plan_familly_dinner_with_tasks_saved_in_db, '101', TaskStatusList.DONE,  '102'),
+
+         (_plan_step_10, '300.1.1' , TaskStatusList.DONE, '300.1.2'),
+         (_plan_step_11, '300.1.2' , TaskStatusList.DONE, '300.2.1'),
+         (_plan_step_12, '300.2.1' , TaskStatusList.READY, '300.2.1'),
+         (_plan_step_12, '300.2.1' , TaskStatusList.DONE, '300.2.2'),
+         (_plan_step_13, '300.2.2' , TaskStatusList.DONE, '300.3'),
+         (_plan_step_15, '300.3.1' , TaskStatusList.READY, '300.3.1'),
+         (_plan_step_15, '300.3.1' , TaskStatusList.DONE, '300.3.2'),
+         (_plan_step_16, '300.3.2' , TaskStatusList.READY, '300.3.2'),
+         (_plan_step_16, '300.3.2' , TaskStatusList.DONE, '300.3.3'),
+         (_plan_step_17, '300.3.3' , TaskStatusList.READY, '300.3.3'),
+         (_plan_step_17, '300.3.3' , TaskStatusList.DONE, '300.4'),
+         (_plan_step_18, '300.4' , TaskStatusList.READY, '300.4'),
+         (_plan_step_18, '300.4' , TaskStatusList.DONE, '300.5'),
+         (_plan_step_19, '300.5' , TaskStatusList.READY, '300.5'),
+         (_plan_step_19, '300.5' , TaskStatusList.DONE, '300.6' ),
+         (_plan_step_20, '300.6' , TaskStatusList.READY, '300.6' ),
+         (_plan_step_20, '300.6' , TaskStatusList.DONE, '201'),
+         #(_plan_step_21, '300.4' , TaskStatusList.READY, '300.4'),
+         #(_plan_step_21, '300.4' , TaskStatusList.DONE, '300.5'),
+         (_plan_step_21, '201' , TaskStatusList.READY, '201'),
+         (_plan_step_21, '201' , TaskStatusList.DONE, '300' ),
+         (_plan_step_22, '300' , TaskStatusList.READY, '300' ),
+         (_plan_step_22, '300' , TaskStatusList.DONE, '100'),
+         #(_plan_step_22, '100' , TaskStatusList.READY,  '100'),
+         #(_plan_step_22, '100' , TaskStatusList.DONE, None),
+    #     (plan_familly_dinner_with_tasks_saved_in_db, None, '101'),
     ]
     )
-async def test_get_next_task(plan_step, current_task_id, expected_next_task_id, request):
+async def test_get_next_task(plan_step, current_task_id, current_task_status,  expected_next_task_id, request):
+
+
     plan : Plan = await plan_step()
+
+    for task_id in plan.get_ready_tasks_ids() :
+        ready_task = await plan.get_task(task_id = task_id)
+        ready_task.state = TaskStatusList.BACKLOG
+
+    plan._ready_task_ids = []
+
     if current_task_id is not None:
-        current_task = await plan.get_task(task_id=current_task_id)
+        current_task : Task = await plan.get_task(task_id=current_task_id)
+        if current_task_status is not TaskStatusList.DONE : 
+            current_task.state = current_task_status
+        else :
+            await current_task.close_task()
     else:
         current_task = None
 
+
+
     next_task = await plan.get_next_task(task=current_task)
+
     try : 
-        assert next_task.task_id == expected_next_task_id
+        if ("100" == expected_next_task_id ) : 
+            assert next_task is None
+        else : 
+            assert next_task.task_id == expected_next_task_id
+
     except AssertionError:
-        raise AssertionError( f"next_task.task_id = {next_task.task_id} \n " 
+        raise AssertionError( 
+                            f"current_task_id  = {current_task_id} \n"
+                            f"next_task.task_id = {next_task.task_id} \n " 
                              f"expected_next_task_id = {expected_next_task_id} \n " 
                              f"{await make_tree(plan)}"
                              )

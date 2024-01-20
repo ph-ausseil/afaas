@@ -100,7 +100,7 @@ class AbstractTask(AbstractBaseTask):
         ...
 
     @abstractmethod
-    async def get_sibblings(self) -> list["AbstractTask"]:
+    async def get_siblings(self) -> list["AbstractTask"]:
         ...
 
     @abstractmethod

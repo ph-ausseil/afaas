@@ -86,8 +86,8 @@ class TaskStack(AFAASModel):
             #             + f"- Consider parent predecessor when evaluatin `Task.is_ready()`\n"))
             from AFAAS.interfaces.task.meta import TaskStatusList
 
-            if not parent_is_plan : 
-                if len(self) >= 1 and TaskStatusList.IN_PROGRESS_WITH_SUBTASKS: 
+            if not parent_is_plan :
+                if len(self) >= 1 and TaskStatusList.IN_PROGRESS_WITH_SUBTASKS:
                     LOG.warning(
                         f"Added subtask should only be added if parent_task is in progres . Current state of {self.parent_task.debug_formated_str()} is {self.parent_task.state}"
                     )
