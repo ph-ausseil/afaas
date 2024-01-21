@@ -186,14 +186,11 @@ class PlannerLoop(BaseLoop):
             else:
                 """
                 If the task doesn't match readiness criterias at this point, it means that we can't close it
-                this situation is most likely due to the adition of subbtasks or predecessor during the excecution of the task
-                #TODO: Concider implementing this feature as a Tool Callback for Tools that can create subtasks
+                this situation is usualy due to the addition of subbtasks (or predecessor ?) during the excecution of the task.
                 """
-                # FIXME:
-                # Option 1 : May be remove that line as it could break tree trasversal
-                # Option 2 : Create status ready with subtasks
-                LOG.error(f"Can't terminate Task : {current_task.debug_formated_str()}")
-                self.plan()._ready_task_ids.remove(current_task.task_id)
+                if current_task.state != TaskStatusList.IN_PROGRESS_WITH_SUBTASKS : 
+                    LOG.error(f"Can't terminate Task : {current_task.debug_formated_str()}")
+                    raise Exception(f"Can't terminate Task : {current_task.debug_formated_str()}")
 
             LOG.debug(await self.plan().debug_dump_str(depth=2))
             self._current_task = await self.plan().get_next_task(task=current_task)

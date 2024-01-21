@@ -66,25 +66,20 @@ Autonomous Agent are experimental initiative aiming to set inteligent systems wi
 
 ### Currently working on
 
-[v0.0.1](https://github.com/ph-ausseil/afaas/milestone/2) - Basic agent with no coding capacity (Planned on 14/01/2024)
-  - Provide an agent that can operate with a basic set of API (Arxiv, Wikipedia, Google Places,...)
-  - Fix "most urgent" bugs
-  - Improve general thinking & planning performances
-
-## Roadmap
-
-- [v0.0.2](https://github.com/ph-ausseil/afaas/milestone/3)  - Reduce Technical debt (Planned on 21/01/2024)
+- [v0.0.2](https://github.com/ph-ausseil/afaas/milestone/3)  - Reduce Technical debt (Planned on 31/01/2024)
   - Improving & automating tests coverage
-  - Extend the set of tool
   - Capacity to create own tools
   - Improve general thinking & planning performances
   - Sets a Proxy between the PlannerAgent & the User.
-- [v0.0.3](https://github.com/ph-ausseil/afaas/milestone/4)  - Provide basic coding capacities (Planned on 28/01/2024)
+
+## Roadmap
+
+- [v0.0.3](https://github.com/ph-ausseil/afaas/milestone/4)  - Provide basic coding capacities (Planned on 15/02/2024)
   - Namely implement a first Pipeline/Workflow for code
 - [v0.0.4](https://github.com/ph-ausseil/afaas/milestone/5)  - Serve the agent via an API (TBD)
   - Serve the Agent via API
 - [v0.1.0](https://github.com/ph-ausseil/afaas/milestone/6)  - User & Technical documentation, CI/CD Pipeline, GUI (TBD)
-  - 80% Test Coverage for API
+  - 100% Test Coverage for API
   - 50% Test Coverage for Core
   - A Web Interface (If we receive help 🪄 )
 
