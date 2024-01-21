@@ -44,9 +44,7 @@ async def run_cli_demo():
     )
 
     # NOTE : Real world scenario, this user_id will be passed as an argument
-    agent_dict_list: list[
-        PlannerAgent.SystemSettings
-    ] = await PlannerAgent.db_list(
+    agent_dict_list: list[PlannerAgent.SystemSettings] = await PlannerAgent.db_list(
         user_id=user_id,
     )
 
@@ -59,7 +57,6 @@ async def run_cli_demo():
                 print(
                     f"{i+1}. {agent_dict['agent_name']}({agent_dict['agent_id']}) : {agent_dict['agent_goal_sentence']}"
                 )
-
 
             i: int = 0
             while selected_agent_index < 1 or selected_agent_index > len(
@@ -82,8 +79,7 @@ async def run_cli_demo():
         else:
             selected_agent_index: int = 1
 
-
-    if (selected_agent_index > 0)  :     
+    if selected_agent_index > 0:
         agent_dict = agent_dict_list[selected_agent_index - 1]
         agent_settings = PlannerAgent.SystemSettings(
             **agent_dict_list[selected_agent_index - 1]
@@ -113,7 +109,9 @@ async def run_cli_demo():
         agent_settings._type_ = "AFAAS.core.agents.planner.main.PlannerAgent"
 
         # Step 3. Create the agent.
-        agent: PlannerAgent = await PlannerAgent.load(settings = agent_settings , **agent_settings.dict())
+        agent: PlannerAgent = await PlannerAgent.load(
+            settings=agent_settings, **agent_settings.dict()
+        )
 
     await agent.run(
         user_input_handler=handle_user_input_request,

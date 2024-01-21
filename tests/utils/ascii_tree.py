@@ -1,18 +1,18 @@
-
 import pytest
+
 from AFAAS.interfaces.task.base import AbstractBaseTask
-
-
 
 """""
 THE  FUNCTION print_tree(node, prefix="") IS USED TO PRINT A TREE STRUCTURE OF THE TESTS
-"""""
-async def make_tree(node : AbstractBaseTask, prefix=""):
-    # Print the current node's name
-    tree_str = prefix + "|-- " + node.task_goal + " " + node.task_id 
+""" ""
 
-    if hasattr(node, "state") : 
-        tree_str +=  " " + node.state
+
+async def make_tree(node: AbstractBaseTask, prefix=""):
+    # Print the current node's name
+    tree_str = prefix + "|-- " + node.task_goal + " " + node.task_id
+
+    if hasattr(node, "state"):
+        tree_str += " " + node.state
 
     tree_str += "\n"
     # Check if the node has subtasks
@@ -29,8 +29,9 @@ async def make_tree(node : AbstractBaseTask, prefix=""):
 
     return tree_str
 
-async def print_tree(node : AbstractBaseTask, prefix=""):
-    print(await make_tree(node = node , prefix= prefix))
+
+async def print_tree(node: AbstractBaseTask, prefix=""):
+    print(await make_tree(node=node, prefix=prefix))
 
 
 test_trees = {}
@@ -41,7 +42,7 @@ async def pytest_terminal_summary(terminalreporter, exitstatus, config):
     terminalreporter.write_sep("-", "Tree Structure for Tests")
     for test_name, tree in test_trees.items():
         terminalreporter.write(f"Tree for {test_name}:\n")
-        await print_tree(tree, file=terminalreporter) 
+        await print_tree(tree, file=terminalreporter)
 
 
 # Example test using the fixture

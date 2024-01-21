@@ -9,9 +9,10 @@ from typing import Any, Literal, Optional, TypedDict
 from pydantic import BaseModel
 
 from AFAAS.configs.schema import AFAASModel, Configurable
+from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.db.db_table import AbstractTable
 from AFAAS.lib.sdk.logger import AFAASLogger
-from AFAAS.interfaces.agent.main import BaseAgent
+
 LOG = AFAASLogger(name=__name__)
 
 
@@ -102,7 +103,7 @@ class BaseNoSQLTable(AbstractTable):
 
         return parent_dict
 
-    #FIXME: Remove the id argument
+    # FIXME: Remove the id argument
     # if value[self.primary_key] exit & is not None then use it
     # else, raise a warning & generate an ID
     async def add(self, value: dict, id: str = str(uuid.uuid4())) -> uuid.UUID:

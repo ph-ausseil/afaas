@@ -29,7 +29,9 @@ class CosmosDBMemory(NoSQLMemory):
         self._client = None
         self._database = None
 
-    async def connect(self, cosmos_endpoint=None, cosmos_key=None, cosmos_database_name=None):
+    async def connect(
+        self, cosmos_endpoint=None, cosmos_key=None, cosmos_database_name=None
+    ):
         endpoint = cosmos_endpoint | self.cosmos_endpoint
         db_name = cosmos_database_name | self.cosmos_database_name
         key = cosmos_key | self.cosmos_key

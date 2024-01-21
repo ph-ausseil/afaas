@@ -55,7 +55,7 @@ class AbstractPlan(AbstractBaseTask):
         ...
 
     @abstractmethod
-    async  def get_active_tasks(
+    async def get_active_tasks(
         self, task_ids_set: Optional[list[str]] = None
     ) -> list[AbstractTask]:
         ...

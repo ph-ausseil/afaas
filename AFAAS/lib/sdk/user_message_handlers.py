@@ -1,7 +1,7 @@
 import click
 
-class UserMessageHandlers:
 
+class UserMessageHandlers:
     @staticmethod
     async def user_input_handler(prompt):
         user_input = click.prompt(

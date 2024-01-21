@@ -3,12 +3,12 @@ import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
-from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 from PIL import Image
 
 from AFAAS.core.tools.image_gen import generate_image, generate_image_with_sd_webui
+from AFAAS.lib.task.task import Task
 
 
 @pytest.fixture(params=[256, 512, 1024])

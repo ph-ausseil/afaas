@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 # from langchain_community.tools.gmail import (
 #     GmailCreateDraft,
 #     GmailGetMessage,
@@ -25,10 +26,9 @@ from __future__ import annotations
 # # load_dotenv()
 # # gplaces_api_key = os.getenv('GPLACES_API_KEY', None)
 
-# # if not gplaces_api_key : 
+# # if not gplaces_api_key :
 # #     LOG.warning("A GPLACES_API_KEY is required to use Google places API")
 # #     gplaces_api_key = add_to_env_file(key = "GPLACES_API_KEY", query = "To use Google Places (Google Maps API) please insert your API Key :", section="GOOGLE APIs")
-
 
 
 # def gmail_search_arg_converter(args, agent):
@@ -64,40 +64,38 @@ from __future__ import annotations
 # # from langchain_community.agent_toolkits import GmailToolkit
 # # toolkit = GmailToolkit(api_resource=api_resource)
 
-# try : 
+# try :
 #     gmail_create_draft = Tool.generate_from_langchain_tool(
-#             tool=GmailCreateDraft(api_resource = api_resource), 
+#             tool=GmailCreateDraft(api_resource = api_resource),
 #             #arg_converter=file_search_args,
 #             categories=[ "google", "mail", "gmail"],
 #     )
 
 #     gmail_get_message = Tool.generate_from_langchain_tool(
-#             tool=GmailGetMessage(api_resource = api_resource), 
+#             tool=GmailGetMessage(api_resource = api_resource),
 #             #arg_converter=file_search_args,
 #             categories=[ "google", "mail", "gmail"],
 #     )
 
 #     gmail_send_message = Tool.generate_from_langchain_tool(
-#             tool=GmailSendMessage(api_resource = api_resource), 
+#             tool=GmailSendMessage(api_resource = api_resource),
 #             #arg_converter=file_search_args,
 #             categories=[ "google", "mail", "gmail"],
 #     )
 
 #     gmail_search = Tool.generate_from_langchain_tool(
-#             tool=GmailSearch(api_resource = api_resource), 
+#             tool=GmailSearch(api_resource = api_resource),
 #             categories=[ "google", "mail", "gmail"],
 #             arg_converter=gmail_search_arg_converter,
 #     )
 
 #     gmail_get_draft = Tool.generate_from_langchain_tool(
-#             tool=GmailGetThread(api_resource = api_resource), 
+#             tool=GmailGetThread(api_resource = api_resource),
 #             #arg_converter=file_search_args,
 #             categories=[ "google", "mail", "gmail"],
 #     )
-# except : 
+# except :
 #     pass
-
-
 
 
 # @tool_from_langchain()

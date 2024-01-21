@@ -163,7 +163,10 @@ class AFAASModel(BaseModel):
     def __repr__(self):
         lines = [f"repr:{self.__class__.__name__}("]
 
-        for field_name, field_value in self.__dict__.items():  # Use __dict__ to access object's attributes
+        for (
+            field_name,
+            field_value,
+        ) in self.__dict__.items():  # Use __dict__ to access object's attributes
             formatted_field_name = field_name.replace("_", " ").capitalize()
             if field_value is None:
                 value_str = "Not provided"
@@ -236,26 +239,11 @@ class Configurable(abc.ABC, Generic[S]):
     def __init__(self, settings: S, **kwargs):
         self._settings = settings
 
+
 class AFAASMessageType(str, enum.Enum):
     AGENT_LLM = "agent_llm"
     AGENT_AGENT = "agent_agent"
     AGENT_USER = "agent_user"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def _update_user_config_from_env(instance: BaseModel) -> dict[str, Any]:

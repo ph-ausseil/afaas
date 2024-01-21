@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from AFAAS.configs.schema import Configurable, AFAASModel
+from AFAAS.configs.schema import AFAASModel, Configurable
 from AFAAS.interfaces.adapters.language_model import AbstractLanguageModelProvider
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.sdk.logger import AFAASLogger

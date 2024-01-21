@@ -3,12 +3,12 @@ import string
 import tempfile
 from pathlib import Path
 
-from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 
 import AFAAS.core.tools.execute_code as sut  # system under testing
 from AFAAS.lib.sdk.errors import InvalidArgumentError, OperationNotAllowedError
+from AFAAS.lib.task.task import Task
 
 
 @pytest.fixture
@@ -44,9 +44,7 @@ def random_string():
 def test_execute_python_file(
     python_test_file: Path, random_string: str, agent: PlannerAgent
 ):
-    result: str = sut.execute_python_file(
-        python_test_file, agent=default_task.agent
-    )
+    result: str = sut.execute_python_file(python_test_file, agent=default_task.agent)
     assert result.replace("\r", "") == f"Hello {random_string}!\n"
 
 
@@ -64,9 +62,7 @@ def test_execute_python_file_args(
 
 
 def test_execute_python_code(random_code: str, random_string: str, agent: PlannerAgent):
-    result: str = sut.execute_python_code(
-        random_code, agent=default_task.agent
-    )
+    result: str = sut.execute_python_code(random_code, agent=default_task.agent)
     assert result.replace("\r", "") == f"Hello {random_string}!\n"
 
 

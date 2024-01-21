@@ -17,10 +17,10 @@ from AFAAS.core.tools.builtins.file_operations_helpers import (
 from AFAAS.core.tools.builtins.file_operations_utils import (  # FIXME: replace with Langchain
     decode_textual_file,
 )
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE, tool_from_langchain
 from AFAAS.core.tools.tool import Tool
-from AFAAS.interfaces.tools.base import AbstractTool
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool, tool_from_langchain
 from AFAAS.interfaces.agent.main import BaseAgent
+from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.lib.sdk.errors import DuplicateOperationError
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
@@ -186,7 +186,7 @@ def file_search_args(input_args: dict[str, any], agent: BaseAgent):
 
 
 file_search = Tool.generate_from_langchain_tool(
-    tool=FileSearchTool(), 
+    tool=FileSearchTool(),
     arg_converter=file_search_args,
     categories=[AbstractTool.FRAMEWORK_CATEGORY, TOOL_CATEGORY],
 )
@@ -195,4 +195,3 @@ file_search = Tool.generate_from_langchain_tool(
 #                      categories=[AbstractTool.FRAMEWORK_CATEGORY, TOOL_CATEGORY],)
 # class AdaptedFileSearchTool(FileSearchTool):
 #     pass
-

@@ -17,7 +17,6 @@ from AFAAS.interfaces.tools.schema import ToolResult
 from AFAAS.lib.utils.json_schema import JSONSchema
 
 
-
 class ToolConfiguration(SystemConfiguration):
     """Struct for model configuration."""
 
@@ -97,6 +96,7 @@ class AbstractToolRegistry(AgentMixin, abc.ABC):
     @abc.abstractmethod
     async def perform(self, tool_name: str, **kwargs: Any) -> ToolResult:
         ...
+
 
 @dataclass
 class ToolCategory:

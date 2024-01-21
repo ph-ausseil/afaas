@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.tools.base import AbstractTool
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan
 from AFAAS.lib.task.task import Task
@@ -23,7 +23,7 @@ LOG = AFAASLogger(name=__name__)
     description="Make a plan to tacle a tasks",
     # parameters = ,
     hide=True,
-    categories=[AbstractTool.FRAMEWORK_CATEGORY, 'planning']
+    categories=[AbstractTool.FRAMEWORK_CATEGORY, "planning"],
 )
 async def afaas_make_initial_plan(task: Task, agent: BaseAgent) -> None:
     # plan =  self.execute_strategy(

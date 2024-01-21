@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import json
-from typing import Any, ClassVar, Generator, Optional, Type, TYPE_CHECKING
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, ClassVar, Generator, Optional, Type
 
 from AFAAS.configs.schema import AFAASModel
 from AFAAS.interfaces.db.db import AbstractMemory
@@ -10,12 +11,12 @@ from AFAAS.lib.sdk.logger import AFAASLogger
 LOG = AFAASLogger(name=__name__)
 
 if TYPE_CHECKING:
-
     from AFAAS.interfaces.agent.main import BaseAgent
+
 
 class AFAASMessage(ABC, AFAASModel):
     message_id: str
-    _table_name: ClassVar[str] #= "message"
+    _table_name: ClassVar[str]  # = "message"
     task_id: Optional[str]
 
 
@@ -26,7 +27,7 @@ class AFAASMessageStack(AFAASModel):
     async def db_create(self, message: AFAASMessage):
         self._messages[message.message_id] = message
         table = await self.db.get_table(message._table_name)
-        await table.add(value= message , id = message.message_id)
+        await table.add(value=message, id=message.message_id)
         return message.message_id
 
     def __init__(self, **data: Any):
@@ -64,27 +65,29 @@ class AFAASMessageStack(AFAASModel):
     def __str__(self):
         return self._messages.__str__()
 
-
-
-    async def load(self, agent : BaseAgent, cls : Type[AFAASMessage]) -> dict[AFAASMessage]:
+    async def load(
+        self, agent: BaseAgent, cls: Type[AFAASMessage]
+    ) -> dict[AFAASMessage]:
         from AFAAS.interfaces.db.db_table import AbstractTable
+
         table = await agent.db.get_table(cls._table_name)
         list = await table.list(
             filter=AbstractTable.FilterDict(
-            {
-                "agent_id": [
-                    AbstractTable.FilterItem(
-                        value=str(agent.agent_id), operator=AbstractTable.Operators.EQUAL_TO
-                    )
-                ]
-            }
-        ),
+                {
+                    "agent_id": [
+                        AbstractTable.FilterItem(
+                            value=str(agent.agent_id),
+                            operator=AbstractTable.Operators.EQUAL_TO,
+                        )
+                    ]
+                }
+            ),
             order_column="created_at",
             order_direction="desc",
         )
         for message in list:
-            if message['message_id'] not in self._messages.keys() : 
-                self._messages[message['message_id']] = cls(**message)
-            else : 
+            if message["message_id"] not in self._messages.keys():
+                self._messages[message["message_id"]] = cls(**message)
+            else:
                 LOG.warning(f"Message {message['message_id']} already loaded")
         return self

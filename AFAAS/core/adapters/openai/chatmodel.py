@@ -261,7 +261,10 @@ class AFAASChatOpenAI(Configurable[OpenAISettings], AbstractChatModelProvider):
         if self._should_retry_function_call(
             tools=tools, response_message=response_message
         ):
-            if self._func_call_fails_count <= self._settings.configuration.maximum_retry:
+            if (
+                self._func_call_fails_count
+                <= self._settings.configuration.maximum_retry
+            ):
                 return await self._retry_chat_completion(
                     model_prompt=chat_messages,
                     tools=tools,
@@ -493,9 +496,9 @@ async def _create_chat_completion(
             del kwargs["tools"]
         kwargs.pop("tool_choice", None)
 
-    else :
-        #kwargs["tools"] = [function for function in kwargs["tools"]]
-        if (len(kwargs["tools"])  == 0): 
+    else:
+        # kwargs["tools"] = [function for function in kwargs["tools"]]
+        if len(kwargs["tools"]) == 0:
             del kwargs["tools"]
             kwargs.pop("tool_choice", None)
         elif len(kwargs["tools"]) == 1:
@@ -508,7 +511,6 @@ async def _create_chat_completion(
                 "type": "function",
                 "function": {"name": kwargs["tool_choice"]},
             }
-
 
     LOG.trace(raw_messages[0]["content"])
     LOG.trace(kwargs)

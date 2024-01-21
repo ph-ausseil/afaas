@@ -12,8 +12,8 @@ import pytest
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_registry import DefaultToolRegistry
 from AFAAS.core.tools.tool import Tool
+from AFAAS.core.tools.tool_registry import DefaultToolRegistry
 from AFAAS.interfaces.tools.tool_parameters import ToolParameter
 from AFAAS.lib.utils.json_schema import JSONSchema
 
@@ -51,7 +51,7 @@ def test_tool_creation():
         exec_function=example_tool_exec_function,
         parameters=PARAMETERS,
         success_check_callback=Tool.default_success_check_callback,
-        categories=["example"]
+        categories=["example"],
     )
 
     assert cmd.name == "example"
@@ -71,7 +71,7 @@ def example_tool():
         exec_function=example_tool_exec_function,
         parameters=PARAMETERS,
         success_check_callback=Tool.default_success_check_callback,
-        categories=["undefined"]
+        categories=["undefined"],
     )
 
 
@@ -186,7 +186,7 @@ async def test_call_tool(agent: BaseAgent, empty_tool_registry: DefaultToolRegis
         exec_function=example_tool_exec_function,
         parameters=PARAMETERS,
         success_check_callback=Tool.default_success_check_callback,
-        categories=["example"]
+        categories=["example"],
     )
 
     empty_tool_registry.register(cmd)

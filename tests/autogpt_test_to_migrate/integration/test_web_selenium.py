@@ -1,8 +1,8 @@
-from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.agents.agent import PlannerAgent
 
 from AFAAS.core.tools.web_selenium import BrowsingError, read_webpage
+from AFAAS.lib.task.task import Task
 
 
 @pytest.mark.vcr

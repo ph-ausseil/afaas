@@ -1,16 +1,18 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from AFAAS.core.tools.builtins.query_language_model import query_language_model
 from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
-
 from tests.dataset.plan_familly_dinner import (
     Task,
     _plan_familly_dinner,
+    default_task,
     plan_familly_dinner_with_tasks_saved_in_db,
     plan_step_0,
     task_ready_no_predecessors_or_subtasks,
-    default_task
 )
+
 
 @pytest.mark.asyncio
 async def test_query_language_model_returns_string():
@@ -29,9 +31,9 @@ async def test_query_language_model_returns_string():
         query="How to plan a familly dinner ?",
         format="Aswer in 3 paragraphs",
         persona="A drunk Paraguayan sailor",
-        task = mock_task, 
-        agent = mock_agent
-        )
+        task=mock_task,
+        agent=mock_agent,
+    )
 
     # Assert that the result is a string
     assert isinstance(result, str)
@@ -39,19 +41,19 @@ async def test_query_language_model_returns_string():
 
 
 @pytest.mark.asyncio
-async def test_query_language_model_integration(activate_integration_tests, default_task : Task):
-
+async def test_query_language_model_integration(
+    activate_integration_tests, default_task: Task
+):
     if not activate_integration_tests:
         pytest.skip("Integration tests are not activated")
 
     # Call the function with the real or semi-real objects
     result = await query_language_model(
-        task = default_task, 
-        agent= default_task.agent,
+        task=default_task,
+        agent=default_task.agent,
         query="How to plan a familly dinner ?",
         format="Aswer in 3 paragraphs",
         persona="A drunk Paraguayan sailor",
-        )
+    )
 
-    assert  isinstance(result, str)
-
+    assert isinstance(result, str)
