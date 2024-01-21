@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.app.setup import (
     apply_overrides_to_ai_settings,
@@ -9,6 +8,7 @@ from autogpt.app.setup import (
 from autogpt.config.ai_profile import AIProfile
 
 from AFAAS.configs.config import AIDirectives, Config
+from AFAAS.lib.task.task import Task
 
 
 @pytest.mark.asyncio

@@ -10,9 +10,9 @@ from AFAAS.interfaces.agent.main import BaseAgent
 from tests.dataset.plan_familly_dinner import (
     Task,
     _plan_familly_dinner,
+    default_task,
     plan_familly_dinner_with_tasks_saved_in_db,
     plan_step_0,
-    default_task,
 )
 
 

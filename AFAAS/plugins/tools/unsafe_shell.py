@@ -1,21 +1,22 @@
 from __future__ import annotations
-from dotenv import load_dotenv
+
+import importlib
 import os
 import os.path
-import importlib
 from pathlib import Path
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import PIPE, STDOUT, Popen
+
+from dotenv import load_dotenv
 from langchain_community.tools.file_management.file_search import FileSearchTool
 from langchain_core.vectorstores import VectorStore
 
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
 from AFAAS.core.tools.tool import Tool
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import DuplicateOperationError
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
 from AFAAS.lib.utils.json_schema import JSONSchema
-
 
 # Load environment variables
 load_dotenv()
@@ -23,20 +24,24 @@ load_dotenv()
 # Retrieve the allowed commands and convert them into a list, or an empty list if not defined
 ALLOWED_COMMANDS = os.getenv("ALLOWED_COMMANDS")
 
-if not SAFE_MODE or (SAFE_MODE and ALLOWED_COMMANDS is not None) : 
+if not SAFE_MODE or (SAFE_MODE and ALLOWED_COMMANDS is not None):
     if ALLOWED_COMMANDS is not None:
-        ALLOWED_COMMANDS = ALLOWED_COMMANDS.split(',')
+        ALLOWED_COMMANDS = ALLOWED_COMMANDS.split(",")
     else:
         ALLOWED_COMMANDS = []
 
     def load_validator(command_name):
         # Construct the path to the validator module
-        module_path = Path(__file__).parent / f"shell_commands_validators/{command_name}.py"
+        module_path = (
+            Path(__file__).parent / f"shell_commands_validators/{command_name}.py"
+        )
 
         if not module_path.exists():
             return default_arg_validation  # Use the default validator
 
-        spec = importlib.util.spec_from_file_location(f"{command_name}_validator", module_path)
+        spec = importlib.util.spec_from_file_location(
+            f"{command_name}_validator", module_path
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -61,7 +66,9 @@ if not SAFE_MODE or (SAFE_MODE and ALLOWED_COMMANDS is not None) :
             ),
         },
     )
-    def execute_shell_command(command: str, arguments: str, task: Task, agent: BaseAgent) -> str:
+    def execute_shell_command(
+        command: str, arguments: str, task: Task, agent: BaseAgent
+    ) -> str:
         """Execute a shell command with arguments
 
         Args:

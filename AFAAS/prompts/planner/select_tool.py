@@ -21,9 +21,6 @@ from AFAAS.interfaces.prompts.strategy_planning import (
     AbstractPlanningPromptStrategy,
     PlanningPromptStrategiesConfiguration,
 )
-from AFAAS.interfaces.task.task import AbstractTask
-from AFAAS.lib.action_history import Episode
-
 from AFAAS.interfaces.prompts.utils.utils import (
     indent,
     json_loads,
@@ -32,6 +29,9 @@ from AFAAS.interfaces.prompts.utils.utils import (
     to_numbered_list,
     to_string_list,
 )
+from AFAAS.interfaces.task.task import AbstractTask
+from AFAAS.lib.action_history import Episode
+
 
 class SelectToolFunctionNames(str, enum.Enum):
     SELECT_TOOL: str = "select_tool"

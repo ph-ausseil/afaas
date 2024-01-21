@@ -53,7 +53,7 @@ class JSONFileMemory(NoSQLMemory):
         data = await self._load_file(key, table_name)
         if data:
             data.update(value)
-            await  self._save_file(key, table_name, data)
+            await self._save_file(key, table_name, data)
         else:
             raise KeyError(f"No such key '{key}' in table {table_name}")
 

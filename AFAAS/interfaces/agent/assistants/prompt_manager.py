@@ -54,8 +54,8 @@ class BasePromptManager(AgentMixin):
             AfaasTaskRagStep3Strategy,
             AutoCorrectionStrategy,
             BaseTaskSummary_Strategy,
-            SearchInfo_Strategy,
             QueryLLMStrategy,
+            SearchInfo_Strategy,
             load_all_strategies,
         )
         common_strategies = [AutoCorrectionStrategy(

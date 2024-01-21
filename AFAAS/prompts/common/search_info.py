@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from AFAAS.interfaces.task.task import AbstractTask
 
+from AFAAS.core.tools.tool import Tool
 from AFAAS.interfaces.adapters import (
     AbstractLanguageModelProvider,
     AbstractPromptConfiguration,
@@ -15,6 +16,7 @@ from AFAAS.interfaces.adapters import (
     ChatPrompt,
     CompletionModelFunction,
 )
+from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.prompts.strategy import (
     AbstractPromptStrategy,
     DefaultParsedResponse,
@@ -22,8 +24,6 @@ from AFAAS.interfaces.prompts.strategy import (
 )
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.utils.json_schema import JSONSchema
-from AFAAS.interfaces.agent.main import BaseAgent
-from AFAAS.core.tools.tool import Tool
 
 LOG = AFAASLogger(name=__name__)
 
@@ -67,18 +67,20 @@ class SearchInfo_Strategy(AbstractPromptStrategy):
         tools: list[Tool],
         **kwargs,
     ):
-        self._tools : list[CompletionModelFunction] = []
+        self._tools: list[CompletionModelFunction] = []
 
         for tool in tools:
             self._tools.append(tool.dump())
 
-    async def build_message(  self, 
-                        task: AbstractTask,
-                        agent : BaseAgent, 
-                        query : str, 
-                        reasoning : str , 
-                        tools : list[Tool],
-                        **kwargs) -> ChatPrompt:
+    async def build_message(
+        self,
+        task: AbstractTask,
+        agent: BaseAgent,
+        query: str,
+        reasoning: str,
+        tools: list[Tool],
+        **kwargs,
+    ) -> ChatPrompt:
         LOG.debug("Building prompt for task : " + await task.debug_dump_str())
         self._task: AbstractTask = task
         smart_rag_param = {

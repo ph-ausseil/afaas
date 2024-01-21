@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
 from AFAAS.core.agents.routing.main import RoutingAgent
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.task import Task
@@ -23,7 +23,7 @@ LOG = AFAASLogger(name=__name__)
     tech_description="Divide a task into subtasks",
     # parameters = ,
     hide=True,
-    categories=[AbstractTool.FRAMEWORK_CATEGORY, 'planning']
+    categories=[AbstractTool.FRAMEWORK_CATEGORY, "planning"],
 )
 async def afaas_routing(
     task: Task,

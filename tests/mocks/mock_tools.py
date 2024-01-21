@@ -1,4 +1,4 @@
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.lib.utils.json_schema import JSONSchema
 
 TOOL_CATEGORY = "mock"

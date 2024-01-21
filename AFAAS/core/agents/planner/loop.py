@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Awaitable, Callable, Dict, Optional
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.tools.tool_output import ToolOutput
 from AFAAS.lib.sdk.errors import AgentException, ToolExecutionError, UnknownToolError
-from AFAAS.lib.task.task import Task, TaskStatusList
 from AFAAS.lib.task.plan import Plan
+from AFAAS.lib.task.task import Task, TaskStatusList
 
 if TYPE_CHECKING:
     from AFAAS.core.agents.planner.main import PlannerAgent
@@ -45,6 +45,17 @@ class PlannerLoop(BaseLoop):
     ) -> None:
         from pathlib import Path
 
+        # current_task = self._current_task
+        # # NOTE : Test tools individually
+        # command_name = "web_search"
+        # command_args= {"query": "instructions for building a Pizza oven"}
+        # return_value = await execute_command(
+        #     command_name=command_name,
+        #     arguments=command_args,
+        #     task=current_task,
+        #     agent=self._agent,
+        # )
+        # print(return_value)
         import AFAAS.core.tools.builtins.file_operations as file_ops
 
         # current_task = self._current_task
@@ -58,26 +69,6 @@ class PlannerLoop(BaseLoop):
         #     agent=self._agent,
         # )
         # print(return_value)
-
-
-
-
-
-        import AFAAS.core.tools.builtins.file_operations as file_ops
-        from pathlib import Path
-        #current_task = self._current_task
-        # # NOTE : Test tools individually
-        # command_name = "web_search"
-        # command_args= {"query": "instructions for building a Pizza oven"}
-        # return_value = await execute_command(
-        #     command_name=command_name,
-        #     arguments=command_args,
-        #     task=current_task,
-        #     agent=self._agent,
-        # )
-        # print(return_value)
-
-
 
         if isinstance(user_input_handler, Callable) and user_input_handler is not None:
             self._user_input_handler = user_input_handler
@@ -198,8 +189,8 @@ class PlannerLoop(BaseLoop):
                 this situation is most likely due to the adition of subbtasks or predecessor during the excecution of the task
                 #TODO: Concider implementing this feature as a Tool Callback for Tools that can create subtasks
                 """
-                #FIXME: 
-                # Option 1 : May be remove that line as it could break tree trasversal  
+                # FIXME:
+                # Option 1 : May be remove that line as it could break tree trasversal
                 # Option 2 : Create status ready with subtasks
                 LOG.error(f"Can't terminate Task : {current_task.debug_formated_str()}")
                 self.plan()._ready_task_ids.remove(current_task.task_id)
@@ -226,7 +217,9 @@ class PlannerLoop(BaseLoop):
                 LOG.trace(f"Next task : {self._current_task.debug_formated_str()}")
 
                 LOG.info("Task history : (Max. 10 tasks)")
-                plan_history: list[Task] = await self.plan().get_last_achieved_tasks(count=10)
+                plan_history: list[Task] = await self.plan().get_last_achieved_tasks(
+                    count=10
+                )
                 for i, task in enumerate(plan_history):
                     LOG.info(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"
@@ -235,7 +228,9 @@ class PlannerLoop(BaseLoop):
                 if LOG.isEnabledFor(TRACE):
                     input("Press Enter to continue...")
 
-                LOG.info(f"Task Path : {await self._current_task.get_formated_task_path()}")
+                LOG.info(
+                    f"Task Path : {await self._current_task.get_formated_task_path()}"
+                )
                 task_path: list[Task] = await self._current_task.get_task_path()
                 for i, task in enumerate(task_path):
                     LOG.trace(
@@ -258,7 +253,9 @@ class PlannerLoop(BaseLoop):
                 LOG.trace(f"Task Predecessor :")
                 task_predecessors: list[
                     Task
-                ] = await self._current_task.task_predecessors.get_all_tasks_from_stack()
+                ] = (
+                    await self._current_task.task_predecessors.get_all_tasks_from_stack()
+                )
                 for i, task in enumerate(task_predecessors):
                     LOG.trace(
                         f"{i+1}.Task : {task.debug_formated_str()} : {getattr(task, 'task_text_output', '')}"

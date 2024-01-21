@@ -1,37 +1,38 @@
 from __future__ import annotations
+
+import json
+import os
+import time
+
 import redis
 from dotenv import load_dotenv
-import json
-import time
-import os
 
 
 class CacheManager:
     def __init__(self):
-
         load_dotenv()
-        use_redis = os.getenv('USE_REDIS', 'False').lower() == 'true'
+        use_redis = os.getenv("USE_REDIS", "False").lower() == "true"
         self.redis_config = {
-            'host': os.getenv('REDIS_HOST'),
-            'port': int(os.getenv('REDIS_PORT')), 
-            'db': int(os.getenv('REDIS_DB'))
-         }
-        self.json_file_path= os.getenv('JSON_CACHE_FILE_PATH')
+            "host": os.getenv("REDIS_HOST"),
+            "port": int(os.getenv("REDIS_PORT")),
+            "db": int(os.getenv("REDIS_DB")),
+        }
+        self.json_file_path = os.getenv("JSON_CACHE_FILE_PATH")
         self.cache = {}
 
         self.use_redis = False
         if use_redis:
-            try : 
+            try:
                 self.redis_client = redis.Redis(**self.redis_config)
                 self.use_redis = True
-            except :
+            except:
                 self.load_from_json()
         else:
             self.load_from_json()
 
     def load_from_json(self):
         if os.path.exists(self.json_file_path):
-            with open(self.json_file_path, 'r') as file:
+            with open(self.json_file_path, "r") as file:
                 self.cache = json.load(file)
 
     def save_to_json(self):
@@ -40,7 +41,7 @@ class CacheManager:
 
         # Create the directory if it doesn't exist
         os.makedirs(directory, exist_ok=True)
-        with open(self.json_file_path, 'w') as file:
+        with open(self.json_file_path, "w") as file:
             json.dump(self.cache, file, indent=4)
 
     def get(self, key):
@@ -66,13 +67,13 @@ class CacheManager:
             self.cache = {}  # Reset the in-memory cache
             self.save_to_json()  # Save the empty cache to the JSON file
 
-    def set_cache_time(self, time_stamp = time.time()):
+    def set_cache_time(self, time_stamp=time.time()):
         """Set the last updated time in the cache."""
-        self.set('last_updated', time_stamp)
+        self.set("last_updated", time_stamp)
 
     def get_cache_time(self):
         """Get the last updated time from the cache. Returns 0 if not set."""
-        return self.get('last_updated') or 0
+        return self.get("last_updated") or 0
 
     def get_all_categories(self) -> list[str]:
         """
@@ -83,10 +84,14 @@ class CacheManager:
         """
         if self.use_redis:
             # Retrieve all keys from Redis and filter out 'last_updated'
-            all_keys = self.redis_client.keys('*')
-            all_categories = [key.decode('utf-8') for key in all_keys if key.decode('utf-8') != 'last_updated']
+            all_keys = self.redis_client.keys("*")
+            all_categories = [
+                key.decode("utf-8")
+                for key in all_keys
+                if key.decode("utf-8") != "last_updated"
+            ]
         else:
             # For JSON cache, filter out 'last_updated' from the keys
-            all_categories = list(set(self.cache.keys()) - {'last_updated'})
+            all_categories = list(set(self.cache.keys()) - {"last_updated"})
 
         return all_categories

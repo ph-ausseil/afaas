@@ -17,8 +17,6 @@ LOG = AFAASLogger(name=__name__)
 
 
 class UserContextLoop(BaseLoop):
-
-
     class LoophooksDict(BaseLoop.LoophooksDict):
         pass
 

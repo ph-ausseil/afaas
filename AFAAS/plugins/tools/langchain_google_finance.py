@@ -16,7 +16,7 @@
 # serper_api_key = os.getenv('SERPER_API_KEY', None)
 
 
-# if not serper_api_key : 
+# if not serper_api_key :
 #     LOG.warning("A SERPER_API_KEY is required to use Google Serper (Google Search)")
 #     serper_api_key = add_to_env_file(key = "SERPER_API_KEY", query = "To use Google Serper (Google Search) please insert your API Key :", section="GOOGLE APIs")
 #     os.environ['SERPAPI_API_KEY'] = serper_api_key
@@ -31,7 +31,7 @@
 #     LOG.info("google_auth_oauthlib package has been installed.")
 
 # google_finance = Tool.generate_from_langchain_tool(
-#         tool=GoogleFinanceQueryRun(GoogleFinanceAPIWrapper()), 
+#         tool=GoogleFinanceQueryRun(GoogleFinanceAPIWrapper()),
 #         #arg_converter=file_search_args,
 #         categories=[ "google", "finance"],
 # )

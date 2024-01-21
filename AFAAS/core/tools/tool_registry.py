@@ -1,7 +1,8 @@
 from __future__ import annotations
-import os
+
 import importlib
 import inspect
+import os
 import time
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Iterator
@@ -23,10 +24,15 @@ from AFAAS.interfaces.adapters import (
     ModelProviderName,
 )
 from AFAAS.interfaces.db.db import AbstractMemory
-from AFAAS.interfaces.tools.base import AbstractTool, AbstractToolRegistry, ToolConfiguration
+from AFAAS.interfaces.tools.base import (
+    AbstractTool,
+    AbstractToolRegistry,
+    ToolConfiguration,
+)
 from AFAAS.interfaces.tools.schema import ToolResult
 from AFAAS.interfaces.workspace import AbstractFileWorkspace
 from AFAAS.lib.sdk.cache_manager import CacheManager
+
 
 class ToolsRegistryConfiguration(SystemConfiguration):
     """
@@ -63,14 +69,13 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         name: str = "simple_tool_registry"
         description: str = "A simple tool registry."
 
-
     def __init__(
         self,
         settings: DefaultToolRegistry.SystemSettings,
         db: AbstractMemory,
         workspace: AbstractFileWorkspace,
         model_providers: dict[ModelProviderName, AbstractChatModelProvider],
-        include_builtins = True
+        include_builtins=True,
     ):
         """
         Initialize the DefaultToolRegistry.
@@ -101,52 +106,55 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         # ) in self._settings.configuration.tools.items():
         #     self.register_tool(tool_name, tool_configuration)
 
-        self.tools_by_name : dict[AbstractTool] = {}
-        #self.tool_aliases : dict[AbstractTool]  = {}
-        self._tool_module : dict[AbstractTool]  = {}
+        self.tools_by_name: dict[AbstractTool] = {}
+        # self.tool_aliases : dict[AbstractTool]  = {}
+        self._tool_module: dict[AbstractTool] = {}
 
         self.initialize_cache()
 
-        if include_builtins : 
+        if include_builtins:
             from AFAAS.core.tools.builtins import BUILTIN_MODULES
-            for module in BUILTIN_MODULES :
+
+            for module in BUILTIN_MODULES:
                 self._import_tool_module(module_name=module)
 
     last_updated = 0
-    plugin_directory = 'AFAAS/plugins/tools/'
+    plugin_directory = "AFAAS/plugins/tools/"
     cache_manager = CacheManager()
     categories = {}
+
     def initialize_cache(self):
         current_time = time.time()
         last_updated_in_cache = self.cache_manager.get_cache_time() or 0
         # Determine if the cache needs to be updated
         needs_update = any(
-            os.path.getmtime(os.path.join(self.plugin_directory, f)) > last_updated_in_cache
+            os.path.getmtime(os.path.join(self.plugin_directory, f))
+            > last_updated_in_cache
             for f in os.listdir(self.plugin_directory)
-            if f.endswith('.py') and not f.startswith('__')
+            if f.endswith(".py") and not f.startswith("__")
         )
 
-        if needs_update :
+        if needs_update:
             self.rebuild_cache()
             self.last_updated = current_time
 
     def rebuild_cache(self):
         self.cache_manager.clear_cache()
         for filename in os.listdir(self.plugin_directory):
-            if filename.endswith('.py') and not filename.startswith('__'):
-                module_path = f"{self.plugin_directory.replace('/', '.')}{filename[:-3]}"
+            if filename.endswith(".py") and not filename.startswith("__"):
+                module_path = (
+                    f"{self.plugin_directory.replace('/', '.')}{filename[:-3]}"
+                )
                 module = self._import_tool_module(module_path)
                 for name, attr in inspect.getmembers(module):
                     if hasattr(attr, TOOL_WRAPPER_MARKER):  # Check if attr is a tool
-                        tool_instance = getattr(attr, 'tool')
+                        tool_instance = getattr(attr, "tool")
                         for category in tool_instance.categories:
                             existing_modules = self.cache_manager.get(category) or {}
                             existing_modules.update({tool_instance.name: module_path})
                             self.cache_manager.set(category, existing_modules)
 
         self.cache_manager.set_cache_time()
-
-
 
     def add_all_tool_categories(self):
         # Retrieve all categories from the cache
@@ -156,9 +164,8 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
         for category in all_categories:
             self.add_tool_category(category)
 
-
-    def add_tool_categories(self, categories: list[str]): 
-        for category in categories: 
+    def add_tool_categories(self, categories: list[str]):
+        for category in categories:
             self.add_tool_category(category)
 
     def add_tool_category(self, category: str):
@@ -183,7 +190,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
             LOG.error(f"Tool '{tool_name}' not found in cache.")
 
     def __contains__(self, tool_name: str):
-        return tool_name in self.tools_by_name #or tool_name in self.tool_aliases
+        return tool_name in self.tools_by_name  # or tool_name in self.tool_aliases
 
     def register_tool(
         self,
@@ -245,7 +252,9 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
 
     def register(self, tool: AbstractTool) -> None:
         if tool.name in self.tools_by_name:
-            LOG.notice(f"Tool '{tool.name}' already registered and will be overwritten!")
+            LOG.notice(
+                f"Tool '{tool.name}' already registered and will be overwritten!"
+            )
         self.tools_by_name[tool.name] = tool
 
         # if tool.name in self.tool_aliases:
@@ -263,7 +272,6 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
             #     del self.tool_aliases[alias]
         else:
             raise KeyError(f"Tool '{tool.name}' not found in registry.")
-
 
     # def reload_tools(self) -> None:
     #     for cmd_name in self.tools:
@@ -322,7 +330,7 @@ class DefaultToolRegistry(Configurable, AbstractToolRegistry):
     def _import_tool_module(self, module_name: str) -> None:
         module = importlib.import_module(module_name)
 
-        #category = self.register_module_category(module)
+        # category = self.register_module_category(module)
 
         for attr_name in dir(module):
             attr = getattr(module, attr_name)

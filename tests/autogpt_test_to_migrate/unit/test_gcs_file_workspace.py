@@ -2,13 +2,17 @@ import os
 import uuid
 from pathlib import Path
 
-from AFAAS.lib.task.task import Task
 import pytest
 import pytest_asyncio
-from AFAAS.core.workspace.gcs import GCSFileWorkspace_AlphaRealease, GCSFileWorkspaceConfiguration
 from google.auth.exceptions import GoogleAuthError
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
+
+from AFAAS.core.workspace.gcs import (
+    GCSFileWorkspace_AlphaRealease,
+    GCSFileWorkspaceConfiguration,
+)
+from AFAAS.lib.task.task import Task
 
 try:
     storage.Client()
@@ -50,7 +54,9 @@ def test_initialize(
 
 
 @pytest.fixture
-def gcs_workspace(gcs_workspace_uninitialized: GCSFileWorkspace_AlphaRealease) -> GCSFileWorkspace_AlphaRealease:
+def gcs_workspace(
+    gcs_workspace_uninitialized: GCSFileWorkspace_AlphaRealease,
+) -> GCSFileWorkspace_AlphaRealease:
     (gcs_workspace := gcs_workspace_uninitialized).initialize()
     yield gcs_workspace  # type: ignore
 
@@ -75,7 +81,9 @@ TEST_FILES: list[tuple[str | Path, str]] = [
 
 
 @pytest_asyncio.fixture
-async def gcs_workspace_with_files(gcs_workspace: GCSFileWorkspace_AlphaRealease) -> GCSFileWorkspace_AlphaRealease:
+async def gcs_workspace_with_files(
+    gcs_workspace: GCSFileWorkspace_AlphaRealease,
+) -> GCSFileWorkspace_AlphaRealease:
     for file_name, file_content in TEST_FILES:
         gcs_workspace._bucket.blob(
             str(gcs_workspace.get_path(file_name))

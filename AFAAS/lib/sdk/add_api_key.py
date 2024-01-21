@@ -1,9 +1,12 @@
 import os
 import re
+
 from dotenv import load_dotenv
+
 from AFAAS.core.tools.builtins.user_interaction import user_interaction
 
-def add_to_env_file(key : str, query : str , section=None, env_file_path=".env"):
+
+def add_to_env_file(key: str, query: str, section=None, env_file_path=".env"):
     """
     Add a new key-value pair to a .env file with optional sections.
 
@@ -29,9 +32,13 @@ def add_to_env_file(key : str, query : str , section=None, env_file_path=".env")
         if not section_pattern.search(file_contents):
             # Create the section if it doesn't exist
             with open(env_file_path, "a") as env_file:
-                env_file.write(f"\n\n#############################################################################\n")
+                env_file.write(
+                    f"\n\n#############################################################################\n"
+                )
                 env_file.write(f"### {section}\n")
-                env_file.write(f"#############################################################################\n")
+                env_file.write(
+                    f"#############################################################################\n"
+                )
 
     # Append the new entry to the .env file
     with open(env_file_path, "a") as env_file:
@@ -39,5 +46,3 @@ def add_to_env_file(key : str, query : str , section=None, env_file_path=".env")
 
     # Optionally, update the environment variables in your script
     os.environ[key] = value
-
-

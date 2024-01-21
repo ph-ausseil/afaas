@@ -12,9 +12,7 @@ if TYPE_CHECKING:
 
 from langchain.tools.base import BaseTool
 
-from AFAAS.interfaces.adapters import (
-    CompletionModelFunction,
-)
+from AFAAS.interfaces.adapters import CompletionModelFunction
 from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.lib.sdk.logger import AFAASLogger
 
@@ -37,7 +35,7 @@ class Tool:
         self,
         name: str,
         description: str,
-        categories : list[str],
+        categories: list[str],
         exec_function: Callable[..., ToolOutput],
         parameters: list[ToolParameter],
         success_check_callback: Callable[..., Any],
@@ -59,7 +57,7 @@ class Tool:
         self.hide = hide
         self.success_check_callback = success_check_callback
         self.tech_description = tech_description or description
-        self.categories =categories
+        self.categories = categories
 
     @property
     def is_async(self) -> bool:
@@ -87,14 +85,15 @@ class Tool:
 
     @classmethod
     def generate_from_langchain_tool(
-        cls, 
-        tool: BaseTool, 
+        cls,
+        tool: BaseTool,
         arg_converter: Optional[Callable] = None,
-        categories : list[str] = ['undefined'],
-        success_check_callback = None
+        categories: list[str] = ["undefined"],
+        success_check_callback=None,
     ) -> "Tool":
-
-        success_check_callback = success_check_callback or cls.default_success_check_callback
+        success_check_callback = (
+            success_check_callback or cls.default_success_check_callback
+        )
 
         def wrapper(*args, **kwargs):
             # a Tool's run function doesn't take an agent as an arg, so just remove that
@@ -119,9 +118,9 @@ class Tool:
         # ]
 
         typed_parameters = [
-                ToolParameter(
-                    name=name,
-                    spec = JSONSchema(
+            ToolParameter(
+                name=name,
+                spec=JSONSchema(
                     type=schema.get("type"),
                     description=schema.get("description", schema.get("title")),
                     required=bool(
@@ -129,10 +128,10 @@ class Tool:
                     )  # gives True if `field.required == pydantic.Undefined``
                     if tool.args_schema
                     else True,
-                    )
-                )
-                for name, schema in tool.args.items()
-            ]
+                ),
+            )
+            for name, schema in tool.args.items()
+        ]
 
         tool = Tool(
             categories=categories,

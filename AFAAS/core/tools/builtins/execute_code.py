@@ -10,7 +10,7 @@ import docker
 from docker.errors import DockerException, ImageNotFound, NotFound
 from docker.models.containers import Container as DockerContainer
 
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.tools.base import AbstractTool
 from AFAAS.lib.sdk.errors import (
@@ -33,9 +33,9 @@ DENYLIST_CONTROL = "denylist"
 
 
 @tool(
-    name = "execute_python_code",
-    description= "Executes the given Python code inside a single-use Docker container"
-        " with access to your workspace folder",
+    name="execute_python_code",
+    description="Executes the given Python code inside a single-use Docker container"
+    " with access to your workspace folder",
     parameters={
         "code": JSONSchema(
             type=JSONSchema.Type.STRING,

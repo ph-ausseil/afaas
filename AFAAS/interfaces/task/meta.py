@@ -46,10 +46,14 @@ class TaskStatus(AFAASModel):
 
 
 class TaskStatusList(str, enum.Enum):
-
-    BACKLOG: TaskStatus = TaskStatus( name="backlog", description="The task is not ready")
+    BACKLOG: TaskStatus = TaskStatus(
+        name="backlog", description="The task is not ready"
+    )
     READY: TaskStatus = TaskStatus(name="ready", description="The task  ready")
-    IN_PROGRESS_WITH_SUBTASKS : TaskStatus = TaskStatus(name= "ready_with_subtasks", description="subtasks of this task are being processed" )
+    IN_PROGRESS_WITH_SUBTASKS: TaskStatus = TaskStatus(
+        name="ready_with_subtasks",
+        description="subtasks of this task are being processed",
+    )
     # IN_PROGRESS: TaskStatus = TaskStatus( name="in_progress", description="The being taken care of" )
     DONE: TaskStatus = TaskStatus(name="done", description="The being achieved")
 

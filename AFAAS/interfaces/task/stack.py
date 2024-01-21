@@ -86,7 +86,7 @@ class TaskStack(AFAASModel):
             #             + f"- Consider parent predecessor when evaluatin `Task.is_ready()`\n"))
             from AFAAS.interfaces.task.meta import TaskStatusList
 
-            if not parent_is_plan :
+            if not parent_is_plan:
                 if len(self) >= 1 and TaskStatusList.IN_PROGRESS_WITH_SUBTASKS:
                     LOG.warning(
                         f"Added subtask should only be added if parent_task is in progres . Current state of {self.parent_task.debug_formated_str()} is {self.parent_task.state}"
@@ -105,7 +105,8 @@ class TaskStack(AFAASModel):
         Get all tasks. If only_ready is True, return only ready tasks.
         """
         return [
-            await self.parent_task.agent.plan.get_task(task_id) for task_id in self._task_ids
+            await self.parent_task.agent.plan.get_task(task_id)
+            for task_id in self._task_ids
         ]
 
     def get_all_task_ids_from_stack(self) -> list[str]:
@@ -123,7 +124,8 @@ class TaskStack(AFAASModel):
         common_task_ids = ready_task_ids_set.intersection(self._task_ids)
 
         return [
-            await  self.parent_task.agent.plan.get_task(task_id) for task_id in common_task_ids
+            await self.parent_task.agent.plan.get_task(task_id)
+            for task_id in common_task_ids
         ]
 
     async def get_done_tasks_from_stack(self) -> list[AbstractTask]:
@@ -135,7 +137,8 @@ class TaskStack(AFAASModel):
         common_task_ids = done_task_ids_set.intersection(self._task_ids)
 
         return [
-            await self.parent_task.agent.plan.get_task(task_id) for task_id in common_task_ids
+            await self.parent_task.agent.plan.get_task(task_id)
+            for task_id in common_task_ids
         ]
 
     async def get_active_tasks_from_stack(self) -> list[AbstractTask]:
@@ -147,7 +150,8 @@ class TaskStack(AFAASModel):
         common_task_ids = active_task_ids_set.intersection(self._task_ids)
 
         return [
-            await self.parent_task.agent.plan.get_task(task_id) for task_id in common_task_ids
+            await self.parent_task.agent.plan.get_task(task_id)
+            for task_id in common_task_ids
         ]
 
     # def __repr__(self):

@@ -14,9 +14,9 @@ from AFAAS.interfaces.agent.main import BaseAgent
 from tests.dataset.plan_familly_dinner import (
     Task,
     _plan_familly_dinner,
+    default_task,
     plan_familly_dinner_with_tasks_saved_in_db,
     plan_step_0,
-    default_task,
 )
 from tests.dataset.test_tools_file import (
     file_content,
@@ -53,9 +53,7 @@ def test_read_file(
     assert content.replace("\r", "") == file_content
 
 
-def test_read_file_not_found(
-    default_task: Task, agent: BaseAgent
-):
+def test_read_file_not_found(default_task: Task, agent: BaseAgent):
     filename = "does_not_exist.txt"
     with pytest.raises(FileNotFoundError):
         file_ops.read_file(

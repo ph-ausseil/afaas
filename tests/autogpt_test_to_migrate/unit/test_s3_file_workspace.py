@@ -2,11 +2,15 @@ import os
 import uuid
 from pathlib import Path
 
-from AFAAS.lib.task.task import Task
 import pytest
 import pytest_asyncio
-from AFAAS.core.workspace.s3 import S3FileWorkspace_AlphaRelease, S3FileWorkspaceConfiguration
 from botocore.exceptions import ClientError
+
+from AFAAS.core.workspace.s3 import (
+    S3FileWorkspace_AlphaRelease,
+    S3FileWorkspaceConfiguration,
+)
+from AFAAS.lib.task.task import Task
 
 if not os.getenv("S3_ENDPOINT_URL") and not os.getenv("AWS_ACCESS_KEY_ID"):
     pytest.skip("S3 environment variables are not set", allow_module_level=True)
@@ -27,7 +31,9 @@ def s3_workspace_uninitialized(s3_bucket_name: str) -> S3FileWorkspace_AlphaRele
     del os.environ["WORKSPACE_STORAGE_BUCKET"]
 
 
-def test_initialize(s3_bucket_name: str, s3_workspace_uninitialized: S3FileWorkspace_AlphaRelease):
+def test_initialize(
+    s3_bucket_name: str, s3_workspace_uninitialized: S3FileWorkspace_AlphaRelease
+):
     s3 = s3_workspace_uninitialized._s3
 
     # test that the bucket doesn't exist yet
@@ -48,7 +54,9 @@ def test_workspace_bucket_name(
 
 
 @pytest.fixture
-def s3_workspace(s3_workspace_uninitialized: S3FileWorkspace_AlphaRelease) -> S3FileWorkspace_AlphaRelease:
+def s3_workspace(
+    s3_workspace_uninitialized: S3FileWorkspace_AlphaRelease,
+) -> S3FileWorkspace_AlphaRelease:
     (s3_workspace := s3_workspace_uninitialized).initialize()
     yield s3_workspace  # type: ignore
 
@@ -67,7 +75,9 @@ TEST_FILES: list[tuple[str | Path, str]] = [
 
 
 @pytest_asyncio.fixture
-async def s3_workspace_with_files(s3_workspace: S3FileWorkspace_AlphaRelease) -> S3FileWorkspace_AlphaRelease:
+async def s3_workspace_with_files(
+    s3_workspace: S3FileWorkspace_AlphaRelease,
+) -> S3FileWorkspace_AlphaRelease:
     for file_name, file_content in TEST_FILES:
         s3_workspace._bucket.Object(str(s3_workspace.get_path(file_name))).put(
             Body=file_content

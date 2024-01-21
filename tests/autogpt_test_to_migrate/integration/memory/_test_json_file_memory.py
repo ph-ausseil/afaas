@@ -1,12 +1,12 @@
 # sourcery skip: snake-case-functions
 """Tests for JSONFileMemory class"""
 import orjson
-from AFAAS.lib.task.task import Task
 import pytest
 from autogpt.memory.vector import JSONFileMemory, MemoryItem
 
 from AFAAS.configs.config import Config
 from AFAAS.core.workspace import AbstractFileWorkspace
+from AFAAS.lib.task.task import Task
 
 
 def test_json_memory_init_without_backing_file(

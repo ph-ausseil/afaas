@@ -1,22 +1,21 @@
-
 import os
 import shutil
 from pathlib import Path
 
 import pytest
 
-from AFAAS.core.agents.planner.main import PlannerAgent, Plan
+from AFAAS.core.agents.planner.main import Plan, PlannerAgent
 from AFAAS.core.workspace import AbstractFileWorkspace
 from AFAAS.interfaces.tools.base import AbstractToolRegistry
-from tests.dataset.agent_planner import agent_dataset
-from AFAAS.lib.task.task import Task
 from AFAAS.lib.sdk.logger import AFAASLogger, logging
+from AFAAS.lib.task.task import Task
+from tests.dataset.agent_planner import agent_dataset
 
 # LOG = AFAASLogger(name=__name__)
 # LOG.setLevel(logging.ERROR)
-os.environ['PYTEST_RUN'] = 'true'
+os.environ["PYTEST_RUN"] = "true"
 
-if os.getenv('_PYTEST_RAISE', "0") != "0":
+if os.getenv("_PYTEST_RAISE", "0") != "0":
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_exception_interact(call):
@@ -30,11 +29,13 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
     #     print( call.excinfo.traceback[0] )
     #     pass
 
+
 @pytest.fixture(scope="session")
 def activate_integration_tests():
     # Use an environment variable to control the activation of integration tests
 
     return os.getenv("RUN_INTEGRATION_TESTS", "false").lower() == "true"
+
 
 # @pytest.fixture(scope='function', autouse=True)
 # def capture_fixture_name(request):
@@ -51,10 +52,12 @@ def activate_integration_tests():
 #             if fixture_name:
 #                 request.node.user_properties.append(("Fixture Used (Sync)", fixture_name.name))
 
+
 @pytest.mark.asyncio
 @pytest.fixture(scope="function")
 async def agent() -> PlannerAgent:
     return await agent_dataset()
+
 
 # # Higher-level fixture to intercept Plan fixtures
 # @pytest.mark.asyncio
@@ -78,6 +81,7 @@ async def agent() -> PlannerAgent:
 
 #         task.agent.plan.db_save()
 
+
 @pytest.fixture(scope="function", autouse=True)
 def reset_environment_each_test():
     # AFAASLogger.setLevel(logging.ERROR)
@@ -94,8 +98,6 @@ def reset_environment_each_test():
 
     # Code to clean up after each test
     delete_logs()
-
-
 
 
 def setup_environment():
@@ -139,9 +141,10 @@ async def local_workspace() -> AbstractFileWorkspace:
     agent = await agent_dataset()
     return agent.workspace
 
+
 # In your pytest fixture
 @pytest.fixture(scope="function", autouse=True)
 def reset_singleton():
-     Plan._instance = {}
-     Plan.initialized = False
-     yield
+    Plan._instance = {}
+    Plan.initialized = False
+    yield

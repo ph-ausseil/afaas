@@ -1,8 +1,12 @@
 from pathlib import Path
 
-from AFAAS.lib.task.task import Task
 import pytest
-from AFAAS.core.workspace.local import AGPTLocalFileWorkspace, AGPTLocalFileWorkspaceConfiguration
+
+from AFAAS.core.workspace.local import (
+    AGPTLocalFileWorkspace,
+    AGPTLocalFileWorkspaceConfiguration,
+)
+from AFAAS.lib.task.task import Task
 
 _WORKSPACE_ROOT = Path("home/users/monty/auto_gpt_workspace")
 
@@ -80,13 +84,17 @@ def test_sanitize_path_inaccessible(inaccessible_path, workspace_root):
 
 
 def test_get_path_accessible(accessible_path, workspace_root):
-    workspace = AGPTLocalFileWorkspace(AGPTLocalFileWorkspaceConfiguration(root=workspace_root))
+    workspace = AGPTLocalFileWorkspace(
+        AGPTLocalFileWorkspaceConfiguration(root=workspace_root)
+    )
     full_path = workspace.get_path(accessible_path)
     assert full_path.is_absolute()
     assert full_path.is_relative_to(workspace_root)
 
 
 def test_get_path_inaccessible(inaccessible_path, workspace_root):
-    workspace = AGPTLocalFileWorkspace(AGPTLocalFileWorkspaceConfiguration(root=workspace_root))
+    workspace = AGPTLocalFileWorkspace(
+        AGPTLocalFileWorkspaceConfiguration(root=workspace_root)
+    )
     with pytest.raises(ValueError):
         workspace.get_path(inaccessible_path)

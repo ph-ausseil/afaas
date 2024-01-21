@@ -1,4 +1,3 @@
-from AFAAS.lib.task.task import Task
 import pytest
 from git.exc import GitCommandError
 from git.repo.base import Repo
@@ -6,6 +5,7 @@ from git.repo.base import Repo
 from AFAAS.core.tools.untested.git_operations import clone_repository
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import ToolExecutionError
+from AFAAS.lib.task.task import Task
 
 
 @pytest.fixture

@@ -18,9 +18,9 @@ from AFAAS.lib.sdk.errors import DuplicateOperationError
 from tests.dataset.plan_familly_dinner import (
     Task,
     _plan_familly_dinner,
+    default_task,
     plan_familly_dinner_with_tasks_saved_in_db,
     plan_step_0,
-    default_task,
 )
 from tests.dataset.test_tools_file import (
     file_content,
@@ -33,9 +33,7 @@ from tests.dataset.test_tools_file import (
 )
 
 
-def test_file_operations_log(
-    default_task: Task, test_file: TextIOWrapper
-):
+def test_file_operations_log(default_task: Task, test_file: TextIOWrapper):
     log_file_content = (
         "File Operation Logger\n"
         "write: path/to/file1.txt #checksum1\n"
@@ -57,9 +55,7 @@ def test_file_operations_log(
     assert list(operations_from_log(log_path=test_file.name)) == expected
 
 
-def test_file_operations_state(
-    default_task: Task, test_file: TextIOWrapper
-):
+def test_file_operations_state(default_task: Task, test_file: TextIOWrapper):
     # Prepare a fake log file
     log_file_content = (
         "File Operation Logger\n"

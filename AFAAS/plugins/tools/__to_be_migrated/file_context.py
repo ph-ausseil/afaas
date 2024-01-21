@@ -14,7 +14,7 @@ from AFAAS.lib.task.task import Task
 if TYPE_CHECKING:
     from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.interfaces.tools.context_items import FileContextItem, FolderContextItem
 from AFAAS.lib.sdk.errors import ToolExecutionError
 from AFAAS.lib.utils.json_schema import JSONSchema
@@ -27,12 +27,12 @@ COMMAND_CATEGORY_TITLE = "File Operations"
 
 def agent_implements_context(agent: BaseAgent) -> bool:
     return False
-    #return isinstance(agent, ContextMixin)
+    # return isinstance(agent, ContextMixin)
 
 
 @tool(
-    name = "open_file",
-    description = "Opens a file for editing or continued viewing;"
+    name="open_file",
+    description="Opens a file for editing or continued viewing;"
     " creates it if it does not exist yet. "
     "Note: If you only need to read or write a file once, use `write_to_file` instead.",
     parameters={
@@ -79,7 +79,7 @@ def open_file(
 
 
 @tool(
-    name = "open_folder",
+    name="open_folder",
     description="Open a folder to keep track of its content",
     parameters={
         "path": JSONSchema(

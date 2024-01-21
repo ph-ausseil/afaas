@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
 import asyncio
 import time
+from typing import TYPE_CHECKING, Optional
+
 from pydantic import Field, validator
 
 from AFAAS.interfaces.adapters import AbstractChatModelResponse
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.base import AbstractBaseTask
 from AFAAS.interfaces.task.meta import TaskStatusList
-from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.interfaces.task.plan import AbstractPlan
+from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.lib.sdk.logger import AFAASLogger, logging
 from AFAAS.prompts.common.afaas_task_post_rag_update import (
     AfaasPostRagTaskUpdateStrategy,
@@ -25,15 +26,13 @@ if TYPE_CHECKING:
 
 
 class Task(AbstractTask):
-
     def __init__(self, **data):
-
         super().__init__(**data)
         LOG.trace(
             f"Quitting {self.__class__.__name__}.__init__() : {data['task_goal']}"
         )
         self._task_parent_loading = False
-        #self._task_parent_loaded = asyncio.Event()
+        # self._task_parent_loaded = asyncio.Event()
         self._task_parent_future = asyncio.Future()
         self.plan_id = self.agent.plan.plan_id
 
@@ -57,14 +56,13 @@ class Task(AbstractTask):
             "task_successors",
             "_task_parent_future",
             "_task_parent_loading",
-            "_task_parent"
+            "_task_parent",
         }
 
     ###
     ### GENERAL properties
     ###
     task_id: str = Field(default_factory=lambda: Task.generate_uuid())
-
 
     plan_id: Optional[str] = Field()
 
@@ -119,7 +117,6 @@ class Task(AbstractTask):
             LOG.error(f"Task {task_id} state is None")
         return new_state
 
-
     command: Optional[str] = Field(default_factory=lambda: Task.default_tool())
     arguments: Optional[dict] = Field(default={})
 
@@ -128,13 +125,9 @@ class Task(AbstractTask):
     task_text_output_as_uml: Optional[str]
     """ The agent summary of his own doing while performing the task as a UML diagram"""
 
-
-    async def is_ready(self) -> bool :   
+    async def is_ready(self) -> bool:
         if (
-            (
-                self.state == TaskStatusList.BACKLOG
-                or self.state == TaskStatusList.READY 
-            )
+            (self.state == TaskStatusList.BACKLOG or self.state == TaskStatusList.READY)
             and len(await self.task_predecessors.get_active_tasks_from_stack()) == 0
             and len(await self.subtasks.get_active_tasks_from_stack()) == 0
         ):
@@ -154,18 +147,22 @@ class Task(AbstractTask):
 
         return False
 
-    async def close_task(self) : 
+    async def close_task(self):
         self.state = TaskStatusList.DONE
 
         LOG.info(f"Terminating Task : {self.debug_formated_str()}")
-        #TODO: MOVE to the validator state for robustness
-        if len(set( await self.get_siblings_ids(excluse_self=False)) - set(self.agent.plan.get_all_done_tasks_ids())) == 0 :
-
+        # TODO: MOVE to the validator state for robustness
+        if (
+            len(
+                set(await self.get_siblings_ids(excluse_self=False))
+                - set(self.agent.plan.get_all_done_tasks_ids())
+            )
+            == 0
+        ):
             parent = await self.task_parent()
-            if (not isinstance(parent, AbstractPlan)):
-                #FIXME:  Make resumé of Parent
+            if not isinstance(parent, AbstractPlan):
+                # FIXME:  Make resumé of Parent
                 parent.state = TaskStatusList.DONE
-
 
     def add_predecessor(self, task: Task):
         """
@@ -274,7 +271,7 @@ class Task(AbstractTask):
 
         return indented_structure
 
-    async def get_siblings(self , excluse_self = True) -> list[Task]:
+    async def get_siblings(self, excluse_self=True) -> list[Task]:
         """
         Finds the sibblings of this task.
         """
@@ -289,7 +286,7 @@ class Task(AbstractTask):
 
         return all_siblings
 
-    async def get_siblings_ids(self, excluse_self = True)-> list[Task]:
+    async def get_siblings_ids(self, excluse_self=True) -> list[Task]:
         parent_task = await self.task_parent()
         if parent_task is None:
             return []
@@ -345,12 +342,12 @@ class Task(AbstractTask):
         # 5. Get the sibblings of the task and remove them from history to avoid redondancy
         task_sibblings: list[Task] = []
         if sibblings:
-            #sibblings_tmp = await self.get_siblings()
+            # sibblings_tmp = await self.get_siblings()
             if avoid_sibbling_predecessors_redundancy:
                 task_sibblings = (
                     set(await self.get_siblings()) - history_and_predecessors
                 )  # - set([self])
-            else :
+            else:
                 task_sibblings = set(await self.get_siblings())  # - set([self])
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases
@@ -361,28 +358,30 @@ class Task(AbstractTask):
             )
             try:
                 # FIXME: Create an adapter or open a issue on Langchain Github : https://github.com/langchain-ai/langchain to harmonize the AP
-                related_tasks_documents = (
-                    await self.agent.vectorstores["tasks"].asimilarity_search_by_vector(
-                        task_embedding,
-                        k=similar_tasks,
-                        include_metadata=True,
-                        filter={"plan_id": {"$eq": self.plan_id}},
-                    )
+                related_tasks_documents = await self.agent.vectorstores[
+                    "tasks"
+                ].asimilarity_search_by_vector(
+                    task_embedding,
+                    k=similar_tasks,
+                    include_metadata=True,
+                    filter={"plan_id": {"$eq": self.plan_id}},
                 )
             except Exception:
-                related_tasks_documents = (
-                    await self.agent.vectorstores["tasks"].asimilarity_search_by_vector(
-                        task_embedding,
-                        k=10,
-                        include_metadata=True,
-                        filter=[{"metadata.plan_id": {"$eq": self.plan_id}}],
-                    )
+                related_tasks_documents = await self.agent.vectorstores[
+                    "tasks"
+                ].asimilarity_search_by_vector(
+                    task_embedding,
+                    k=10,
+                    include_metadata=True,
+                    filter=[{"metadata.plan_id": {"$eq": self.plan_id}}],
                 )
 
             LOG.debug(related_tasks_documents)
             ## 1. Make Task Object
             for task in related_tasks_documents:
-                related_tasks.append(await self.agent.plan.get_task(task.metadata["task_id"]))
+                related_tasks.append(
+                    await self.agent.plan.get_task(task.metadata["task_id"])
+                )
 
             ## 2. Make a set of related tasks and remove current tasks, sibblings, history and predecessors
             related_tasks = list(
@@ -414,7 +413,7 @@ class Task(AbstractTask):
                 related_tasks=related_tasks,
             )
             self.rag_history_txt = rv.parsed_result[0]["command_args"]["paragraph"]
-            self.rag_uml = rv.parsed_result[0]["command_args"].get("uml_diagrams" , "")
+            self.rag_uml = rv.parsed_result[0]["command_args"].get("uml_diagrams", "")
 
             # RAG : 3. Summarize Followup
             if len(task_successors) > 0 or len(related_tasks) > 0:
@@ -430,7 +429,9 @@ class Task(AbstractTask):
                 self.rag_related_task_txt = rv.parsed_result[0]["command_args"][
                     "paragraph"
                 ]
-                self.rag_uml += rv.parsed_result[0]["command_args"].get("uml_diagrams", "")
+                self.rag_uml += rv.parsed_result[0]["command_args"].get(
+                    "uml_diagrams", ""
+                )
 
             # RAG : 4. Post-Rag task update
             rv: AbstractChatModelResponse = await self.agent.execute_strategy(

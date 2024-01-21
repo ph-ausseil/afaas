@@ -8,7 +8,7 @@ from pathlib import Path
 from git.repo import Repo
 
 from AFAAS.core.tools.builtins.file_operations_utils import sanitize_path_arg
-from AFAAS.core.tools.tool_decorator import tool, SAFE_MODE
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.lib.sdk.errors import ToolExecutionError
 from AFAAS.lib.task.task import Task

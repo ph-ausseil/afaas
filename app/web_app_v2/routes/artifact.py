@@ -225,9 +225,7 @@ async def list_artifacts(
     List the artifacts that the task has created.
     """
     try:
-        artifacts, pagination = await agent.db.list_artifacts(
-            agent_id, page, pageSize
-        )
+        artifacts, pagination = await agent.db.list_artifacts(agent_id, page, pageSize)
         return AgentArtifactsListResponse(artifacts=artifacts, pagination=pagination)
 
     except Exception:

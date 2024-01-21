@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import enum
+import time
 import uuid
 from typing import Optional
 
 from pydantic import Field
-import time
 
 from AFAAS.configs.schema import AFAASMessageType, AFAASModel
 from AFAAS.lib.message_common import AFAASMessage
@@ -57,7 +58,6 @@ class Emiter(enum.Enum):
 
 
 class MessageAgentUser(AFAASMessage):
-
     message_id: str = Field(default_factory=lambda: MessageAgentUser.generate_uuid())
     message_type: str = AFAASMessageType.AGENT_USER.value
     emitter: Emiter
@@ -72,5 +72,5 @@ class MessageAgentUser(AFAASMessage):
         return self._table_name
 
     @classmethod
-    def generate_uuid(cls) : 
+    def generate_uuid(cls):
         return "MAU" + str(time.time()) + str(uuid.uuid4())

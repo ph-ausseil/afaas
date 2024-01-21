@@ -35,7 +35,7 @@ class UserContextAgent(BaseAgent):
         db: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
-        vectorstores: dict[str , VectorStore] = {},
+        vectorstores: dict[str, VectorStore] = {},
         embeddings: Embeddings = None,
         workflow_registry: WorkflowRegistry = None,
         **kwargs,

@@ -3,8 +3,8 @@ from __future__ import annotations
 import abc
 import base64
 import json
-import uuid
 import os
+import uuid
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -78,7 +78,7 @@ class AbstractMemory(Configurable, abc.ABC):
         class Config(SystemSettings.Config):
             extra = "allow"
 
-    _instances : dict[AbstractMemory] = {}
+    _instances: dict[AbstractMemory] = {}
 
     """
     Abstract class representing a db storage system for storing and retrieving data.
@@ -117,7 +117,7 @@ class AbstractMemory(Configurable, abc.ABC):
 
     @classmethod
     async def add_adapter(cls, adapter: AbstractMemory):
-        #TODO:v0.1.0 Implement an add adapter method & a more robust multiton with dependency injection
+        # TODO:v0.1.0 Implement an add adapter method & a more robust multiton with dependency injection
         raise NotImplementedError("add_adapter")
         config_key = base64.b64encode(
             json.dumps(adapter._settings.configuration.dict()).encode()
