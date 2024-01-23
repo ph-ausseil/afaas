@@ -2,9 +2,26 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
+import json
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from AFAAS.interfaces.agent.main import BaseAgent
 
-from AFAAS.core.tools.tool_decorator import tool
+from AFAAS.lib.utils.json_schema import JSONSchema
 
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
+from AFAAS.interfaces.tools.base import AbstractTool
+from AFAAS.lib.sdk.logger import AFAASLogger
+from AFAAS.lib.task.task import Task
+
+# Tool may need to be moved to a pipeline
+# Get Specifications
+# Run a prompt strategy
+# Write a file
+# Install
+# Test
+# Loop ?
 
 @tool(
     name="create_function",
@@ -75,15 +92,31 @@ from AFAAS.core.tools.tool_decorator import tool
         "required": ["function_description"],
     },
 )
-def create_new_tool(self, function_description):
+def create_new_tool(function_description, task : Task, agent: BaseAgent):
+    # try:
+    #     function_description = json.loads(function_description_json)
+    # except json.JSONDecodeError:
+    #     raise ValueError("Invalid JSON format for function_description")
+
+    # Validate function name and description
+    function_name = function_description.get('name', '')
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', function_name):
+        raise ValueError("Invalid function name")
+
+
     # Import statements
     imports = "\n".join(
-        f"import {module}" for module in function_description["imports"]
+
+        f"install_and_import_package('module')\nimport {package}" for package in function_description["packages"]
     )
 
+    imports += "\n".join(
+
+        f"install_and_import_package('module')\nimport {module}" for module in function_description["imports"]
+    )
     # Adding new config keys
     new_config_keys = "\n    ".join(
-        f"# {key['description']}\n    config['{key['key']}'] = None"
+        f"ensure_api_key(key= '{key['key']}' , api_name= '{{key['key']}}')"
         for key in function_description.get("new_config_keys", [])
     )
 
@@ -91,14 +124,38 @@ def create_new_tool(self, function_description):
     parameters = ", ".join(function_description["parameters"]["required"])
 
     # Function body
-    body = f"""
-def {function_description['name']}({parameters}):
+    body = f"""@tool(
+    name='{function_description['name']}'
+    description='{function_description['description']}'
+    parameters={
+        function_description["parameters"]
+    }
+    category="generated_by_framework"
+    )
+async def {function_description['name']}({parameters} , task : Task, agent: BaseAgent):
     {new_config_keys}
     """
 
     # Combining everything
-    code = f"""
+    code = f"""from __future__ import annotations
+
+from AFAAS.lib.sdk.add_api_key import install_and_import_package, ensure_api_key
+from AFAAS.core.tools.tool_decorator import tool
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from AFAAS.interfaces.agent.main import BaseAgent
+
+from AFAAS.core.tools.tool_decorator import SAFE_MODE, tool
+from AFAAS.interfaces.tools.base import AbstractTool
+from AFAAS.lib.sdk.logger import AFAASLogger
+from AFAAS.lib.task.task import Task
+from AFAAS.prompts.routing import RoutingStrategyConfiguration
+
+LOG = AFAASLogger(name=__name__)
+
 {imports}
+
+{new_config_keys}
 
 {body}
     """
@@ -120,3 +177,8 @@ def {function_description['name']}({parameters}):
     spec.loader.exec_module(module)
 
     return code
+
+
+    DefaultToolRegistry.write_and_load_module_in_afaas(
+        module_name= function_description["name"] , code = code
+    )
