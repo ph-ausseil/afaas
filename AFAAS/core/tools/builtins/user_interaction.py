@@ -67,28 +67,7 @@ async def user_interaction(
                                          )
         )
 
-        from langchain_core.documents import Document
-        doc = Document(
-            page_content="This is a manually created document.",
-            metadata={
-                "created_at": '1234',
-                "author": "John Doe",
-                "document_id" : "234",
-            },
-        )
-
-        doc2 = Document(
-            page_content="This is a second manually created document.",
-            metadata={
-                "created_at": '12434',
-                "author": "Jane Doe",
-                "document_id" : "1234"
-            },
-        )
-        messages.append(doc)
-        messages.append(doc2)
-
-        if (len(messages) > 0 or True ): #FIXME: Remove True , after testing
+        if len(messages) > 0 : 
             llm_response =await agent.execute_strategy(strategy_name="user_proxy", 
                                                        documents = messages, 
                                                        query=original_query,
