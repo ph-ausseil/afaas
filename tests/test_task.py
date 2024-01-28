@@ -120,15 +120,16 @@ async def test_get_siblings_and_siblings_ids(default_task : Task, task_with_unme
 
 
 @pytest.mark.asyncio
-async def test_get_task_from_db(default_task):
+async def test_get_task_from_db(default_task: Task):
     # Assuming mocked_db is a fixture to mock the database interaction
     mocked_db = default_task.agent.db
     fetched_task = await Task.get_task_from_db(default_task.task_id, default_task.agent)
     assert fetched_task.task_id == default_task.task_id
 
-def test_task_hashing(default_task):
+@pytest.mark.asyncio
+async def test_task_hashing(default_task: Task):
     # Test that two tasks with the same ID have the same hash
-    task_clone = default_task.clone()
+    task_clone = await default_task.clone()
     assert hash(default_task) != hash(task_clone)
 
     # Test that different tasks have different hashes
