@@ -1,0 +1,258 @@
+from __future__ import annotations
+
+import datetime
+import uuid
+from sklearn.cluster import KMeans
+import numpy as np
+import math
+
+from typing import TYPE_CHECKING, Optional, Union, Literal
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores import VectorStore
+from langchain_core.documents import Document
+
+from pydantic import BaseModel, Field, validator
+from AFAAS.lib.sdk.logger import AFAASLogger
+LOG = AFAASLogger(name=__name__)
+
+from enum import Enum
+
+class DocumentType(str, Enum):
+        TASK = "task"
+        DOCUMENTS = "documents"
+        MESSAGE_AGENT_USER = "message_agent_user"
+        ALL = '*'
+
+class FilterType(str, Enum):
+    EQUAL = "$eq"
+    REGEX = "$regex"
+    START_WITH ="$startswith"
+    IN = "$in"
+
+class Filter(BaseModel):
+    filter_type : FilterType
+    value : str
+
+
+Filter.update_forward_refs()
+
+class SearchFilter(BaseModel):
+
+    filters : dict[str, Filter]
+
+    @validator('filters', always=True)
+    def check_agent_or_user_id(cls, v, values, **kwargs):
+        if 'agent_id' not in v.keys() and 'user_id' not in v.keys() and 'plan_id' not in v.keys():
+            raise ValueError('Either plan_id, agent_id or user_id must be provided')
+
+        if 'type' in v.keys():
+            raise ValueError('type is a special value and can not be used as a filter')
+
+        return v
+
+    def generate_filters(self, document_type: Union[DocumentType, list[DocumentType]]) -> dict:
+        filter = {}
+        for key, value in self.filters.items():
+            filter.update(self._make_filter(key, value))
+
+        if isinstance(document_type, list):
+            if DocumentType.ALL not in document_type:
+                filter.update(self._make_filter('type', Filter(filter_type=FilterType.IN, value=document_type)))
+            else :
+                raise ValueError("ALL can not be used with other types")
+        else:
+            if document_type != DocumentType.ALL:
+                filter.update(self._make_filter('type', Filter(filter_type=FilterType.EQUAL, value=document_type)))
+
+        return filter
+
+    def _make_filter(self, key: str, filter: Filter) -> dict:
+        if not isinstance(filter, Filter):
+            raise ValueError(f'Filter {key} is not a valid filter')
+        return {key: {filter.filter_type: filter.value}}
+
+
+    def add_filter(self, key: str, filter: Filter):
+        if not isinstance(filter, Filter):
+            raise ValueError(f'Filter {key} is not a valid filter')
+        if key == 'type':
+            raise ValueError('type is a special value and can not be used as a filter')
+        self.filters[key] = filter
+
+    # def _check_special_key(self, key: str) -> bool:
+    #     if key == 'type':
+    #         raise ValueError('type is a special value and can not be used as a filter')
+    #     return True
+
+
+SearchFilter.update_forward_refs()
+
+class VectorStoreWrapper:
+    def __init__(self, vector_store: VectorStore, embedding_model: Embeddings):
+        self.vector_store = vector_store
+        self.embedding_model = embedding_model
+
+
+    async def add_document(self, document_type : DocumentType , document : Document , doc_id =  "DOC" + str(uuid.uuid4()) ) :
+        if not any(key in document.metadata for key in ['plan_id', 'agent_id', 'user_id']):
+                raise ValueError("At least one of 'plan_id', 'agent_id', or 'user_id' must be provided")
+
+        document.metadata["type"] = document_type
+        document.metadata["created_at"] = str(datetime.datetime.now())
+        document.metadata["document_id"] = doc_id
+
+        new_ids = await self.vector_store.aadd_documents([document])
+        LOG.notice(f"Document added to vector store with id {new_ids[0]}")
+        return doc_id
+
+
+    async def search_from_uri(self,
+                              query: str,
+                              uri: str,
+                              search_filters: SearchFilter,
+                              nb_results: int = 5) -> list[Document]:
+
+        search_filters.add_filter('type', Filter(filter_type=FilterType.EQUAL, value=DocumentType.DOCUMENTS.value))
+        search_filters.add_filter('source', Filter(filter_type=FilterType.START_WITH, value=uri))
+        documents = await  self.get_related_documents(
+                                            embedding=await self.embedding_model.aembed_query(query),
+                                            nb_results=nb_results,
+                                            search_filters=search_filters,
+                                            document_type=[DocumentType.DOCUMENTS]
+                                            )
+
+
+
+        return sorted(documents, key=lambda x: x.metadata['created_at'], reverse=True)
+
+    async def get_related_documents(self,
+                                    embedding: Embeddings,
+                                    nb_results: int,
+                                    search_filters: SearchFilter,
+                                    document_type: Union[DocumentType, list[DocumentType]],
+                                    cluster_search=True
+                                    ) -> list[Document]:
+
+        k = math.ceil(nb_results * 2.5)  # Always round up
+        documents = await self.vector_store.asimilarity_search_by_vector(
+            embedding,
+            k=k,
+            include_metadata=True,
+            filter=search_filters.generate_filters(document_type=document_type),
+        )
+
+        if len(documents) < k:
+            return documents[:nb_results]
+
+        if cluster_search:
+            sorted_documents = sorted(documents, key=lambda r: r.similarity_score, reverse=True)
+            half_nb_results = math.ceil(nb_results / 2)  # Round up division
+            top_similar_documents = sorted_documents[:half_nb_results]
+            remaining_results = nb_results - len(top_similar_documents)
+            remaining_documents = [doc for doc in sorted_documents if doc not in top_similar_documents]
+            clustered_documents = self._get_most_similar_document_each_cluster(remaining_results, remaining_documents)
+            return top_similar_documents + clustered_documents
+
+        return documents[:nb_results]
+
+    def _get_centrermost_document_from_each_cluster(self, nb_clusters : int, documents : list[Document]) -> list[Document]:
+        vectors = [doc.embedding for doc in documents]
+        kmeans = KMeans(n_clusters=nb_clusters, random_state=42).fit(vectors)
+        # Create an empty list that will hold your closest points
+        closest_indices = []
+
+        # Loop through the number of clusters you have
+        for i in range(nb_clusters):
+
+            # Get the list of distances from that particular cluster center
+            distances = np.linalg.norm(vectors - kmeans.cluster_centers_[i], axis=1)
+
+            # Find the list position of the closest one (using argmin to find the smallest distance)
+            closest_index = np.argmin(distances)
+
+            # Append that position to your closest indices list
+            #closest_indices.append(closest_index)
+            closest_indices.append(documents[closest_index])
+
+        return closest_indices
+
+    def _get_most_similar_document_each_cluster(self, nb_clusters : int, documents : list[Document]) -> list[Document]:
+        vectors = [doc.embedding for doc in documents]
+        kmeans = KMeans(n_clusters=nb_clusters, random_state=42).fit(vectors)
+
+        # Create a list to hold the best document per cluster
+        best_documents = []
+
+        # Loop through each cluster
+        for cluster_index in range(nb_clusters):
+            cluster_members_indices = np.where(kmeans.labels_ == cluster_index)[0]
+            cluster_members = [documents[i] for i in cluster_members_indices]
+
+            # Find the most similar document within this cluster
+            most_similar_document = max(cluster_members, key=lambda doc: doc.similarity_score)
+
+            best_documents.append(most_similar_document)
+
+        return best_documents[:nb_clusters]
+
+    def determine_optimal_clusters(self, embeddings, max_clusters=10):
+        """
+        Determine the optimal number of clusters for KMeans clustering using the elbow method.
+
+        :param embeddings: A list of document embeddings.
+        :param max_clusters: Maximum number of clusters to consider.
+
+        :return: Optimal number of clusters.
+        """
+        inertia_values = []
+        for i in range(1, max_clusters + 1):
+            kmeans = KMeans(n_clusters=i, random_state=42)
+            kmeans.fit(embeddings)
+            inertia_values.append(kmeans.inertia_)
+
+        # Determine the elbow point, which is the optimal number of clusters
+        optimal_clusters = self._find_elbow_point(inertia_values)
+        return optimal_clusters
+
+    @staticmethod
+    def _find_elbow_point(inertia_values):
+        """
+        Find the elbow point in the KMeans inertia values, which indicates the optimal number of clusters.
+
+        :param inertia_values: A list of inertia values for different numbers of clusters.
+
+        :return: The number of clusters at the elbow point.
+        """
+        # This is a simplified way to find the elbow point.
+        # For a more accurate determination, consider using more advanced methods.
+        n_points = len(inertia_values)
+        all_coords = np.vstack((range(1, n_points + 1), inertia_values)).T
+        first_point = all_coords[0]
+        last_point = all_coords[-1]
+        line_vec = last_point - first_point
+        line_vec_norm = line_vec / np.sqrt(np.sum(line_vec**2))
+        vec_from_first = all_coords - first_point
+        scalar_product = np.sum(vec_from_first * np.matlib.repmat(line_vec_norm, n_points, 1), axis=1)
+        vec_from_first_parallel = np.outer(scalar_product, line_vec_norm)
+        vec_to_line = vec_from_first - vec_from_first_parallel
+        dist_to_line = np.sqrt(np.sum(vec_to_line ** 2, axis=1))
+        index_of_best_point = np.argmax(dist_to_line)
+
+        return index_of_best_point + 1
+
+        # from langchain.text_splitter import (
+        #     Language,
+        #     RecursiveCharacterTextSplitter,
+        # )
+        # from langchain_experimental.text_splitter import SemanticChunker
+        # from langchain_openai.embeddings import OpenAIEmbeddings
+
+        # text_splitter = SemanticChunker(OpenAIEmbeddings())
+
+        # """
+        # 1. Load
+        # 2. Split
+        # 3. Add to vector store
+        # 4. Search
+        # 5. Retrieve
+        # """
