@@ -47,14 +47,13 @@ class PlannerLoop(BaseLoop):
 
         # current_task = self._current_task
         # # NOTE : Test tools individually
-        # command_name = "user_interaction"
-        # command_args= {"query": "Who is your daddy ? "}
+        # command_name = "web_search"
+        # command_args= {"query": "instructions for building a Pizza oven"}
         # return_value = await execute_command(
         #     command_name=command_name,
         #     arguments=command_args,
         #     task=current_task,
         #     agent=self._agent,
-
         # )
         # print(return_value)
         import AFAAS.core.tools.builtins.file_operations as file_ops
