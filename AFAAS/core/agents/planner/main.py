@@ -76,6 +76,7 @@ class PlannerAgent(BaseAgent):
         ] = {},  # Optional parameter for custom vectorstore
         embedding_model: Embeddings = None,  # Optional parameter for custom embedding model
         workflow_registry: WorkflowRegistry = None,
+        log_path=None,
         **kwargs,
     ):
         # FIXME:
@@ -100,6 +101,7 @@ class PlannerAgent(BaseAgent):
             vectorstores=vectorstores,
             embedding_model=embedding_model,
             workflow_registry=workflow_registry,
+            log_path=log_path,
             **kwargs,
         )
 
@@ -142,6 +144,7 @@ class PlannerAgent(BaseAgent):
         vectorstores: dict[str, VectorStore] = {},
         embedding_model: Embeddings = None,
         workflow_registry: WorkflowRegistry = None,
+        log_path=None,
         **kwargs,
     ):
         agent = cls(
@@ -158,6 +161,7 @@ class PlannerAgent(BaseAgent):
             vectorstores=vectorstores,
             embedding_model=embedding_model,
             workflow_registry=workflow_registry,
+            log_path=log_path,
             **kwargs,
         )
 

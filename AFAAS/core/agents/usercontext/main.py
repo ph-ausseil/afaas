@@ -38,6 +38,7 @@ class UserContextAgent(BaseAgent):
         vectorstores: dict[str, VectorStore] = {},
         embeddings: Embeddings = None,
         workflow_registry: WorkflowRegistry = None,
+        log_path = None,
         **kwargs,
     ):
         super().__init__(
@@ -51,6 +52,7 @@ class UserContextAgent(BaseAgent):
             vectorstores=vectorstores,
             embedding_model=embeddings,
             workflow_registry=workflow_registry,
+            log_path=log_path,
             **kwargs,
         )
 
