@@ -310,16 +310,18 @@ class Task(AbstractTask):
     async def clone(self , with_predecessor = False) -> Task:
         import copy
         clone = copy.deepcopy(self)
-        clone.task_id = Task.generate_uuid()
-        clone.state = TaskStatusList.BACKLOG
-        clone.task_text_output = None
-        clone.task_text_output_as_uml = None
-        clone._task_successors = None
+        clone.agent = self.agent
+        clone._task_parent = self._task_parent
         for successor in await self.task_successors.get_all_tasks_from_stack():
             successor.add_predecessor(clone)
         if with_predecessor :
             for predecessor in await self.task_predecessors.get_all_tasks_from_stack():
                 predecessor.add_successor(clone)
+        clone.task_id = Task.generate_uuid()
+        clone.state = TaskStatusList.BACKLOG
+        clone.task_text_output = None
+        clone.task_text_output_as_uml = None
+        clone._task_successors = None
         return clone
 
     async def retry(self) -> Task:
