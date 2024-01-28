@@ -8,8 +8,9 @@ import math
 
 from typing import TYPE_CHECKING, Optional, Union, Literal
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain.vectorstores import VectorStore
 from langchain_core.documents import Document
+from langchain.vectorstores.chroma import Chroma
 
 from pydantic import BaseModel, Field, validator
 from AFAAS.lib.sdk.logger import AFAASLogger
@@ -49,28 +50,6 @@ class SearchFilter(BaseModel):
             raise ValueError('type is a special value and can not be used as a filter')
 
         return v
-
-    def generate_filters(self, document_type: Union[DocumentType, list[DocumentType]]) -> dict:
-        filter = {}
-        for key, value in self.filters.items():
-            filter.update(self._make_filter(key, value))
-
-        if isinstance(document_type, list):
-            if DocumentType.ALL not in document_type:
-                filter.update(self._make_filter('type', Filter(filter_type=FilterType.IN, value=document_type)))
-            else :
-                raise ValueError("ALL can not be used with other types")
-        else:
-            if document_type != DocumentType.ALL:
-                filter.update(self._make_filter('type', Filter(filter_type=FilterType.EQUAL, value=document_type)))
-
-        return filter
-
-    def _make_filter(self, key: str, filter: Filter) -> dict:
-        if not isinstance(filter, Filter):
-            raise ValueError(f'Filter {key} is not a valid filter')
-        return {key: {filter.filter_type: filter.value}}
-
 
     def add_filter(self, key: str, filter: Filter):
         if not isinstance(filter, Filter):
@@ -132,14 +111,21 @@ class VectorStoreWrapper:
                                     document_type: Union[DocumentType, list[DocumentType]],
                                     cluster_search=True
                                     ) -> list[Document]:
+        self.used_default_filter = False
 
         k = math.ceil(nb_results * 2.5)  # Always round up
-        documents = await self.vector_store.asimilarity_search_by_vector(
-            embedding,
-            k=k,
-            include_metadata=True,
-            filter=search_filters.generate_filters(document_type=document_type),
-        )
+        try : 
+            documents = await self.vector_store.asimilarity_search_by_vector(
+                embedding,
+                k=k,
+                include_metadata=True,
+                filter= self.generate_filters(filters= search_filters, document_type=document_type),
+            )
+        except Exception as e :
+            LOG.error(e)
+            if (self.used_default_filter) : 
+                LOG.error("This is most likely due because your vector store is not yet supported, help us and implement `VectoreStoreWrapper._make_filter()` for your VectorStore.")
+            return []
 
         if len(documents) < k:
             return documents[:nb_results]
@@ -154,6 +140,32 @@ class VectorStoreWrapper:
             return top_similar_documents + clustered_documents
 
         return documents[:nb_results]
+
+    def generate_filters(self, filters : SearchFilter,  document_type: Union[DocumentType, list[DocumentType]]) -> dict:
+        filter = {}
+        for key, value in filters.filters.items():
+            filter.update(self._make_filter(key, value))
+
+        if isinstance(document_type, list):
+            if DocumentType.ALL not in document_type:
+                filter.update(self._make_filter('type', Filter(filter_type=FilterType.IN, value=document_type)))
+            else :
+                raise ValueError("ALL can not be used with other types")
+        else:
+            if document_type != DocumentType.ALL:
+                filter.update(self._make_filter('type', Filter(filter_type=FilterType.EQUAL, value=document_type)))
+
+        return filter
+
+    def _make_filter(self, key: str, filter: Filter) -> dict:
+        if not isinstance(filter, Filter):
+            raise ValueError(f'Filter {key} is not a valid filter')
+
+        if isinstance(self.vector_store, Chroma) : 
+            return {key: {filter.filter_type: filter.value}}
+        else : 
+            self.used_default_filter = True
+            return {key: {filter.filter_type: filter.value}}
 
     def _get_centrermost_document_from_each_cluster(self, nb_clusters : int, documents : list[Document]) -> list[Document]:
         vectors = [doc.embedding for doc in documents]
