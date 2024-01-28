@@ -158,23 +158,15 @@ class VectorStoreWrapper:
     def _get_centrermost_document_from_each_cluster(self, nb_clusters : int, documents : list[Document]) -> list[Document]:
         vectors = [doc.embedding for doc in documents]
         kmeans = KMeans(n_clusters=nb_clusters, random_state=42).fit(vectors)
-        # Create an empty list that will hold your closest points
-        closest_indices = []
 
-        # Loop through the number of clusters you have
-        for i in range(nb_clusters):
-
-            # Get the list of distances from that particular cluster center
-            distances = np.linalg.norm(vectors - kmeans.cluster_centers_[i], axis=1)
-
-            # Find the list position of the closest one (using argmin to find the smallest distance)
+        centermost_document = []
+        for cluster_index in range(nb_clusters):
+            distances = np.linalg.norm(vectors - kmeans.cluster_centers_[cluster_index], axis=1)
             closest_index = np.argmin(distances)
 
-            # Append that position to your closest indices list
-            #closest_indices.append(closest_index)
-            closest_indices.append(documents[closest_index])
+            centermost_document.append(documents[closest_index])
 
-        return closest_indices
+        return centermost_document
 
     def _get_most_similar_document_each_cluster(self, nb_clusters : int, documents : list[Document]) -> list[Document]:
         vectors = [doc.embedding for doc in documents]
@@ -190,7 +182,6 @@ class VectorStoreWrapper:
 
             # Find the most similar document within this cluster
             most_similar_document = max(cluster_members, key=lambda doc: doc.similarity_score)
-
             best_documents.append(most_similar_document)
 
         return best_documents[:nb_clusters]
