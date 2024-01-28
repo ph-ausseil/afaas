@@ -89,7 +89,8 @@ class VectorStoreWrapper:
                               query: str,
                               uri: str,
                               search_filters: SearchFilter,
-                              nb_results: int = 5) -> list[Document]:
+                              nb_results: int = 5
+                              ) -> list[Document]:
 
         search_filters.add_filter('type', Filter(filter_type=FilterType.EQUAL, value=DocumentType.DOCUMENTS.value))
         search_filters.add_filter('source', Filter(filter_type=FilterType.START_WITH, value=uri))
@@ -109,63 +110,43 @@ class VectorStoreWrapper:
                                     nb_results: int,
                                     search_filters: SearchFilter,
                                     document_type: Union[DocumentType, list[DocumentType]],
-                                    cluster_search=True
+                                    cluster_search=True,
+                                    similarity_threshold=0.8,
+                                    similatity_prevalence=0.5,
                                     ) -> list[Document]:
         self.used_default_filter = False
 
         k = math.ceil(nb_results * 2.5)  # Always round up
+        query_filter = self.generate_filters(filters= search_filters, document_type=document_type)
         try : 
-            documents = await self.vector_store.asimilarity_search_by_vector(
+            documents = self.get_documents(        
                 embedding,
                 k=k,
                 include_metadata=True,
-                filter= self.generate_filters(filters= search_filters, document_type=document_type),
-            )
+                score_threshold = similarity_threshold,
+                filter= query_filter,
+                )
         except Exception as e :
             LOG.error(e)
             if (self.used_default_filter) : 
                 LOG.error("This is most likely due because your vector store is not yet supported, help us and implement `VectoreStoreWrapper._make_filter()` for your VectorStore.")
             return []
 
+
         if len(documents) < k:
             return documents[:nb_results]
 
         if cluster_search:
             sorted_documents = sorted(documents, key=lambda r: r.similarity_score, reverse=True)
-            half_nb_results = math.ceil(nb_results / 2)  # Round up division
+            half_nb_results = math.ceil(nb_results * similatity_prevalence)  # Round up division
             top_similar_documents = sorted_documents[:half_nb_results]
             remaining_results = nb_results - len(top_similar_documents)
             remaining_documents = [doc for doc in sorted_documents if doc not in top_similar_documents]
-            clustered_documents = self._get_most_similar_document_each_cluster(remaining_results, remaining_documents)
+            #clustered_documents = self._get_most_similar_document_each_cluster(remaining_results, remaining_documents)
+            clustered_documents = self._get_centrermost_document_from_each_cluster(remaining_results, remaining_documents)
             return top_similar_documents + clustered_documents
 
         return documents[:nb_results]
-
-    def generate_filters(self, filters : SearchFilter,  document_type: Union[DocumentType, list[DocumentType]]) -> dict:
-        filter = {}
-        for key, value in filters.filters.items():
-            filter.update(self._make_filter(key, value))
-
-        if isinstance(document_type, list):
-            if DocumentType.ALL not in document_type:
-                filter.update(self._make_filter('type', Filter(filter_type=FilterType.IN, value=document_type)))
-            else :
-                raise ValueError("ALL can not be used with other types")
-        else:
-            if document_type != DocumentType.ALL:
-                filter.update(self._make_filter('type', Filter(filter_type=FilterType.EQUAL, value=document_type)))
-
-        return filter
-
-    def _make_filter(self, key: str, filter: Filter) -> dict:
-        if not isinstance(filter, Filter):
-            raise ValueError(f'Filter {key} is not a valid filter')
-
-        if isinstance(self.vector_store, Chroma) : 
-            return {key: {filter.filter_type: filter.value}}
-        else : 
-            self.used_default_filter = True
-            return {key: {filter.filter_type: filter.value}}
 
     def _get_centrermost_document_from_each_cluster(self, nb_clusters : int, documents : list[Document]) -> list[Document]:
         vectors = [doc.embedding for doc in documents]
@@ -243,6 +224,63 @@ class VectorStoreWrapper:
 
         return index_of_best_point + 1
 
+    def generate_filters(self, filters : SearchFilter,  document_type: Union[DocumentType, list[DocumentType]]) -> dict:
+        filter = {}
+        for key, value in filters.filters.items():
+            filter.update(self._make_filter(key, value))
+
+        if isinstance(document_type, list):
+            if DocumentType.ALL not in document_type:
+                filter.update(self._make_filter('type', Filter(filter_type=FilterType.IN, value=document_type)))
+            else :
+                raise ValueError("ALL can not be used with other types")
+        else:
+            if document_type != DocumentType.ALL:
+                filter.update(self._make_filter('type', Filter(filter_type=FilterType.EQUAL, value=document_type)))
+
+        return filter
+
+    def _make_filter(self, key: str, filter: Filter) -> dict:
+        if not isinstance(filter, Filter):
+            raise ValueError(f'Filter {key} is not a valid filter')
+
+        if isinstance(self.vector_store, Chroma) : 
+            return {key: {filter.filter_type: filter.value}}
+        else : 
+            self.used_default_filter = True
+            return {key: {filter.filter_type: filter.value}}
+
+    async def get_documents(self,
+                      embedding: Embeddings,
+                      k: int,
+                      include_metadata: bool ,
+                      score_threshold: float,
+                      filter: dict) -> list[Document]:
+
+        if isinstance(self.vector_store, Chroma) : 
+            documents = await self.vector_store.asimilarity_search_by_vector(
+                embedding,
+                k=k,
+                include_metadata=include_metadata,
+                filter= filter,
+            )
+            #FIXME : This is a hack to make sure that we still keep to a certain threshold
+            LOG.notice("Score threshold not yet implemented... Starting fallback method...")
+            return [doc for doc in documents if doc.similarity_score >= score_threshold]
+        else :
+            LOG.warning("Vector Store not supported... Attempting fallback...")
+            documents = await self.vector_store.asimilarity_search_by_vector(
+                embedding,
+                k=k,
+                include_metadata=include_metadata,
+                filter= filter,
+            )
+            return [doc for doc in documents if doc.similarity_score >= score_threshold]
+
+
+
+
+        # """
         # from langchain.text_splitter import (
         #     Language,
         #     RecursiveCharacterTextSplitter,
