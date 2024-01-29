@@ -7,9 +7,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from AFAAS.interfaces.task.meta import TaskStatusList
+from AFAAS.interfaces.task.meta import TaskStatusList , AFAASModel
 from AFAAS.lib.task.plan import Plan
-from AFAAS.lib.task.task import Task
+from AFAAS.lib.task.task import Task, BaseAgent
+from AFAAS.interfaces.task.stack import TaskStack
 
 from .dataset.agent_planner import agent_dataset
 from .dataset.plan_familly_dinner import (
@@ -132,9 +133,95 @@ async def test_task_hashing(default_task: Task):
     task_clone = await default_task.clone()
     assert hash(default_task) != hash(task_clone)
 
-    # Test that different tasks have different hashes
+    # Test that hash is on task_id
     task_clone.task_id = default_task.task_id
     assert hash(default_task) == hash(task_clone)
+
+
+@pytest.mark.asyncio
+async def test_task_copy(default_task: Task):
+    import asyncio
+    import datetime
+    task_clone =  default_task.__copy__()
+    assert hash(default_task) == hash(task_clone)
+    print(f"Hash comparison: default_task({hash(default_task)}) != task_clone({hash(task_clone)})")
+
+    last_class_type = None
+    for attr in sorted(default_task.__dict__, key=lambda x: type(getattr(default_task, x)).__name__):
+        current_class_type = type(getattr(default_task, attr)).__name__
+
+        # Print a big separator when the class type changes
+        if current_class_type != last_class_type:
+            print(f"\n{'=' * 30}\nClass Type: {current_class_type} ; is AFAASModel : {isinstance(getattr(default_task, attr), AFAASModel)}\n{'=' * 30}\n")
+            last_class_type = current_class_type
+
+        original_attr = getattr(default_task, attr)
+        cloned_attr = getattr(task_clone, attr)
+        print(f"Attr: {attr}")
+        print(f"Equality (==): {original_attr == cloned_attr}")
+        if not (isinstance(original_attr, bool)or isinstance(original_attr, str) or isinstance(original_attr, int) or isinstance(original_attr, float) or isinstance(original_attr, tuple)) : 
+            print(f"Identity (is): {original_attr is cloned_attr}")
+            if original_attr is not cloned_attr:
+                print(f"Original: {original_attr}")
+                print(f"Cloned: {cloned_attr}")
+
+        if (original_attr is None) : 
+            assert cloned_attr is None
+        elif isinstance(original_attr , bool):
+            assert original_attr == cloned_attr
+        elif isinstance(original_attr, str) or isinstance(original_attr, int) or isinstance(original_attr, float) or isinstance(original_attr, tuple) :
+            assert original_attr == cloned_attr
+            if (isinstance(original_attr, str)):
+                setattr(task_clone, attr, "new_value")
+                assert original_attr is not getattr(task_clone, attr)
+            if (isinstance(original_attr, bool)):
+                setattr(task_clone, attr, not cloned_attr)
+                assert original_attr is not getattr(task_clone, attr)
+            if (isinstance(original_attr, int)):
+                setattr(task_clone, attr, original_attr + 1)
+                assert original_attr is not getattr(task_clone, attr)
+            if (isinstance(original_attr, float)):
+                setattr(task_clone, attr, original_attr + 1.0)
+                assert original_attr is not getattr(task_clone, attr)
+        elif isinstance(original_attr, datetime.datetime):  
+            assert original_attr == cloned_attr
+            setattr(task_clone, attr, original_attr + datetime.timedelta(days=1))
+            assert original_attr is not getattr(task_clone, attr)
+        elif isinstance(original_attr, TaskStack):
+            assert original_attr is not cloned_attr
+        elif isinstance(original_attr, Plan) or isinstance(original_attr, BaseAgent) :
+            assert original_attr is cloned_attr
+        elif isinstance(original_attr, asyncio.Future):
+            continue
+        else : 
+            assert original_attr is not cloned_attr
+
+
+@pytest.mark.asyncio
+async def test_task_clone(default_task: Task):
+    import asyncio
+    task_clone = await default_task.clone()
+    assert hash(default_task) != hash(task_clone)
+    print(f"Hash comparison: default_task({hash(default_task)}) != task_clone({hash(task_clone)})")
+    task_clone.task_goal = "new_goal"
+    last_class_type = None
+    for attr in sorted(default_task.__dict__, key=lambda x: type(getattr(default_task, x)).__name__):
+        current_class_type = type(getattr(default_task, attr)).__name__
+
+        # Print a big separator when the class type changes
+        if current_class_type != last_class_type:
+            print(f"\n{'=' * 30}\nClass Type: {current_class_type} ; is AFAASModel : {isinstance(getattr(default_task, attr), AFAASModel)}\n{'=' * 30}\n")
+            last_class_type = current_class_type
+
+        original_attr = getattr(default_task, attr)
+        cloned_attr = getattr(task_clone, attr)
+        print(f"Attr: {attr}")
+        print(f"Equality (==): {original_attr == cloned_attr}")
+        if not (isinstance(original_attr, bool)or isinstance(original_attr, str) or isinstance(original_attr, int) or isinstance(original_attr, float) or isinstance(original_attr, tuple)) : 
+            print(f"Identity (is): {original_attr is cloned_attr}")
+            if original_attr is not cloned_attr:
+                print(f"Original: {original_attr}")
+                print(f"Cloned: {cloned_attr}")
 
 
 # @pytest.mark.asyncio
