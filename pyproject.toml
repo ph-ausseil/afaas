@@ -81,6 +81,7 @@ llama-hub = "0.0.71"
 langchain-openai = "^0.0.3"
 scikit-learn = "^1.4.0"
 langchain-core = "^0.1.16"
+langchain-community = "^0.0.16"
 
 
 [tool.poetry.extras]

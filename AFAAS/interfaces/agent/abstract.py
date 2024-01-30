@@ -18,7 +18,7 @@ from AFAAS.lib.message_common import AFAASMessageStack
 from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)
-from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
