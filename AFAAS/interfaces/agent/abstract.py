@@ -18,11 +18,12 @@ from AFAAS.lib.message_common import AFAASMessageStack
 from AFAAS.lib.sdk.logger import AFAASLogger
 
 LOG = AFAASLogger(name=__name__)
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore
+from langchain.vectorstores import VectorStore
 from AFAAS.interfaces.adapters.embeddings.wrapper import VectorStoreWrapper, ChromaWrapper
+
 if TYPE_CHECKING:
     from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
     from AFAAS.interfaces.task.plan import AbstractPlan
