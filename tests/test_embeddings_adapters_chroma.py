@@ -5,7 +5,7 @@ from unittest.mock import MagicMock , AsyncMock
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.chroma import Chroma
 from .dataset.documents import documents
-from AFAAS.interfaces.adapters.embeddings.wrapper import VectorStoreWrapper, SearchFilter, DocumentType, Document, Filter, FilterType
+from AFAAS.interfaces.adapters.embeddings.wrapper import VectorStoreWrapper, SearchFilter, DocumentType, Document, Filter, FilterType, ChromaWrapper
 from langchain_openai import OpenAIEmbeddings
 from tests.dataset.plan_familly_dinner import (
     Task,
@@ -28,7 +28,7 @@ async def test_dataset(documents):
 
 @pytest.fixture
 async def vector_store_wrapper(default_task : Task):
-    return VectorStoreWrapper(vector_store=Chroma(
+    return ChromaWrapper(vector_store=Chroma(
                 persist_directory=f'data/chroma/',
                 embedding_function=OpenAIEmbeddings()
             ), embedding_model= OpenAIEmbeddings()
@@ -37,7 +37,7 @@ async def vector_store_wrapper(default_task : Task):
 
 @pytest.fixture
 async def vector_store_wrapper_with_documents(documents : list[Document]):
-    wrapper =  VectorStoreWrapper(vector_store=Chroma(
+    wrapper =  ChromaWrapper(vector_store=Chroma(
                 persist_directory=f'data/chroma/' + str(uuid.uuid4()),
                 embedding_function=OpenAIEmbeddings()
             ), embedding_model= OpenAIEmbeddings()

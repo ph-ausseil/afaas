@@ -22,6 +22,7 @@ from AFAAS.lib.message_common import AFAASMessageStack
 from AFAAS.lib.sdk.logger import AFAASLogger
 from AFAAS.lib.task.plan import Plan, TaskStatusList
 
+from AFAAS.interfaces.adapters.embeddings.wrapper import VectorStoreWrapper, ChromaWrapper
 from .loop import PlannerLoop
 
 LOG = AFAASLogger(name=__name__)
@@ -71,7 +72,7 @@ class PlannerAgent(BaseAgent):
         db: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
-        vectorstore: VectorStore = None,  # Optional parameter for custom vectorstore
+        vectorstore : VectorStoreWrapper = None,  # Optional parameter for custom vectorstore
         embedding_model: Embeddings = None,  # Optional parameter for custom embedding model
         workflow_registry: WorkflowRegistry = None,
         **kwargs,
@@ -137,7 +138,7 @@ class PlannerAgent(BaseAgent):
         db: AbstractMemory = None,
         default_llm_provider: AbstractLanguageModelProvider = None,
         workspace: AbstractFileWorkspace = None,
-        vectorstore:  VectorStore = None,
+        vectorstore: VectorStoreWrapper = None,
         embedding_model: Embeddings = None,
         workflow_registry: WorkflowRegistry = None,
         **kwargs,

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import abc
 import datetime
 import uuid
 from sklearn.cluster import KMeans
@@ -19,10 +19,10 @@ LOG = AFAASLogger(name=__name__)
 from enum import Enum
 
 class DocumentType(str, Enum):
-        TASK = "task"
-        DOCUMENTS = "documents"
-        MESSAGE_AGENT_USER = "message_agent_user"
-        ALL = '*'
+    TASK = "task"
+    DOCUMENTS = "documents"
+    MESSAGE_AGENT_USER = "message_agent_user"
+    ALL = '*'
 
 class FilterType(str, Enum):
     EQUAL = "$eq"
@@ -34,28 +34,24 @@ class Filter(BaseModel):
     filter_type : FilterType
     value : str
 
-class RetrievedDocument(Document) : 
-    similarity_score : float 
-    vector_store : VectorStore
+
+Filter.update_forward_refs()
+
+
+class RetrievedDocument(Document) :
+    similarity_score : float
+    vector_store_wrapper : VectorStoreWrapper
 
     class Config(Document.Config):
         arbitrary_types_allowed = True
 
 
-    def __init__(self, vector_store : VectorStore ,  document = Document, similarity_score = float):
-        super().__init__(**document.dict(), similarity_score=similarity_score , vector_store = vector_store)
+    def __init__(self, vector_store_wrapper : VectorStoreWrapper ,  document = Document, similarity_score = float):
+        super().__init__(**document.dict(), similarity_score=similarity_score , vector_store = vector_store_wrapper)
 
 
     def get_embeddings(self):
-        if isinstance(self.vector_store, Chroma) :
-            document = self.vector_store._collection.get(ids=[self.metadata["document_id"]] , include=["embeddings", "metadatas", "documents"])
-        else :
-            document = self.vector_store._collection.get(ids=[self.metadata["document_id"]] , include=["embeddings", "metadatas", "documents"])
-
-        return document.embeddings[0]
-
-
-Filter.update_forward_refs()
+        return self.vector_store_wrapper._get_embeding_from_document_id( id = self.metadata["document_id"])
 
 class SearchFilter(BaseModel):
 
@@ -86,7 +82,7 @@ class SearchFilter(BaseModel):
 
 SearchFilter.update_forward_refs()
 
-class VectorStoreWrapper:
+class VectorStoreWrapper(abc.ABC):
     def __init__(self, vector_store: VectorStore, embedding_model: Embeddings):
         self.vector_store = vector_store
         self.embedding_model = embedding_model
@@ -100,15 +96,9 @@ class VectorStoreWrapper:
         document.metadata["type"] = document_type
         document.metadata["created_at"] = str(datetime.datetime.now())
         document.metadata["document_id"] = doc_id
-        document.metadata["checksum"] = hashlib.md5(document.page_content.encode()).hexdigest() 
-        if isinstance(self.vector_store, Chroma) :
-            new_ids = await self.vector_store.aadd_documents(documents = [document], ids = [doc_id])
-        else :
-            new_ids = await self.vector_store.aadd_documents(documents = [document], ids = [doc_id])
+        document.metadata["checksum"] = hashlib.md5(document.page_content.encode()).hexdigest()
+        new_ids = self._add_document(document = document , id = doc_id)
         LOG.notice(f"Document added to vector store with id {new_ids[0]}")
-        assert new_ids[0] == doc_id, "Document ID should be returned correctly"
-        if isinstance(self.vector_store, Chroma) :
-            self.vector_store._collection.get(ids=[doc_id] , include=["embeddings", "metadatas", "documents"])
 
         return doc_id
 
@@ -117,7 +107,7 @@ class VectorStoreWrapper:
                               uri: str,
                               search_filters: SearchFilter,
                               nb_results: int = 5
-                              ) -> list[Document]:
+                              ) -> list[RetrievedDocument]:
 
         search_filters.add_filter('type', Filter(filter_type=FilterType.EQUAL, value=DocumentType.DOCUMENTS.value))
         search_filters.add_filter('source', Filter(filter_type=FilterType.START_WITH, value=uri))
@@ -139,12 +129,12 @@ class VectorStoreWrapper:
                                     similarity_threshold=0.8,
                                     similatity_prevalence=0.5,
                                     ) -> list[RetrievedDocument]:
-        self.used_default_filter = False
+        #self.used_default_filter = False
 
         k = math.ceil(nb_results * 2.5)  # Always round up
         query_filter = self.generate_filters(filters= search_filters, document_type=document_type)
 
-        try : 
+        try :
             documents = await self.get_documents(
                 query = query,
                 k=k,
@@ -153,19 +143,16 @@ class VectorStoreWrapper:
                 filter= query_filter,
                 )
         except Exception as e :
-            if (self.used_default_filter) : 
-                LOG.error("This is most likely due because your vector store is not yet supported, help us and implement `VectoreStoreWrapper._make_filter()` for your VectorStore.")
+        #     if (self.used_default_filter) :
+        #         LOG.error("This is most likely due because your vector store is not yet supported, help us and implement `VectoreStoreWrapper._make_filter()` for your VectorStore.")
+            LOG.error("Error while searching for information, the agent will continue to work with limited capacities")
             return []
 
         if len(documents) < k:
             return documents[:nb_results]
 
         if cluster_search:
-            if (isinstance(self.vector_store, Chroma)) : 
-                sorted_documents = documents
-            else : 
-                #Workaround for non supported vector stores
-                sorted_documents = sorted(documents, key=lambda r: r.similarity_score, reverse=True)
+            sorted_documents = self._sort(documents = documents)
             half_nb_results = math.ceil(nb_results * similatity_prevalence)  # Round up division
             top_similar_documents = sorted_documents[:half_nb_results]
             remaining_results = nb_results - len(top_similar_documents)
@@ -255,6 +242,8 @@ class VectorStoreWrapper:
     def generate_filters(self, filters : SearchFilter,  document_type: Union[DocumentType, list[DocumentType]]) -> dict:
         filter = {}
         for key, value in filters.filters.items():
+            if not isinstance(filter, Filter):
+                raise ValueError(f'Filter {key} is not a valid filter')
             filter.update(self._make_filter(key, value))
 
         if isinstance(document_type, list):
@@ -268,34 +257,13 @@ class VectorStoreWrapper:
 
         return self._compile_filter(filter)
 
-    def _make_filter(self, key: str, filter: Filter) -> dict:
-        if not isinstance(filter, Filter):
-            raise ValueError(f'Filter {key} is not a valid filter')
-
-        if isinstance(self.vector_store, Chroma) : 
-            return {key: {filter.filter_type.value: filter.value}}
-        else : 
-            self.used_default_filter = True
-            return {key: {filter.filter_type.value: filter.value}}
-
-    def _compile_filter(self, filters: dict) -> dict:
-        if isinstance(self.vector_store, Chroma) : 
-            if len(filters) > 1:
-                filters = {"$and": [ {key : filter} for key , filter in  filters.items()]}
-            return filters
-        else : 
-            self.used_default_filter = True
-            if len(filters) > 1:
-                filters = [filters]
-            return filters
-
     async def get_documents(self,
                       query: str,
                       k: int,
                       include_metadata: bool ,
                       score_threshold: float,
                       filter: dict) -> list[RetrievedDocument]:
-        if isinstance(self.vector_store, Chroma) : 
+        if isinstance(self.vector_store, Chroma) :
             documents = await self.vector_store.asimilarity_search_with_relevance_scores(
                 query,
                 k=k,
@@ -305,7 +273,7 @@ class VectorStoreWrapper:
             )
             #FIXME : This is a hack to make sure that we still keep to a certain threshold
             LOG.notice("Score threshold not yet implemented... Starting fallback method...")
-            return [RetrievedDocument(vector_store=self.vector_store , document=doc[0] , similarity_score = doc[1]) for doc in documents if doc[1] >= score_threshold]
+            return [RetrievedDocument(vector_store_wrapper=self, document=doc[0] , similarity_score = doc[1]) for doc in documents if doc[1] >= score_threshold]
         else :
             LOG.warning("Vector Store not supported... Attempting fallback...")
             documents = await self.vector_store.asimilarity_search_by_vector(
@@ -316,23 +284,74 @@ class VectorStoreWrapper:
             )
             return [doc for doc in documents if doc.similarity_score >= score_threshold]
 
+    @abc.abstractmethod
+    async def _add_document(self, document : Document, doc_id : str):
+        ...
+
+    @abc.abstractmethod
+    def _make_filter(self, key: str, filter: Filter) -> dict:
+        ...
+
+    @abc.abstractmethod
+    def _compile_filter(self, filters: dict) -> dict:
+        ...
+
+    @abc.abstractmethod
+    def _get_document_by_id(self, vector_store : VectorStore , id : str):
+        ...
+
+    @abc.abstractmethod
+    def _sort(self, documents : list[RetrievedDocument]) -> list[RetrievedDocument]:
+        ...
+
+    @abc.abstractmethod
+    def _get_embeding_from_document_id(self, id : str):
+        ...
+
+class ChromaWrapper(VectorStoreWrapper):
+
+    vector_store : Chroma
+
+    async def _add_document(self, document : Document, doc_id : str):
+        return await self.vector_store.aadd_documents(documents = [document], ids = [doc_id])
+
+    def _make_filter(self, key: str, filter: Filter) -> dict:
+        return {key: {filter.filter_type.value: filter.value}}
+
+    def _compile_filter(self, filters: dict) -> dict:
+        if len(filters) > 1:
+            filters = {"$and": [ {key : filter} for key , filter in  filters.items()]}
+        return filters
+
+    def _get_document_by_id(self, id : str):
+        return self.vector_store._collection.get(ids=[id] , include=["embeddings", "metadatas", "documents"])
+
+    def _get_embeding_from_document_id(self, id : str):
+        document = self._get_document_by_id(id = id)
+        return document.embeddings[0]
+
+    def _sort(self, documents : list[RetrievedDocument]) -> list[RetrievedDocument]:
+            # if (isinstance(self.vector_store, Chroma)) :
+        return documents
+            # else :
+            #     #Workaround for non supported vector stores
+            #     return sorted(documents, key=lambda r: r.similarity_score, reverse=True)
 
 
+# """
+# from langchain.text_splitter import (
+#     Language,
+#     RecursiveCharacterTextSplitter,
+# )
+# from langchain_experimental.text_splitter import SemanticChunker
+# from langchain_openai.embeddings import OpenAIEmbeddings
 
-        # """
-        # from langchain.text_splitter import (
-        #     Language,
-        #     RecursiveCharacterTextSplitter,
-        # )
-        # from langchain_experimental.text_splitter import SemanticChunker
-        # from langchain_openai.embeddings import OpenAIEmbeddings
+# text_splitter = SemanticChunker(OpenAIEmbeddings())
 
-        # text_splitter = SemanticChunker(OpenAIEmbeddings())
-
-        # """
-        # 1. Load
-        # 2. Split
-        # 3. Add to vector store
-        # 4. Search
-        # 5. Retrieve
-        # """
+# """
+# 1. Load
+# 2. Split
+# 3. Add to vector store
+# 4. Search
+# 5. Retrieve
+# """
