@@ -22,7 +22,7 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.embeddings import Embeddings
 from langchain.vectorstores import VectorStore
-from AFAAS.interfaces.adapters.embeddings.wrapper import VectorStoreWrapper
+from AFAAS.interfaces.adapters.embeddings.wrapper import VectorStoreWrapper, ChromaWrapper
 
 if TYPE_CHECKING:
     from AFAAS.interfaces.prompts.strategy import AbstractChatModelResponse
@@ -36,17 +36,19 @@ class AbstractAgent(ABC):
     plan : Optional[AbstractPlan] = None
 
     @property
-    def vectorstores(self) -> dict[str, VectorStoreWrapper]:        
+    def vectorstores(self) -> VectorStoreWrapper:        
         if self._vectorstores is None:
-            self._vectorstores = VectorStoreWrapper(vector_store=Chroma(
+            self._vectorstores = ChromaWrapper(vector_store=Chroma(
                 persist_directory=f'data/chroma/',
                 embedding_function=self.embedding_model
             ), embedding_model= self.embedding_model)
         return self._vectorstores
 
     @vectorstores.setter
-    def vectorstores(self, value: VectorStore):
-        self._vectorstores = VectorStoreWrapper(vector_store=value, embedding_model= self.embedding_model)
+    def vectorstores(self, value: VectorStoreWrapper):
+        if not isinstance(value, VectorStoreWrapper):
+            raise ValueError("vectorstores must be a VectorStoreWrapper")
+        self._vectorstores : VectorStoreWrapper = value
 
     @property
     def embedding_model(self) -> Embeddings:
@@ -183,7 +185,7 @@ class AbstractAgent(ABC):
         workspace: AbstractFileWorkspace,
         prompt_manager: BasePromptManager,
         default_llm_provider: AbstractLanguageModelProvider,
-        vectorstore:  VectorStore,
+        vectorstore: VectorStoreWrapper,
         embedding_model : Embeddings,
         workflow_registry: WorkflowRegistry,
         user_id: str,
@@ -214,10 +216,7 @@ class AbstractAgent(ABC):
         self._default_llm_provider : AbstractLanguageModelProvider = default_llm_provider
         self._embedding_model : Embeddings = embedding_model
 
-        if (vectorstore is not  None):
-            self._vectorstores: VectorStoreWrapper = VectorStoreWrapper(vector_store= vectorstore , embedding_model= self.embedding_model)
-        else :
-            self._vectorstores : VectorStoreWrapper = None
+        self._vectorstores: VectorStoreWrapper = vectorstore
 
         self._workflow_registry : WorkflowRegistry = workflow_registry
 

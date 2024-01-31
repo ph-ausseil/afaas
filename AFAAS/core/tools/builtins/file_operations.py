@@ -146,7 +146,7 @@ async def write_to_file(
     vector = await agent.vectorstores.add_document(
                                                     document_type = DocumentType.DOCUMENTS,  
                                                     document = document , 
-                                                    doc_id =  str(artifact.artifact_id)
+                                                    document_id =  str(artifact.artifact_id)
                                                     ) 
     #  ids=[str(filename)],
     #  lang="en",
