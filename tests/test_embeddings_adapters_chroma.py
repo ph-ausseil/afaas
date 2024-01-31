@@ -16,14 +16,14 @@ from tests.dataset.plan_familly_dinner import (
     task_ready_no_predecessors_or_subtasks,
 )
 
-@pytest.mark.asyncio
-async def test_dataset(documents):
-    i = 0
-    for doc in documents:
-        print(doc)
-        i += 1
-        if i > 10:
-            break
+# @pytest.mark.asyncio
+# async def test_dataset(documents):
+#     i = 0
+#     for doc in documents:
+#         print(doc)
+#         i += 1
+#         if i > 10:
+#             break
 
 
 @pytest.fixture
@@ -38,13 +38,14 @@ async def vector_store_wrapper(default_task : Task):
 @pytest.fixture
 async def vector_store_wrapper_with_documents(documents : list[Document]):
     wrapper =  ChromaWrapper(vector_store=Chroma(
-                persist_directory=f'data/chroma/' + str(uuid.uuid4()),
+                persist_directory=f'data/chroma/regerg', #+ str(uuid.uuid4()),
                 embedding_function=OpenAIEmbeddings()
             ), embedding_model= OpenAIEmbeddings()
             )
     for doc in documents:
         doc.metadata = {"agent_id": "123"}
-        await wrapper.add_document(DocumentType.DOCUMENTS, doc)
+        await wrapper.add_document(document_type= DocumentType.DOCUMENTS , document=  doc , document_id= "DOC" + str(uuid.uuid4()))
+        print(doc)
     return wrapper
 
 @pytest.mark.asyncio
@@ -53,15 +54,15 @@ async def test_add_document_valid_input(vector_store_wrapper : VectorStoreWrappe
     vector_store_wrapper.vector_store.aadd_documents = AsyncMock(return_value=["doc_id_1"])
 
     document = Document(page_content="Sample content", metadata={"agent_id": "123"})
-    doc_id = await vector_store_wrapper.add_document(DocumentType.TASK, document, "doc_id_1")
+    doc_id = await vector_store_wrapper.add_document(document_type= DocumentType.DOCUMENTS , document=  document, document_id= "doc_id_1")
 
     assert doc_id == "doc_id_1", "Document ID should be returned correctly"
 
 @pytest.mark.asyncio
-async def test_add_document_missing_metadata(vector_store_wrapper):
+async def test_add_document_missing_metadata(vector_store_wrapper : VectorStoreWrapper):
     document = Document(page_content="Sample content", metadata={})
     with pytest.raises(ValueError) as excinfo:
-        await vector_store_wrapper.add_document(DocumentType.TASK, document)
+        await vector_store_wrapper.add_document(document_type= DocumentType.DOCUMENTS , document=  document)
 
     assert "At least one of 'plan_id', 'agent_id', or 'user_id' must be provided" in str(excinfo.value)
 
@@ -82,6 +83,15 @@ async def test_get_related_documents_test_query_no_result(vector_store_wrapper_w
 
 @pytest.mark.asyncio
 async def test_get_related_documents_related_query(vector_store_wrapper_with_documents : VectorStoreWrapper):
+# async def test_get_related_documents_related_query(documents : list[Document]):
+#     wrapper =  ChromaWrapper(vector_store=Chroma(
+#                 persist_directory=f'data/chroma/regerg', #+ str(uuid.uuid4()),
+#                 embedding_function=OpenAIEmbeddings()
+#             ), embedding_model= OpenAIEmbeddings()
+#             )
+#     for doc in documents:
+#         doc.metadata = {"agent_id": "123"}
+#         doc_id = await wrapper.add_document(document_type= DocumentType.DOCUMENTS , document=  doc) 
     search_filter = SearchFilter(filters={"agent_id": Filter(filter_type=FilterType.EQUAL, value="123")})
     results = await vector_store_wrapper_with_documents.get_related_documents(
         query= "god creation", #await vector_store_wrapper_with_documents.embedding_model.aembed_query("god creation"),
@@ -92,7 +102,7 @@ async def test_get_related_documents_related_query(vector_store_wrapper_with_doc
     )
 
     assert isinstance(results, list), "Results should be a list"
-    assert len(results) > 0, "Results list should not be empty"
+    assert len(results) == 20, "Results list 20 items long"
     # Additional checks can be added to verify the contents of the results
 
 

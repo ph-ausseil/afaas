@@ -36,7 +36,7 @@ class AbstractAgent(ABC):
     plan : Optional[AbstractPlan] = None
 
     @property
-    def vectorstores(self) -> dict[str, VectorStoreWrapper]:        
+    def vectorstores(self) -> VectorStoreWrapper:        
         if self._vectorstores is None:
             self._vectorstores = ChromaWrapper(vector_store=Chroma(
                 persist_directory=f'data/chroma/',
