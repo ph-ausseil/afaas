@@ -186,7 +186,7 @@ class Tool:
         vector = await agent.vectorstores.add_document(
                                                        document_type = DocumentType.TASK,  
                                                        document = document , 
-                                                       doc_id =  task.task_id
+                                                       document_id =  task.task_id
                                                        ) 
 
 
