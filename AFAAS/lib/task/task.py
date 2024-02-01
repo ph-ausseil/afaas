@@ -13,11 +13,11 @@ from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.task.plan import AbstractPlan
 from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.lib.sdk.logger import AFAASLogger, logging
-from AFAAS.prompts.common.afaas_task_post_rag_update import (
+from AFAAS.prompts.common import (
     AfaasPostRagTaskUpdateStrategy,
-)
-from AFAAS.prompts.common.afaas_task_rag_step2_history import AfaasTaskRagStep2Strategy
-from AFAAS.prompts.common.afaas_task_rag_step3_related import AfaasTaskRagStep3Strategy
+AfaasTaskRagStep2Strategy, AfaasTaskRagStep3Strategy , AfaasSelectWorkflowStrategy ) 
+from AFAAS.interfaces.adapters.embeddings.wrapper import SearchFilter, DocumentType,  Filter, FilterType
+from AFAAS.interfaces.workflow import FastTrackedWorkflow
 
 LOG = AFAASLogger(name=__name__)
 
@@ -307,6 +307,92 @@ class Task(AbstractTask):
             return self.task_id == other.task_id
         return False
 
+    def __copy__(self):
+        import copy
+        from AFAAS.interfaces.task.base import AFAASModel
+        cls = self.__class__
+        clone = cls(**self.dict(), agent = self.agent)
+        # for attr in self.__dict__:
+        #     original_value = getattr(self, attr)
+
+        #     if isinstance(original_value, (AbstractBaseTask, BaseAgent)):
+        #         # Keep reference for AbstractBaseTask and BaseAgent types
+        #         setattr(clone, attr, original_value)
+        #     elif isinstance(original_value, TaskStack):
+        #         continue
+        #     elif isinstance(original_value, asyncio.Future):
+        #         setattr(clone, attr, original_value)
+        #     else:
+        #         # Copy all other attributes
+        #         setattr(clone, attr, copy.copy(original_value))
+        clone.agent = self.agent
+        clone._task_parent = self._task_parent
+
+        return clone
+
+    def __deepcopy__(self, memo) : 
+        import copy
+        LOG.warning(f"You should not use deepcopy on Task objects. Use Task.clone() instead")
+        return copy.deepcopy(self)
+
+    async def clone(self , with_predecessor = False) -> Task:
+        import copy
+        clone = copy.copy(self)
+
+
+        import datetime
+        clone.created_at = datetime.datetime.now()
+        clone.task_id = Task.generate_uuid()
+
+        clone.state = TaskStatusList.BACKLOG
+        clone.task_text_output = None
+        clone.task_text_output_as_uml = None
+        clone._task_successors = []
+        for successor in await self.task_successors.get_all_tasks_from_stack():
+            successor.add_predecessor(clone)
+        if with_predecessor :
+            for predecessor in await self.task_predecessors.get_all_tasks_from_stack():
+                predecessor.add_successor(clone)
+        return clone
+
+    async def retry(self) -> Task:
+        """ Clone a task and adds it as its immediate successor"""
+        LOG.warning("Task.retry() is an experimental method")
+        clone = self.clone()
+        self.add_successor(clone)
+        return clone
+
+    async def task_preprossessing(
+        self,
+        predecessors: bool = True,
+        successors: bool = False,
+        history: int = 10,
+        sibblings=True,
+        path=True,
+        nb_similar_tasks: int = 100,
+        avoid_sibbling_predecessors_redundancy: bool = False,
+    ):
+        await self.select_workflow()
+        if self.task_workflow != FastTrackedWorkflow.name : 
+            await self.prepare_rag(
+                predecessors=predecessors,
+                successors=successors,
+                history=history,
+                sibblings=sibblings,
+                path=path,
+                nb_similar_tasks=nb_similar_tasks,
+                avoid_sibbling_predecessors_redundancy=avoid_sibbling_predecessors_redundancy,
+            )
+
+
+    async def select_workflow(self) : 
+            # RAG : 4. Post-Rag task update
+            rv: AbstractChatModelResponse = await self.agent.execute_strategy(
+                strategy_name=AfaasSelectWorkflowStrategy.STRATEGY_NAME,
+                task=self,
+            )
+            self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
+
     async def prepare_rag(
         self,
         predecessors: bool = True,
@@ -334,7 +420,9 @@ class Task(AbstractTask):
         # 3. Remove predecessors from history to avoid redondancy
         history_and_predecessors = set(plan_history) | set(task_predecessors)
 
-        # 4. Get the path to the task and remove it from history to avoid redondancy
+        # 4. Get the path to the task and remove it from history to avoid redondancy 
+        # NOTE: We keep the redundancy as the task path doesn't detail the content of tasks
+        # history_and_predecessors - set(task_path)
         task_path: list[Task] = []
         if path:
             task_path = await self.get_task_path()

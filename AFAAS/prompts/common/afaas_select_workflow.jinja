@@ -1,0 +1,14 @@
+## Instructions
+
+An Autonomous agent backed by a Large Language Model (LLM) is charged with performing a task. Select the righ workflow for this task :
+
+## Task description
+
+{{ to_md_quotation(task.long_description) }}
+
+## Workflows
+
+{% for workflow in workflows %}{{ loop.index }}. {{ workflow.name }}: {{ workflow.description }}
+  Example:{% for example in workflow.examples %}
+   - {{ example }}{% endfor %}
+{% endfor %}
