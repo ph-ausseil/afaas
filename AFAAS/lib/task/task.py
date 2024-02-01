@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from pydantic import Field, validator
 
 from AFAAS.interfaces.adapters import AbstractChatModelResponse
+from AFAAS.interfaces.adapters.embeddings.wrapper import SearchFilter, DocumentType,  Filter, FilterType
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.base import AbstractBaseTask
 from AFAAS.interfaces.task.meta import TaskStatusList
@@ -21,8 +22,7 @@ from AFAAS.interfaces.workflow import FastTrackedWorkflow
 
 LOG = AFAASLogger(name=__name__)
 
-if TYPE_CHECKING:
-    from AFAAS.interfaces.task.stack import TaskStack
+from AFAAS.interfaces.task.stack import TaskStack
 
 
 class Task(AbstractTask):
@@ -526,8 +526,8 @@ class Task(AbstractTask):
             self.long_description = rv.parsed_result[0]["command_args"][
                 "long_description"
             ]
-            # FIXME: ONY for ruting & planning ?
-            self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
+            # Moved to task_preprossessing
+            # self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
 
     async def task_execute(self):
         ...
