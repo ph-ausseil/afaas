@@ -371,10 +371,12 @@ class Task(AbstractTask):
         path=True,
         nb_similar_tasks: int = 100,
         avoid_sibbling_predecessors_redundancy: bool = False,
-    ):
-        await self.select_workflow()
+    ):  
+        # NOTE: in current implementation self.command is always routing
+        workflow = await self._select_workflow()
+
         if self.task_workflow != FastTrackedWorkflow.name : 
-            await self.prepare_rag(
+            rv = await self._preprocess_rags(
                 predecessors=predecessors,
                 successors=successors,
                 history=history,
@@ -384,16 +386,16 @@ class Task(AbstractTask):
                 avoid_sibbling_predecessors_redundancy=avoid_sibbling_predecessors_redundancy,
             )
 
-
-    async def select_workflow(self) : 
+    async def _select_workflow(self) : 
             # RAG : 4. Post-Rag task update
             rv: AbstractChatModelResponse = await self.agent.execute_strategy(
                 strategy_name=AfaasSelectWorkflowStrategy.STRATEGY_NAME,
                 task=self,
             )
-            self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
+            result = rv.parsed_result[0]["command_args"]
+            self.task_workflow = result["task_workflow"]
 
-    async def prepare_rag(
+    async def _preprocess_rags(
         self,
         predecessors: bool = True,
         successors: bool = False,
@@ -526,6 +528,12 @@ class Task(AbstractTask):
             ]
             # FIXME: ONY for ruting & planning ?
             self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
+
+    async def task_execute(self):
+        ...
+
+    async def task_postprocessing(self):
+        ...
 
 
 # Need to resolve the circular dependency between Task and TaskContext once both models are defined.

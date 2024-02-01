@@ -163,7 +163,7 @@ class PlannerLoop(BaseLoop):
                     current_task=current_task
                     # user_input = assistant_reply_dict
                 )
-            
+
             # NOTE : Rewrite to current_task.post_processing()
             if await current_task.is_ready():
                 """If the task still match readiness criterias at this point, it means that we can close it"""

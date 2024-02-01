@@ -63,16 +63,17 @@ class AfaasSelectWorkflowStrategy(AbstractPromptStrategy):
             description="Select a workflow",
             parameters={
                 "task_workflow": JSONSchema(
-                    type=JSONSchema.Type.ARRAY,
-                    items=JSONSchema(
-                        type=JSONSchema.Type.STRING,
+                    type=JSONSchema.Type.STRING,
                         description=f"The workflow to be used for the task",
                         required=True,
                         enum=[
                             workflow.name
                             for workflow in self._agent.workflow_registry.workflows.values()
                         ],
-                    ),
+                ),
+                "justifications": JSONSchema(
+                    type=JSONSchema.Type.STRING,
+                    description=f"Explain the reasons that led you to select this workflow specificaly and not select the others",
                 ),
             },
         )

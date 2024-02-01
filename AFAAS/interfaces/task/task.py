@@ -125,3 +125,11 @@ class AbstractTask(AbstractBaseTask):
         avoid_redondancy: bool = False,
     ):
         ...
+
+    @abstractmethod
+    async def task_execute(self):
+        ...
+
+    @abstractmethod
+    async def task_postprocessing(self):
+        ...
