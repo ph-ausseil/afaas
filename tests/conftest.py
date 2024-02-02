@@ -90,13 +90,13 @@ def reset_environment_each_test():
     base_dir = Path("~/AFAAS/data/pytest").expanduser().resolve()
     print(base_dir)
     # Walk through the directory structure
-    for root, dirs, files in os.walk(base_dir):
-        shutil.rmtree(root)
-        print(f"Deleted directory: {root}")
 
     yield
 
     # Code to clean up after each test
+    for root, dirs, files in os.walk(base_dir):
+        shutil.rmtree(root)
+        print(f"Deleted directory: {root}")
     delete_logs()
 
 
