@@ -37,6 +37,8 @@ class Task(AbstractTask):
         # self._task_parent_loaded = asyncio.Event()
         self._task_parent_future = asyncio.Future()
         self.plan_id = self.agent.plan.plan_id
+        self.task_number = len(self.agent.plan)
+        self.task_attempt_number = 0
 
     def __setattr__(self, key, value):
         # Set attribute as normal
@@ -337,7 +339,7 @@ class Task(AbstractTask):
         LOG.warning(f"You should not use deepcopy on Task objects. Use Task.clone() instead")
         return copy.deepcopy(self)
 
-    async def clone(self , with_predecessor = False) -> Task:
+    async def clone(self , with_predecessor = False , new_attempt = True , reset_attempt = True ) -> Task:
         import copy
         clone = copy.copy(self)
 
@@ -345,6 +347,11 @@ class Task(AbstractTask):
         import datetime
         clone.created_at = datetime.datetime.now()
         clone.task_id = Task.generate_uuid()
+        clone.task_number = len(self.agent.plan)
+        if new_attempt :
+            clone.task_attempt_number += 1
+        elif reset_attempt :
+            clone.task_attempt_number = 0
 
         clone.state = TaskStatusList.BACKLOG
         clone.task_text_output = None
@@ -360,8 +367,14 @@ class Task(AbstractTask):
     async def retry(self) -> Task:
         """ Clone a task and adds it as its immediate successor"""
         LOG.warning("Task.retry() is an experimental method")
-        clone = self.clone()
+        clone = await self.clone()
+        parent = await self.task_parent()
+        parent.add_task(clone) 
         self.add_successor(clone)
+        await clone.is_ready()
+
+        self.agent.plan.set_as_priority(task = clone)
+
         return clone
 
     async def task_preprossessing(

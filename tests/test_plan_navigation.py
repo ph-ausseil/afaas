@@ -47,6 +47,7 @@ from .dataset.plan_familly_dinner import (
     plan_step_12,
     plan_step_13,
     plan_step_14,
+    plan_step_18,
     task_awaiting_preparation,
     task_ready_no_predecessors_or_subtasks,
     task_with_mixed_predecessors,
@@ -131,3 +132,25 @@ async def test_get_next_task(
             f"expected_next_task_id = {expected_next_task_id} \n "
             f"{await make_tree(plan)}"
         )
+
+
+@pytest.mark.asyncio
+async def test_set_as_priority(plan_step_18):
+    plan = plan_step_18
+    for task_id in plan.get_ready_tasks_ids():
+        ready_task = await plan.get_task(task_id=task_id)
+        ready_task.state = TaskStatusList.BACKLOG
+
+    plan._ready_task_ids = ["oiuyitu", "piuoyiguf", "oiuyitu", "piuoyiguf"]
+
+    current_task: Task = await plan.get_task(task_id="300.4")
+    current_task.state = TaskStatusList.READY
+
+    assert current_task.state == TaskStatusList.READY 
+    assert len(plan._ready_task_ids) == 5
+    assert plan._ready_task_ids[0] == "oiuyitu"
+    assert plan._ready_task_ids[4] == "300.4"
+
+    plan.set_as_priority(task=current_task)
+    assert len(plan._ready_task_ids) == 5
+    assert plan._ready_task_ids[0] == "300.4"

@@ -149,9 +149,32 @@ class Tool:
         LOG.debug(f"Task = {task}")
         LOG.debug(f"Tool output = {tool_output}")
 
-        agent: BaseAgent = task.agent
+        success = await self.tool_execution_summarry(task, tool_output)
+        await self.memorize_task_output(task)
 
-        strategy_result = await agent.execute_strategy(
+        task.retry()
+        return 
+
+    async def memorize_task_output(self, task: AbstractTask):
+        from langchain_core.documents import Document
+        document = Document(
+            page_content=task.task_text_output,
+            metadata=   {
+                        "task_id": task.task_id, 
+                        "plan_id": task.plan_id ,
+                        "agent_id": task.agent.agent_id ,
+                        }
+        )
+        vector = await task.agent.vectorstores.add_document(
+                                                       document_type = DocumentType.TASK,  
+                                                       document = document , 
+                                                       document_id =  task.task_id
+                                                       ) 
+        LOG.trace(f"Task output embedding added to vector store : {repr(vector)}")
+        return task.task_text_output
+
+    async def tool_execution_summarry(self, task: AbstractTask, tool_output: Any):
+        strategy_result = await task.agent.execute_strategy(
             strategy_name="afaas_task_default_summary",
             task=task,
             tool_output=tool_output,
@@ -165,34 +188,6 @@ class Tool:
         task.task_text_output_as_uml = strategy_result.parsed_result[0][
             "command_args"
         ].get("text_output_as_uml", "")
-
-        # vector = await agent.vectorstores["tasks"].aadd_texts(
-        #     texts=[task.task_text_output],
-        #     metadatas=[{"task_id": task.task_id, 
-        #                 "plan_id": task.plan_id ,
-        #                 "agent_id": task.agent.agent_id ,
-        #                 "type" : DocumentType.TASK.value
-        #                 }],
-        # )
-        from langchain_core.documents import Document
-        document = Document(
-            page_content=task.task_text_output,
-            metadata=   {
-                        "task_id": task.task_id, 
-                        "plan_id": task.plan_id ,
-                        "agent_id": task.agent.agent_id ,
-                        }
-        )
-        vector = await agent.vectorstores.add_document(
-                                                       document_type = DocumentType.TASK,  
-                                                       document = document , 
-                                                       document_id =  task.task_id
-                                                       ) 
-
-
-        LOG.trace(f"Task output embedding added to vector store : {repr(vector)}")
-
-        return task.task_text_output
 
     def dump(self) -> CompletionModelFunction:
         param_dict = {parameter.name: parameter.spec for parameter in self.parameters}
