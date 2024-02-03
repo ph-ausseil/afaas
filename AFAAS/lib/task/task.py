@@ -3,26 +3,28 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import TYPE_CHECKING, Optional
+from AFAAS.interfaces.tools.tool_output import ToolOutput
+from AFAAS.lib.sdk.errors import AgentException, ToolExecutionError, UnknownToolError
 
 from pydantic import Field, validator
 
 from AFAAS.interfaces.adapters import AbstractChatModelResponse
+from AFAAS.interfaces.adapters.embeddings.wrapper import SearchFilter, DocumentType,  Filter, FilterType
 from AFAAS.interfaces.agent.main import BaseAgent
 from AFAAS.interfaces.task.base import AbstractBaseTask
 from AFAAS.interfaces.task.meta import TaskStatusList
 from AFAAS.interfaces.task.plan import AbstractPlan
 from AFAAS.interfaces.task.task import AbstractTask
 from AFAAS.lib.sdk.logger import AFAASLogger, logging
-from AFAAS.prompts.common.afaas_task_post_rag_update import (
+from AFAAS.prompts.common import (
     AfaasPostRagTaskUpdateStrategy,
-)
-from AFAAS.prompts.common.afaas_task_rag_step2_history import AfaasTaskRagStep2Strategy
-from AFAAS.prompts.common.afaas_task_rag_step3_related import AfaasTaskRagStep3Strategy
+AfaasTaskRagStep2Strategy, AfaasTaskRagStep3Strategy , AfaasSelectWorkflowStrategy ) 
+from AFAAS.interfaces.adapters.embeddings.wrapper import SearchFilter, DocumentType,  Filter, FilterType
+from AFAAS.interfaces.workflow import FastTrackedWorkflow
 
 LOG = AFAASLogger(name=__name__)
 
-if TYPE_CHECKING:
-    from AFAAS.interfaces.task.stack import TaskStack
+from AFAAS.interfaces.task.stack import TaskStack
 
 
 class Task(AbstractTask):
@@ -307,14 +309,102 @@ class Task(AbstractTask):
             return self.task_id == other.task_id
         return False
 
-    async def prepare_rag(
+    def __copy__(self):
+        import copy
+        from AFAAS.interfaces.task.base import AFAASModel
+        cls = self.__class__
+        clone = cls(**self.dict(), agent = self.agent)
+        # for attr in self.__dict__:
+        #     original_value = getattr(self, attr)
+
+        #     if isinstance(original_value, (AbstractBaseTask, BaseAgent)):
+        #         # Keep reference for AbstractBaseTask and BaseAgent types
+        #         setattr(clone, attr, original_value)
+        #     elif isinstance(original_value, TaskStack):
+        #         continue
+        #     elif isinstance(original_value, asyncio.Future):
+        #         setattr(clone, attr, original_value)
+        #     else:
+        #         # Copy all other attributes
+        #         setattr(clone, attr, copy.copy(original_value))
+        clone.agent = self.agent
+        clone._task_parent = self._task_parent
+
+        return clone
+
+    def __deepcopy__(self, memo) : 
+        import copy
+        LOG.warning(f"You should not use deepcopy on Task objects. Use Task.clone() instead")
+        return copy.deepcopy(self)
+
+    async def clone(self , with_predecessor = False) -> Task:
+        import copy
+        clone = copy.copy(self)
+
+
+        import datetime
+        clone.created_at = datetime.datetime.now()
+        clone.task_id = Task.generate_uuid()
+
+        clone.state = TaskStatusList.BACKLOG
+        clone.task_text_output = None
+        clone.task_text_output_as_uml = None
+        clone._task_successors = []
+        for successor in await self.task_successors.get_all_tasks_from_stack():
+            successor.add_predecessor(clone)
+        if with_predecessor :
+            for predecessor in await self.task_predecessors.get_all_tasks_from_stack():
+                predecessor.add_successor(clone)
+        return clone
+
+    async def retry(self) -> Task:
+        """ Clone a task and adds it as its immediate successor"""
+        LOG.warning("Task.retry() is an experimental method")
+        clone = self.clone()
+        self.add_successor(clone)
+        return clone
+
+    async def task_preprossessing(
         self,
         predecessors: bool = True,
         successors: bool = False,
         history: int = 10,
         sibblings=True,
         path=True,
-        similar_tasks: int = 100,
+        nb_similar_tasks: int = 100,
+        avoid_sibbling_predecessors_redundancy: bool = False,
+    ):  
+        # NOTE: in current implementation self.command is always routing
+        workflow = await self._select_workflow()
+
+        if self.task_workflow != FastTrackedWorkflow.name : 
+            rv = await self._preprocess_rags(
+                predecessors=predecessors,
+                successors=successors,
+                history=history,
+                sibblings=sibblings,
+                path=path,
+                nb_similar_tasks=nb_similar_tasks,
+                avoid_sibbling_predecessors_redundancy=avoid_sibbling_predecessors_redundancy,
+            )
+
+    async def _select_workflow(self) : 
+            # RAG : 4. Post-Rag task update
+            rv: AbstractChatModelResponse = await self.agent.execute_strategy(
+                strategy_name=AfaasSelectWorkflowStrategy.STRATEGY_NAME,
+                task=self,
+            )
+            result = rv.parsed_result[0]["command_args"]
+            self.task_workflow = result["task_workflow"]
+
+    async def _preprocess_rags(
+        self,
+        predecessors: bool = True,
+        successors: bool = False,
+        history: int = 10,
+        sibblings=True,
+        path=True,
+        nb_similar_tasks: int = 100,
         avoid_sibbling_predecessors_redundancy: bool = False,
     ):
         plan_history: list[Task] = []
@@ -334,7 +424,9 @@ class Task(AbstractTask):
         # 3. Remove predecessors from history to avoid redondancy
         history_and_predecessors = set(plan_history) | set(task_predecessors)
 
-        # 4. Get the path to the task and remove it from history to avoid redondancy
+        # 4. Get the path to the task and remove it from history to avoid redondancy 
+        # NOTE: We keep the redundancy as the task path doesn't detail the content of tasks
+        # history_and_predecessors - set(task_path)
         task_path: list[Task] = []
         if path:
             task_path = await self.get_task_path()
@@ -352,29 +444,23 @@ class Task(AbstractTask):
 
         # 6. Get the similar tasks , if at least n (similar_tasks) have been treated so we only look for similarity in complexe cases
         related_tasks: list[Task] = []
-        if len(self.agent.plan.get_all_done_tasks_ids()) > similar_tasks:
+        if len(self.agent.plan.get_all_done_tasks_ids()) > nb_similar_tasks:
             task_embedding = await self.agent.embedding_model.aembed_query(
                 text=self.long_description
             )
-            try:
-                # FIXME: Create an adapter or open a issue on Langchain Github : https://github.com/langchain-ai/langchain to harmonize the AP
-                related_tasks_documents = await self.agent.vectorstores[
-                    "tasks"
-                ].asimilarity_search_by_vector(
-                    task_embedding,
-                    k=similar_tasks,
-                    include_metadata=True,
-                    filter={"plan_id": {"$eq": self.plan_id}},
-                )
-            except Exception:
-                related_tasks_documents = await self.agent.vectorstores[
-                    "tasks"
-                ].asimilarity_search_by_vector(
-                    task_embedding,
-                    k=10,
-                    include_metadata=True,
-                    filter=[{"metadata.plan_id": {"$eq": self.plan_id}}],
-                )
+            # FIXME: Create an adapter or open a issue on Langchain Github : https://github.com/langchain-ai/langchain to harmonize the AP
+            related_tasks_documents = await self.agent.vectorstores.get_related_documents(
+                                        embedding =  task_embedding ,
+                                        nb_results = 10 ,
+                                        document_type = DocumentType.TASK,
+                                        search_filters= SearchFilter(filters = {
+                                            'agent_id' : Filter( 
+                                                filter_type=FilterType.EQUAL,
+                                                value=self.agent.agent_id,
+                                            ) 
+                                        }
+                                        )
+            )
 
             LOG.debug(related_tasks_documents)
             ## 1. Make Task Object
@@ -442,8 +528,40 @@ class Task(AbstractTask):
             self.long_description = rv.parsed_result[0]["command_args"][
                 "long_description"
             ]
-            # FIXME: ONY for ruting & planning ?
-            self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
+            # Moved to task_preprossessing
+            # self.task_workflow = rv.parsed_result[0]["command_args"]["task_workflow"]
+
+
+    async def task_execute(self) -> ToolOutput:
+        LOG.info(f"Executing command : {self.command}")
+        LOG.info(f"with arguments : {self.arguments}")
+
+        if tool := self.agent._tool_registry.get_tool(tool_name=self.command):
+            try:
+                result = await tool(**self.arguments, task=self, agent=self.agent)
+                await tool.success_check_callback(self=tool, task=self, tool_output=result)
+                return result
+            except Exception as e:
+                raise ToolExecutionError(str(e))
+        raise UnknownToolError(f"Cannot execute command '{self.command}': unknown command.")
+
+
+    async def task_postprocessing(self) -> bool:
+        try : 
+            if await self.is_ready():
+                """If the task still match readiness criterias at this point, it means that we can close it"""
+                await self.close_task()
+            else:
+                """
+                If the task doesn't match readiness criterias at this point, it means that we can't close it
+                this situation is usualy due to the addition of subbtasks (or predecessor ?) during the excecution of the task.
+                """
+                if self.state != TaskStatusList.IN_PROGRESS_WITH_SUBTASKS : 
+                    LOG.error(f"Can't terminate Task : {self.debug_formated_str()}")
+                    raise Exception(f"Can't terminate Task : {self.debug_formated_str()}")
+            return True
+        except : 
+            return False
 
 
 # Need to resolve the circular dependency between Task and TaskContext once both models are defined.
