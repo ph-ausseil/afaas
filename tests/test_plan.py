@@ -63,11 +63,13 @@ from .dataset.plan_familly_dinner import (
 from .utils.ascii_tree import make_tree, print_tree, pytest_terminal_summary, test_trees
 
 
-def test_plan_hashable(plan_step_2: Plan, plan_step_8 : Plan):
+@pytest.mark.asyncio
+async def test_plan_hashable(plan_step_2: Plan):
     # Check if the plan can be used as a dictionary key
-    assert hash(plan_step_2) == hash(plan_step_8), "Hashes of same plans should match"
-    plan_step_8.plan_id = "new_id"
-    assert hash(plan_step_2) != hash(plan_step_8), "Hashes of different plans should not match"
+    other_plan = await _plan_step_10()
+    assert hash(plan_step_2) == hash(other_plan), "Hashes of same plans should match"
+    other_plan = "new_id"
+    assert hash(plan_step_2) != hash(other_plan), "Hashes of different plans should not match"
 
 
 def test_plan_length(plan_with_no_task: Plan, default_task: Task):
